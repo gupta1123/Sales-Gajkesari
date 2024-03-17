@@ -3,9 +3,11 @@ import { NextPage } from 'next';
 import { AppProps } from 'next/app';
 import Sidebar from '../components/Sidebar';
 import styles from './App.module.css';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Provider, useSelector } from 'react-redux';
 import { store, loginUser } from '../store';
 import React, { useState, ReactNode } from 'react';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../store';
 //import Image from 'next/image';
 
 const Card = ({ children }: { children: ReactNode }) => (
@@ -39,7 +41,7 @@ const Typography = {
 };
 
 const LoginPage = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -47,7 +49,7 @@ const LoginPage = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(loginUser({ username, password })); // Make sure loginUser is a properly defined async thunk
+    dispatch(loginUser({ username, password }));
   };
 
   const togglePasswordVisibility = () => {
@@ -59,7 +61,7 @@ const LoginPage = () => {
       <Card>
         <div className="text-center">
           <Typography.Title level={2}>Gajkesari</Typography.Title>
-       
+
           <div className="mb-4">
             <Input
               type="text"
@@ -132,6 +134,7 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
     </Provider>
   );
 }
+
 const AuthWrapper = ({ children }: { children: ReactNode }) => {
   const authStatus = useSelector((state: any) => state.auth.status);
   const token = useSelector((state: any) => state.auth.token);

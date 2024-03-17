@@ -57,9 +57,7 @@ export const registerUser = createAsyncThunk<string, UserData, { rejectValue: st
 );
 
 export const loginUser = createAsyncThunk<string, UserData, { rejectValue: string }>(
-
   'auth/login',
-
   async (userData, { rejectWithValue }) => {
 
     try {
@@ -199,9 +197,7 @@ export const { logout, checkStoredToken } = authSlice.actions;
 export default authSlice.reducer;
 
 export const store = configureStore({
-
   reducer: {
-
     auth: authSlice.reducer,
 
   },
@@ -209,5 +205,4 @@ export const store = configureStore({
 });
 
 export type RootState = ReturnType<typeof store.getState>;
-
 export type AppDispatch = typeof store.dispatch;
