@@ -6,7 +6,7 @@ import styles from './App.module.css';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store, loginUser } from '../store';
 import React, { useState, ReactNode } from 'react';
-import Image from 'next/image';
+//import Image from 'next/image';
 
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
@@ -47,7 +47,7 @@ const LoginPage = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(loginUser({ username, password }));
+    dispatch(loginUser({ username, password })); // Make sure loginUser is a properly defined async thunk
   };
 
   const togglePasswordVisibility = () => {
@@ -59,7 +59,7 @@ const LoginPage = () => {
       <Card>
         <div className="text-center">
           <Typography.Title level={2}>Gajkesari</Typography.Title>
-          <Image src="/image.gif" alt="Login" width={200} height={200} className="mx-auto mb-4" />
+       
           <div className="mb-4">
             <Input
               type="text"
@@ -132,7 +132,6 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
     </Provider>
   );
 }
-
 const AuthWrapper = ({ children }: { children: ReactNode }) => {
   const authStatus = useSelector((state: any) => state.auth.status);
   const token = useSelector((state: any) => state.auth.token);
