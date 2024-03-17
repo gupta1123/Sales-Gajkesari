@@ -1,0 +1,92 @@
+.container {
+    max-width: 1200px;
+  }
+  
+  .card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-header {
+    background-color: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem;
+  }
+  
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  .card-content {
+    padding: 1.5rem;
+  }
+  
+  .card-footer {
+    background-color: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+  
+  .select-trigger {
+    width: 100%;
+  }
+  
+  .file-input {
+    margin-bottom: 1rem;
+  }
+  
+  .timeline {
+    position: relative;
+    padding: 20px 0;
+  }
+  
+  .timeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 8px;
+    height: 100%;
+    width: 2px;
+    background-color: #e2e8f0;
+  }
+  
+  .timeline-item {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 20px;
+  }
+  
+  .timeline-point {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #4f46e5;
+  }
+  
+  .timeline-content {
+    padding-left: 20px;
+  }
+  
+  .timeline-date {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  
+  .timeline-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .timeline-description {
+    font-size: 14px;
+    color: #64748b;
+  }

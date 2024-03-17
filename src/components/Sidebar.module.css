@@ -1,0 +1,43 @@
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background: linear-gradient(180deg, #333, #222); /* Smooth gradient for a professional look */
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align items to the start (left) */
+  padding: 20px; /* Consistent padding */
+  color: white; /* Ensures all text inside is white */
+}
+
+.sidebarList {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+  margin: 0; /* Reset margin to ensure alignment */
+}
+
+.sidebarItem {
+  width: 100%;
+  padding: 10px 0; /* Vertical padding for each item */
+}
+
+.sidebarLink {
+  display: block;
+  width: 100%;
+  padding: 10px 20px; /* Adequate padding for clickability and comfort */
+  text-align: left; /* Text aligned to the left */
+  color: white; /* White text for readability */
+  text-decoration: none;
+  transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effect */
+  border-left: 3px solid transparent; /* Subtle indicator for active state */
+}
+
+.sidebarLink:hover, .sidebarLink.active {
+  background-color: #444; /* Slightly lighter background on hover */
+  border-left-color: #007bff; /* Highlight color for active/ hover state */
+  color: #fff; /* Maintain white text on hover */
+}
