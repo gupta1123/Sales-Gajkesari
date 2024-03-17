@@ -8,7 +8,7 @@ import { store, loginUser } from '../store';
 import React, { useState, ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
-//import Image from 'next/image';
+import Image from 'next/image';
 
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
@@ -61,7 +61,7 @@ const LoginPage = () => {
       <Card>
         <div className="text-center">
           <Typography.Title level={2}>Gajkesari</Typography.Title>
-
+          <img src="/image.gif" alt="Login" className="mx-auto mb-4" />
           <div className="mb-4">
             <Input
               type="text"
