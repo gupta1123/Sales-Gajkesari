@@ -36,7 +36,7 @@ import { RootState } from '../store';
 
 
 type Customer = {
-    storeId: string; // Add this line
+    storeId: string;
     storeName: string;
     clientFirstName: string;
     primaryContact: string;
@@ -44,6 +44,8 @@ type Customer = {
     intentLevel: number;
     employeeName: string;
     clientType: string;
+    totalVisitCount: number;
+    lastVisitDate: string; // Add this line
 };
 
 type CustomerTableProps = {
@@ -403,23 +405,30 @@ export default function CustomerListPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-4">
-                                            <div>
-                                                <p className="text-lg font-semibold mb-2 flex items-center">
-                                                   Intent Level
-                                                </p>
-                                                <Progress value={(customer.intentLevel / 10) * 100} className="bg-gray-300">
-                                                    <div className="h-3 bg-blue-500 rounded-full" />
-                                                </Progress>
-                                            </div>
+                                           <div>
+  <p className="text-lg font-semibold mb-2 flex items-center">
+    Intent Level
+  </p>
+  <Progress
+    value={(customer.intentLevel / 10) * 100}
+    className="bg-gray-300 h-3 rounded-full overflow-hidden"
+  >
+    <div
+      className="h-full bg-gradient-to-r from-gray-400 to-black"
+      style={{ width: `${(customer.intentLevel / 10) * 100}%` }}
+    />
+  </Progress>
+</div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-gray-200 rounded-lg p-4">
                                                     <p className="text-lg font-semibold">Total Visits</p>
-                                                    <p className="text-3xl font-bold">12</p>
+                                                    <p className="text-3xl font-bold">{customer.totalVisitCount}</p>
                                                 </div>
                                                 <div className="bg-gray-200 rounded-lg p-4">
                                                     <p className="text-lg font-semibold">Last Visit</p>
-                                                    <p className="text-xl font-bold">2023-06-01</p>
+                                                    <p className="text-xl font-bold">{customer.lastVisitDate}</p>
                                                 </div>
+                                         
                                             </div>
                                         </div>
                                     </div>

@@ -9,7 +9,7 @@ import React, { useState, ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import Image from 'next/image';
-
+import { setToken } from '../store';
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
 );
@@ -136,8 +136,16 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
 }
 
 const AuthWrapper = ({ children }: { children: ReactNode }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const authStatus = useSelector((state: any) => state.auth.status);
   const token = useSelector((state: any) => state.auth.token);
+
+  React.useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && !token) {
+      dispatch(setToken(storedToken));
+    }
+  }, [dispatch, token]);
 
   if (!token) {
     return <LoginPage />;

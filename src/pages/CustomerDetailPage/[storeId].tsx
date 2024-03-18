@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button"
 import TimelineOverview from "../../components/TimelineOverview"
 import { useRouter } from 'next/router';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store'; // Updated import path
+import { RootState } from '../../store';
+
 
 interface CustomerData {
   storeId?: string;
@@ -27,7 +28,7 @@ interface CustomerData {
   country?: string;
   pincode?: string;
   monthlySale?: string;
-  intentLevel?: string;
+  intent?: number;
   fieldOfficer?: string;
   clientType?: string;
   clientFirstName?: string;
@@ -47,6 +48,7 @@ interface CustomerData {
   createdAt?: string;
   updatedAt?: string;
 }
+
 
 const dummyData = {
   shopName: "Acme Store",
@@ -75,8 +77,6 @@ export default function CustomerDetailPage() {
   const handleEdit = () => {
     setIsEditing(true);
   };
-
-
 
 
   const handleSave = async () => {
@@ -216,8 +216,8 @@ export default function CustomerDetailPage() {
                 <Flag className="text-yellow-500 w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Intent Level</p>
-                <p className="text-xl font-semibold text-gray-800">{customerData.intentLevel}</p>
+                <p className="text-gray-600">Intent Level</p>
+                <p className="text-lg font-medium text-gray-800">{customerData.intent}</p>
               </div>
             </div>
           </div>
