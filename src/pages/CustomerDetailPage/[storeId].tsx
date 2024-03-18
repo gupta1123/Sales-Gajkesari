@@ -29,6 +29,7 @@ interface CustomerData {
   pincode?: string;
   monthlySale?: string;
   intent?: number;
+  intentLevel?: number;
   fieldOfficer?: string;
   clientType?: string;
   clientFirstName?: string;
@@ -336,8 +337,8 @@ export default function CustomerDetailPage() {
                       Intent Level
                     </label>
                     <Select
-                      value={customerData.intentLevel}
-                      onValueChange={(value) => handleInputChange("intentLevel", value)}
+                      value={customerData.intentLevel ? String(customerData.intentLevel) : undefined}
+                      onValueChange={(value) => handleInputChange("intentLevel", Number(value))}
                     >
                       <SelectTrigger id="intentLevel" className="w-full">
                         <SelectValue placeholder="Select intent level" />

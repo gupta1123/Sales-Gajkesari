@@ -10,6 +10,7 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import Image from 'next/image';
 import { setToken } from '../store';
+
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
 );
@@ -49,7 +50,7 @@ const LoginPage = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(loginUser({ username, password }));
+    dispatch(loginUser({ username, password }) as any); // Add type assertion here
   };
 
   const togglePasswordVisibility = () => {
