@@ -1,5 +1,17 @@
 // next.config.js or next.config.cjs
+
 module.exports = {
+    images: {
+        domains: ['ec2-13-49-190-97.eu-north-1.compute.amazonaws.com'],
+        remotePatterns: [
+            {
+                protocol: 'http',
+                hostname: 'ec2-13-49-190-97.eu-north-1.compute.amazonaws.com',
+                port: '8081',
+                pathname: '/visit/images/**',
+            },
+        ],
+    },
     webpack: (config, { isServer }) => {
         if (!isServer) {
             config.resolve.fallback = { fs: false };

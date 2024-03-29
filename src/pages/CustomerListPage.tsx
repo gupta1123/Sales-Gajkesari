@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import ChangeFieldOfficerDialog from './ChangeFieldOfficerDialog';
+import DownloadExcelButton from './DownloadExcelButton';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Pagination,
@@ -17,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { FiPhone, FiUser, FiDollarSign, FiTarget, FiBriefcase } from "react-icons/fi";
 import { HomeOutlined, SettingOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -42,10 +45,15 @@ type Customer = {
     primaryContact: string;
     monthlySale: number;
     intentLevel: number;
+    intent: number;
     employeeName: string;
     clientType: string;
     totalVisitCount: number;
-    lastVisitDate: string; // Add this line
+    lastVisitDate: string;
+    totalVisits: number;
+    email: string;
+    city: string;
+    state: string;
 };
 
 type CustomerTableProps = {
@@ -54,8 +62,8 @@ type CustomerTableProps = {
     onSelectColumn: (column: string) => void;
     onSelectAllRows: () => void;
     selectedRows: string[];
-    onSelectRow: (customerId: string) => void; // Add this line
-    onBulkAction: (action: string) => void; // Add this line
+    onSelectRow: (customerId: string) => void;
+    onBulkAction: (action: string) => void;
     onDeleteCustomer: (customerId: string) => void;
 };
 
@@ -86,6 +94,11 @@ const CustomerTable = ({
                     {selectedColumns.includes('intentLevel') && <TableHead>Intent Level</TableHead>}
                     {selectedColumns.includes('fieldOfficer') && <TableHead>Field Officer</TableHead>}
                     {selectedColumns.includes('clientType') && <TableHead>Client Type</TableHead>}
+                    {selectedColumns.includes('totalVisits') && <TableHead>Total Visits</TableHead>}
+                    {selectedColumns.includes('lastVisitDate') && <TableHead>Last Visit Date</TableHead>}
+                    {selectedColumns.includes('email') && <TableHead>Email</TableHead>}
+                    {selectedColumns.includes('city') && <TableHead>City</TableHead>}
+                    {selectedColumns.includes('state') && <TableHead>State</TableHead>}
                     <TableHead>Actions</TableHead>
                 </TableRow>
             </TableHeader>
@@ -101,10 +114,10 @@ const CustomerTable = ({
                         {selectedColumns.includes('shopName') && <TableCell>{customer.storeName}</TableCell>}
                         {selectedColumns.includes('ownerName') && <TableCell>{customer.clientFirstName}</TableCell>}
                         {selectedColumns.includes('phone') && <TableCell>{customer.primaryContact}</TableCell>}
-                        <TableCell>{customer.monthlySale ? `$${customer.monthlySale.toLocaleString()}` : ''}</TableCell>
+                        {selectedColumns.includes('monthlySales') && <TableCell>{customer.monthlySale ? `₹${customer.monthlySale.toLocaleString()}` : ''}</TableCell>}
                         {selectedColumns.includes('intentLevel') && (
                             <TableCell>
-                                <Progress value={(customer.intentLevel / 10) * 100} className="w-20">
+                                <Progress value={customer.intent} className="w-20">
                                     <div className="h-2 bg-blue-500 rounded-full" />
                                 </Progress>
                             </TableCell>
@@ -115,6 +128,11 @@ const CustomerTable = ({
                                 <Badge variant="outline">{customer.clientType}</Badge>
                             </TableCell>
                         )}
+                        {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisits}</TableCell>}
+                        {selectedColumns.includes('lastVisitDate') && <TableCell>{customer.lastVisitDate}</TableCell>}
+                        {selectedColumns.includes('email') && <TableCell>{customer.email}</TableCell>}
+                        {selectedColumns.includes('city') && <TableCell>{customer.city}</TableCell>}
+                        {selectedColumns.includes('state') && <TableCell>{customer.state}</TableCell>}
                         <TableCell>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -151,6 +169,11 @@ export default function CustomerListPage() {
         'intentLevel',
         'fieldOfficer',
         'clientType',
+        'totalVisits',
+        'lastVisitDate',
+        'email',
+        'city',
+        'state',
     ]);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState<number>(10);
@@ -312,7 +335,7 @@ export default function CustomerListPage() {
                             <Button variant="outline">Columns</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            {['shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer', 'clientType'].map(
+                            {['shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer', 'clientType', 'totalVisits', 'lastVisitDate', 'email', 'city', 'state'].map(
                                 (column) => (
                                     <DropdownMenuCheckboxItem
                                         key={column}
@@ -339,10 +362,12 @@ export default function CustomerListPage() {
                     <Button onClick={toggleViewMode}>
                         {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
                     </Button>
+                    <DownloadExcelButton customers={customers} />
                 </div>
             </div>
 
-            <AddCustomerModal isOpen={isModalOpen} onClose={closeModal} />
+            <AddCustomerModal isOpen={isModalOpen} onClose={closeModal} token={token || ''} />
+
 
             {viewMode === 'card' ? (
                 <>
@@ -394,10 +419,9 @@ export default function CustomerListPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center">
-                                              
-                                                <span className="font-semibold">Monthly Sales:</span>
-                                                <span className="ml-2">${customer.monthlySale ? customer.monthlySale.toLocaleString() : ''}</span>
-                                            </div>
+                        <span className="font-semibold">Monthly Sales:</span>
+                        <span className="ml-2">₹{customer.monthlySale ? customer.monthlySale.toLocaleString() : ''}</span>
+                      </div>
                                             <div className="flex items-center">
                                             
                                                 <span className="font-semibold">Field Officer:</span>
@@ -405,20 +429,25 @@ export default function CustomerListPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-4">
-                                           <div>
-  <p className="text-lg font-semibold mb-2 flex items-center">
-    Intent Level
-  </p>
-  <Progress
-    value={(customer.intentLevel / 10) * 100}
-    className="bg-gray-300 h-3 rounded-full overflow-hidden"
-  >
-    <div
-      className="h-full bg-gradient-to-r from-gray-400 to-black"
-      style={{ width: `${(customer.intentLevel / 10) * 100}%` }}
-    />
-  </Progress>
-</div>
+                                            <div>
+                                                <p className="text-lg font-semibold mb-2 flex items-center">
+                                                    Intent Level
+                                                </p>
+                                                <Progress
+                                                    value={customer.intent}
+                                                    className="bg-gray-300 h-3 rounded-full overflow-hidden"
+                                                >
+                                                    <div
+                                                        className={`h-full ${customer.intent <= 30
+                                                                ? 'bg-red-500'
+                                                                : customer.intent <= 70
+                                                                    ? 'bg-yellow-500'
+                                                                    : 'bg-green-500'
+                                                            }`}
+                                                        style={{ width: `${customer.intent}%` }}
+                                                    />
+                                                </Progress>
+                                            </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-gray-200 rounded-lg p-4">
                                                     <p className="text-lg font-semibold">Total Visits</p>

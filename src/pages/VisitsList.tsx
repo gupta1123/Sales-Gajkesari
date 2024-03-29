@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import DownloadExcelButton from './DownloadExcelButton';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,7 +39,13 @@ interface Visit {
   checkinTime?: string | null;
   checkoutDate?: string | null;
   checkoutTime?: string | null;
+  visitStart?: string | null; // New field
+  visitEnd?: string | null;   // New field
+  intent?: string | null;     // New field
+  city?: string | null;       // New field
+  state?: string | null;      // New field
 }
+
 
 interface VisitCardProps {
   visit: Visit;
@@ -57,7 +64,7 @@ const VisitCard: React.FC<VisitCardProps> = ({ visit }) => {
   const viewDetails = (visitId: string) => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
-
+ 
   const getOutcomeStatus = (visit: Visit): { emoji: ReactNode; status: string; color: string } => {
     if (
       visit.checkinDate &&
@@ -69,11 +76,10 @@ const VisitCard: React.FC<VisitCardProps> = ({ visit }) => {
     } else if (visit.checkoutDate && visit.checkoutTime) {
       return { emoji: '🚪', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
     } else if (visit.checkinDate && visit.checkinTime) {
-      return { emoji: '✅', status: 'Checked In', color: 'bg-green-100 text-green-800' };
+      return { emoji: '⏳', status: 'On Going', color: 'bg-green-100 text-green-800' };
     }
     return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
   };
-
   const { emoji, status, color } = getOutcomeStatus(visit);
 
   return (
@@ -150,6 +156,18 @@ interface VisitsTableProps {
   onBulkAction: (action: string) => void;
 }
 
+const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
+  if (date && time) {
+    const [hours, minutes] = time.split(':');
+    const formattedTime = format(
+      new Date(`${date}T${hours}:${minutes}`),
+      'dd MMM h:mm a'
+    );
+    return formattedTime;
+  }
+  return '';
+};
+
 const VisitsTable: React.FC<VisitsTableProps> = ({
   visits,
   selectedColumns,
@@ -180,7 +198,7 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
     } else if (visit.checkoutDate && visit.checkoutTime) {
       return { emoji: '🚪', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
     } else if (visit.checkinDate && visit.checkinTime) {
-      return { emoji: '✅', status: 'Checked In', color: 'bg-green-100 text-green-800' };
+      return { emoji: '⏳', status: 'On Going', color: 'bg-green-100 text-green-800' };
     }
     return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
   };
@@ -229,6 +247,23 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
               Status {sortColumn === 'outcome' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
           )}
+          {/* New Columns Start Here */}
+          {selectedColumns.includes('visitStart') && (
+            <th className="px-4 py-2">Visit Start</th>
+          )}
+          {selectedColumns.includes('visitEnd') && (
+            <th className="px-4 py-2">Visit End</th>
+          )}
+          {selectedColumns.includes('intent') && (
+            <th className="px-4 py-2">Intent</th>
+          )}
+          {selectedColumns.includes('city') && (
+            <th className="px-4 py-2">City</th>
+          )}
+          {selectedColumns.includes('state') && (
+            <th className="px-4 py-2">State</th>
+          )}
+          {/* New Columns End Here */}
           <th className="px-4 py-2">Actions</th>
         </tr>
       </thead>
@@ -266,6 +301,26 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                   </Badge>
                 </td>
               )}
+             {selectedColumns.includes('visitStart') && (
+                <td className="px-4 py-2">
+                  {formatDateTime(visit.checkinDate, visit.checkinTime)}
+                </td>
+              )}
+              {selectedColumns.includes('visitEnd') && (
+                <td className="px-4 py-2">
+                  {formatDateTime(visit.checkoutDate, visit.checkoutTime)}
+                </td>
+              )}
+              {selectedColumns.includes('intent') && (
+                <td className="px-4 py-2">{visit.intent}</td>
+              )}
+              {selectedColumns.includes('city') && (
+                <td className="px-4 py-2">{visit.city}</td>
+              )}
+              {selectedColumns.includes('state') && (
+                <td className="px-4 py-2">{visit.state}</td>
+              )}
+              {/* New Columns Data Display End Here */}
               <td className="px-4 py-2">
                 <Button
                   variant="outline"
@@ -343,11 +398,18 @@ interface Visit {
   purpose: string;
   outcome: string;
   feedback?: string;
+  location: string;
   checkinDate?: string | null;
   checkinTime?: string | null;
   checkoutDate?: string | null;
   checkoutTime?: string | null;
+  visitStart?: string | null; // New field
+  visitEnd?: string | null;   // New field
+  intent?: string | null;     // New field
+  city?: string | null;       // New field
+  state?: string | null;      // New field
 }
+
 
 const VisitsList: React.FC = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -400,7 +462,13 @@ const VisitsList: React.FC = () => {
     'location',
     'purpose',
     'outcome',
+    'visitStart', // New column
+    'visitEnd',   // New column
+    'intent',     // New column
+    'city',       // New column
+    'state',      // New column
   ]);
+
 
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -509,6 +577,7 @@ const VisitsList: React.FC = () => {
         <Button onClick={toggleViewMode}>
           {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
         </Button>
+   
       </div>
 
       {viewMode === 'card' ? (

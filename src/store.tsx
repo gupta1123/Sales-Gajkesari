@@ -52,6 +52,18 @@ export const loginUser = createAsyncThunk<string, UserData, { rejectValue: strin
   }
 );
 
+export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
+  'auth/logout',
+  async (_, { rejectWithValue }) => {
+    try {
+      await axios.post('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/logout');
+    } catch (error: any) {
+      console.error('Logout User Error:', error);
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const initialState: AuthState = {
   user: null,
   token: null,
@@ -63,11 +75,6 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.token = null;
-      localStorage.removeItem('token');
-    },
     setToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
     },
@@ -95,11 +102,24 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload || 'Unknown error';
+      })
+      .addCase(logoutUser.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.token = null;
+        localStorage.removeItem('token');
+        state.status = 'succeeded';
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Unknown error';
       });
   },
 });
 
-export const { logout, setToken } = authSlice.actions;
+export const { setToken } = authSlice.actions;
 
 export default authSlice.reducer;
 

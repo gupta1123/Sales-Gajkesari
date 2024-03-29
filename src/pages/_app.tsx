@@ -4,12 +4,11 @@ import { AppProps } from 'next/app';
 import Sidebar from '../components/Sidebar';
 import styles from './App.module.css';
 import { Provider, useSelector } from 'react-redux';
-import { store, loginUser } from '../store';
+import { store, loginUser, logoutUser } from '../store';
 import React, { useState, ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import Image from 'next/image';
-import { setToken } from '../store';
 
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
@@ -50,7 +49,7 @@ const LoginPage = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(loginUser({ username, password }) as any); // Add type assertion here
+    dispatch(loginUser({ username, password }) as any);
   };
 
   const togglePasswordVisibility = () => {
@@ -141,18 +140,22 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
   const authStatus = useSelector((state: any) => state.auth.status);
   const token = useSelector((state: any) => state.auth.token);
 
-  React.useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken && !token) {
-      dispatch(setToken(storedToken));
-    }
-  }, [dispatch, token]);
+  const handleLogout = () => {
+    dispatch(logoutUser() as any);
+  };
 
   if (!token) {
     return <LoginPage />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Button className="fixed top-4 right-4" onClick={handleLogout}>
+        Logout
+      </Button>
+    </>
+  );
 };
 
 export default MyApp;

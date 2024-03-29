@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -17,7 +16,7 @@ import { useRouter } from 'next/router';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
-
+import { Label } from '@/components/ui/label';
 interface CustomerData {
   storeId?: string;
   storeName?: string;
@@ -35,6 +34,7 @@ interface CustomerData {
   clientFirstName?: string;
   clientLastName?: string;
   primaryContact?: string;
+  employeeName?: string;
   secondaryContact?: string;
   email?: string;
   industry?: string;
@@ -63,7 +63,9 @@ const dummyData = {
   clientType: "Shop",
 }
 export default function CustomerDetailPage() {
-  const [activeTab, setActiveTab] = useState<"visits" | "notes" | "TimelineOverview">("visits");
+  const [activeTab, setActiveTab] = useState<"visits" | "notes" | "TimelineOverview" | "basic" | "contact" | "address" | "additional" | "Brands" | "Likes">("visits");
+
+
   const [activeTab1, setActiveTab1] = useState<"Brands" | "Likes">("Brands");
   const router = useRouter();
   const { storeId } = router.query as { storeId?: string };
@@ -77,6 +79,30 @@ export default function CustomerDetailPage() {
 
   const handleEdit = () => {
     setIsEditing(true);
+  };
+
+
+
+
+
+  const handleNext = () => {
+    if (activeTab === 'basic') {
+      setActiveTab('contact');
+    } else if (activeTab === 'contact') {
+      setActiveTab('address');
+    } else if (activeTab === 'address') {
+      setActiveTab('additional');
+    }
+  };
+
+  const handlePrevious = () => {
+    if (activeTab === 'additional') {
+      setActiveTab('address');
+    } else if (activeTab === 'address') {
+      setActiveTab('contact');
+    } else if (activeTab === 'contact') {
+      setActiveTab('basic');
+    }
   };
 
 
@@ -129,7 +155,17 @@ export default function CustomerDetailPage() {
       console.error("Error updating customer:", error);
     }
   };
+  const getNextTab = (currentTab: string) => {
+    const tabs = ['basic', 'contact', 'address', 'additional'];
+    const currentIndex = tabs.indexOf(currentTab);
+    return tabs[currentIndex + 1];
+  };
 
+  const getPreviousTab = (currentTab: string) => {
+    const tabs = ['basic', 'contact', 'address', 'additional'];
+    const currentIndex = tabs.indexOf(currentTab);
+    return tabs[currentIndex - 1];
+  };
 
   const handleInputChange = (field: keyof CustomerData, value: string | number) => {
     setCustomerData((prevData) => ({
@@ -225,122 +261,190 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
-      {/* Info Card */}
       <Card className="bg-white rounded-lg shadow-lg mb-8">
         <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-gray-800">Customer Information</h2>
-            <Button onClick={isEditing ? handleSave : handleEdit} className="text-indigo-500">
-              {isEditing ? "Save" : <Edit />}
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(!isEditing)}
+              className="mr-4"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {isEditing ? "Cancel" : "Edit"}
             </Button>
           </div>
-          {isEditing ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Basic Details</h3>
-                <div className="space-y-4">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "visits" | "notes" | "TimelineOverview" | "basic" | "contact" | "address" | "additional")} className="mt-4">
+
+            <TabsList className="grid grid-cols-4">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="contact">Contact</TabsTrigger>
+              <TabsTrigger value="address">Address</TabsTrigger>
+              <TabsTrigger value="additional">Additional</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basic" className="mt-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="storeName">Shop Name</Label>
+                  <Input
+                    id="storeName"
+                    value={customerData.storeName || ''}
+                    onChange={(e) => handleInputChange('storeName', e.target.value)}
+                    className="w-full"
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="clientFirstName">First Name</Label>
+                  <Input
+                    id="clientFirstName"
+                    value={customerData.clientFirstName || ''}
+                    onChange={(e) => handleInputChange('clientFirstName', e.target.value)}
+                    className="w-full"
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="clientLastName">Last Name</Label>
+                  <Input
+                    id="clientLastName"
+                    value={customerData.clientLastName || ''}
+                    onChange={(e) => handleInputChange('clientLastName', e.target.value)}
+                    className="w-full"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="contact" className="mt-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="primaryContact">Primary Contact</Label>
+                  <Input
+                    id="primaryContact"
+                    type="tel"
+                    value={customerData.primaryContact || ''}
+                    onChange={(e) => handleInputChange('primaryContact', e.target.value)}
+                    className="w-full"
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="secondaryContact">Secondary Contact</Label>
+                  <Input
+                    id="secondaryContact"
+                    type="tel"
+                    value={customerData.secondaryContact || ''}
+                    onChange={(e) => handleInputChange('secondaryContact', e.target.value)}
+                    className="w-full"
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={customerData.email || ''}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="w-full"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="address" className="mt-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="shopName" className="block text-gray-700 font-medium mb-1">
-                      Shop Name
-                    </label>
+                    <Label htmlFor="addressLine1">Address Line 1</Label>
                     <Input
-                      id="shopName"
-                      type="text"
-                      value={customerData.storeName}
-                      onChange={(e) => handleInputChange("storeName", e.target.value)}
+                      id="addressLine1"
+                      value={customerData.addressLine1 || ''}
+                      onChange={(e) => handleInputChange('addressLine1', e.target.value)}
                       className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="location1" className="block text-gray-700 font-medium mb-1">
-                        Latitude
-                      </label>
-                      <Input id="location1" type="text" className="w-full" />
-                    </div>
-                    <div>
-                      <label htmlFor="location2" className="block text-gray-700 font-medium mb-1">
-                        Longitude
-                      </label>
-                      <Input id="location2" type="text" className="w-full" />
-                    </div>
-                  </div>
                   <div>
-                    <label htmlFor="address" className="block text-gray-700 font-medium mb-1">
-                      Address
-                    </label>
+                    <Label htmlFor="addressLine2">Address Line 2</Label>
                     <Input
-                      id="address"
-                      type="text"
-                      value={customerData.addressLine1}
-                      onChange={(e) => handleInputChange("addressLine1", e.target.value)}
-                      className="w-full mb-2"
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="city" className="block text-gray-700 font-medium mb-1">
-                          City
-                        </label>
-                        <Input id="city" type="text" className="w-full" />
-                      </div>
-                      <div>
-                        <label htmlFor="pincode" className="block text-gray-700 font-medium mb-1">
-                          Pincode
-                        </label>
-                        <Input id="pincode" type="text" className="w-full" />
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="ownerName" className="block text-gray-700 font-medium mb-1">
-                      Owner Name
-                    </label>
-                    <Input
-                      id="ownerName"
-                      type="text"
-                      value={customerData.clientFirstName}
-                      onChange={(e) => handleInputChange("clientFirstName", e.target.value)}
+                      id="addressLine2"
+                      value={customerData.addressLine2 || ''}
+                      onChange={(e) => handleInputChange('addressLine2', e.target.value)}
                       className="w-full"
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={customerData.city || ''}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
                   <div>
-                    <label htmlFor="phone" className="block text-gray-700 font-medium mb-1">
-                      Phone
-                    </label>
+                    <Label htmlFor="state">State</Label>
                     <Input
-                      id="phone"
-                      type="tel"
-                      value={customerData.primaryContact}
-                      onChange={(e) => handleInputChange("primaryContact", e.target.value)}
+                      id="state"
+                      value={customerData.state || ''}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
                       className="w-full"
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={customerData.country || ''}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      className="w-full"
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pincode">Pincode</Label>
+                    <Input
+                      id="pincode"
+                      type="number"
+                      value={customerData.pincode || ''}
+                      onChange={(e) => handleInputChange('pincode', e.target.value)}
+                      className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
                 </div>
               </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Additional Info</h3>
-                <div className="space-y-4">
+            </TabsContent>
+            <TabsContent value="additional" className="mt-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="monthlySales" className="block text-gray-700 font-medium mb-1">
-                      Monthly Sales
-                    </label>
+                    <Label htmlFor="monthlySale">Monthly Sale</Label>
                     <Input
-                      id="monthlySales"
-                      type="text"
-                      value={customerData.monthlySale}
-                      onChange={(e) => handleInputChange("monthlySale", e.target.value)}
+                      id="monthlySale"
+                      type="number"
+                      value={customerData.monthlySale || ''}
+                      onChange={(e) => handleInputChange('monthlySale', e.target.value)}
                       className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
                   <div>
-                    <label htmlFor="intentLevel" className="block text-gray-700 font-medium mb-1">
-                      Intent Level
-                    </label>
+                    <Label htmlFor="intent">Intent Level</Label>
                     <Select
-                      value={customerData.intentLevel ? String(customerData.intentLevel) : undefined}
-                      onValueChange={(value) => handleInputChange("intentLevel", Number(value))}
+                      value={customerData.intent ? String(customerData.intent) : undefined}
+                      onValueChange={(value) => handleInputChange('intent', Number(value))}
+                      disabled={!isEditing}
                     >
-                      <SelectTrigger id="intentLevel" className="w-full">
+                      <SelectTrigger id="intentLevel">
                         <SelectValue placeholder="Select intent level" />
                       </SelectTrigger>
                       <SelectContent>
@@ -352,231 +456,92 @@ export default function CustomerDetailPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="fieldOfficer" className="block text-gray-700 font-medium mb-1">
-                      Field Officer
-                    </label>
+                    <Label htmlFor="employeeName">Field Officer</Label>
                     <Input
-                      id="fieldOfficer"
-                      type="text"
-                      value={customerData.fieldOfficer}
-                      onChange={(e) => handleInputChange("fieldOfficer", e.target.value)}
+                      id="employeeName"
+                      value={customerData.employeeName || ''}
+                      onChange={(e) => handleInputChange('employeeName', e.target.value)}
                       className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
                   <div>
-                    <label htmlFor="clientType" className="block text-gray-700 font-medium mb-1">
-                      Client Type
-                    </label>
-                    <Select
-                      value={customerData.clientType}
-                      onValueChange={(value) => {
-                        handleInputChange("clientType", value);
-                        if (value === "others") {
-                          setCustomClientType("");
-                        } else {
-                          setCustomClientType(null);
-                        }
-                      }}
-                    >
-                      <SelectTrigger id="clientType" className="w-full">
-                        <SelectValue placeholder="Select client type">        {customClientType || customerData.clientType}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="project">Project</SelectItem>
-                        <SelectItem value="shop">Shop</SelectItem>
-                        <SelectItem value="others">Others</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {customerData.clientType === "others" && (
-                      <div className="mt-2">
-                        <label htmlFor="customClientType" className="block text-gray-700 font-medium mb-1">
-                          Please specify:
-                        </label>
-                        <textarea
-                          id="customClientType"
-                          value={customClientType || ""}
-                          onChange={(e) => setCustomClientType(e.target.value)}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2"
-                          rows={3}
-                        ></textarea>
-                      </div>
-                    )}
+                    <Label htmlFor="clientType">Client Type</Label>
+                    <Input
+                      id="clientType"
+                      value={customerData.clientType || ''}
+                      onChange={(e) => handleInputChange('clientType', e.target.value)}
+                      className="w-full"
+                      disabled={!isEditing}
+                    />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="companySize" className="block text-gray-700 font-medium mb-1">
-                      Company Size
-                    </label>
+                    <Label htmlFor="companySize">Company Size</Label>
                     <Input
                       id="companySize"
                       type="number"
-                      value={customerData.companySize}
-                      onChange={(e) => handleInputChange("companySize", e.target.value)}
+                      value={customerData.companySize || ''}
+                      onChange={(e) => handleInputChange('companySize', e.target.value)}
                       className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
                   <div>
-                    <label htmlFor="gstNumber" className="block text-gray-700 font-medium mb-1">
-                      GST Number
-                    </label>
+                    <Label htmlFor="gstNumber">GST Number</Label>
                     <Input
                       id="gstNumber"
-                      type="text"
-                      value={customerData.gstNumber}
-                      onChange={(e) => handleInputChange("gstNumber", e.target.value)}
+                      value={customerData.gstNumber || ''}
+                      onChange={(e) => handleInputChange('gstNumber', e.target.value)}
                       className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="addressLine2" className="block text-gray-700 font-medium mb-1">
-                      Address Line 2
-                    </label>
-                    <Input
-                      id="addressLine2"
-                      type="text"
-                      value={customerData.addressLine2}
-                      onChange={(e) => handleInputChange("addressLine2", e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="state" className="block text-gray-700 font-medium mb-1">
-                      State
-                    </label>
-                    <Input
-                      id="state"
-                      type="text"
-                      value={customerData.state}
-                      onChange={(e) => handleInputChange("state", e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="country" className="block text-gray-700 font-medium mb-1">
-                      Country
-                    </label>
-                    <Input
-                      id="country"
-                      type="text"
-                      value={customerData.country}
-                      onChange={(e) => handleInputChange("country", e.target.value)}
-                      className="w-full"
+                      disabled={!isEditing}
                     />
                   </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Basic Details</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-gray-600">Shop Name</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.storeName}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Address</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.addressLine1}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Owner Name</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.clientFirstName}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Phone</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.primaryContact}</p>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Additional Info</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-gray-600">Monthly Sales</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.monthlySale}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Intent Level</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.intentLevel}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Field Officer</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.fieldOfficer}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Client Type</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.clientType}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Industry</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.industry}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Company Size</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.companySize}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">GST Number</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.gstNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Address Line 2</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.addressLine2}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">State</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.state}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Country</p>
-                    <p className="text-lg font-medium text-gray-800">{customerData.country}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
+          <div className="mt-6 flex justify-end space-x-4">
+            {activeTab !== 'basic' && (
+              <Button
+                variant="outline"
+                onClick={() => setActiveTab(getPreviousTab(activeTab) as "visits" | "notes" | "TimelineOverview" | "basic" | "contact" | "address" | "additional")}
+              >
+                Previous
+              </Button>
+
+            )}
+            {activeTab !== 'additional' ? (
+              <Button
+                onClick={() => setActiveTab(getNextTab(activeTab) as "visits" | "notes" | "TimelineOverview" | "basic" | "contact" | "address" | "additional")}
+              >
+                Next
+              </Button>
+
+            ) : (
+              <Button onClick={handleSave} disabled={!isEditing}>
+                Save
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
 
-
-      {/* Tabs */}
-
-      <div className="bg-white rounded-lg shadow-lg">
-        <Tabs defaultValue="Brands" value={activeTab1} onValueChange={(value) => setActiveTab1(value as "Brands" | "Likes")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="Brands" className="px-4 py-2">Brands Used</TabsTrigger>
-            <TabsTrigger value="Likes" className="px-4 py-2">Likes</TabsTrigger>
-          </TabsList>
-
-
-          {/* BrandsSection Tab */}
-          <TabsContent value="Brands" className="p-6">
-            <BrandsSection storeId={customerData.storeId ? customerData.storeId : ''} />
-          </TabsContent>
-
-          {/* LikesSection Tab */}
-          <TabsContent value="Likes" className="p-6">
-            <LikesSection storeId={customerData.storeId ? customerData.storeId : ''} />
-          </TabsContent>
-
-        </Tabs>
-      </div>
-
-      <br />
-
       {/* Tabs */}
       <div className="bg-white rounded-lg shadow-lg">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "visits" | "notes" | "TimelineOverview")}>
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "visits" | "notes" | "TimelineOverview" | "Brands" | "Likes")}>
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="TimelineOverview" className="px-4 py-2">Overview</TabsTrigger>
             <TabsTrigger value="visits" className="px-4 py-2">Visits</TabsTrigger>
             <TabsTrigger value="notes" className="px-4 py-2">Notes</TabsTrigger>
-
+            <TabsTrigger value="Brands" className="px-4 py-2">Brands Used</TabsTrigger>
+            <TabsTrigger value="Likes" className="px-4 py-2">Likes</TabsTrigger>
           </TabsList>
-
 
           {/* Timeline Tab */}
           <TabsContent value="TimelineOverview" className="p-6">
@@ -592,8 +557,18 @@ export default function CustomerDetailPage() {
           <TabsContent value="notes" className="p-6">
             <NotesSection storeId={customerData.storeId ? customerData.storeId : ''} />
           </TabsContent>
+
+          {/* BrandsSection Tab */}
+          <TabsContent value="Brands" className="p-6">
+            <BrandsSection storeId={customerData.storeId ? customerData.storeId : ''} />
+          </TabsContent>
+
+          {/* LikesSection Tab */}
+          <TabsContent value="Likes" className="p-6">
+            <LikesSection storeId={customerData.storeId ? customerData.storeId : ''} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
   )
-}
+} 

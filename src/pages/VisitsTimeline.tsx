@@ -64,9 +64,11 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
               <div className="timeline-content">
                 <div className="timeline-header">
                   <div className="timeline-date">{visit.visit_date}</div>
-                  <Link href={`/VisitDetailPage?id=${visit.id}`}>
+                  <Link href={`/VisitDetailPage/[id]`} as={`/VisitDetailPage/${visit.id}`} passHref>
                     <div className="timeline-visit-id">Visit ID: {visit.id}</div>
                   </Link>
+
+
                 </div>
                 <div className="timeline-title">{visit.purpose}</div>
                 <div className="timeline-description">

@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter } from 'next/router';
 import { CheckCircleOutlined } from '@ant-design/icons';
-
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 type EventIconProps = {
   type: 'task' | 'event' | 'notification'; // Add more types as needed
 };
-
 
 const EventIcon: React.FC<EventIconProps> = ({ type }) => {
   switch (type) {
@@ -25,10 +25,8 @@ const EventIcon: React.FC<EventIconProps> = ({ type }) => {
 
 interface CustomerData {
   storeName?: string;
-  clientFirstName?: string;
-  clientLastName?: string;
-  industry?: string;
-  companySize?: number;
+  firstName?: string;
+  lastName?: string;
   primaryContact?: string;
   secondaryContact?: string;
   email?: string;
@@ -37,20 +35,40 @@ interface CustomerData {
   city?: string;
   state?: string;
   country?: string;
-  pincode?: number;
+  pincode?: string;
   gstNumber?: string;
-  monthlySale?: number;
+  monthlySale?: string;
   clientType?: string;
 }
-
 
 interface AddCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  token: string;
+  existingData?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    // Add other relevant fields
+  };
 }
 
-const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose }) => {
-  const [customerData, setCustomerData] = useState<CustomerData>({});
+const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
+  isOpen,
+  onClose,
+  token,
+  existingData,
+}) => {
+  const [customerData, setCustomerData] = useState<CustomerData>(
+    existingData || {
+      firstName: '',
+      lastName: '',
+      email: '',
+      // Initialize other fields with empty values
+    }
+  );
   const [activeTab, setActiveTab] = useState<string>('basic');
   const router = useRouter();
 
@@ -61,26 +79,48 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose }) 
     }));
   };
 
-
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/create', {
-        method: 'POST',
+      const url = existingData
+        ? `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/update?id=${existingData.id}`
+        : 'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/create';
+
+      const method = existingData ? 'PUT' : 'POST';
+
+      const payload = {
+        ...customerData,
+        clientFirstName: customerData.firstName,
+        clientLastName: customerData.lastName,
+        primaryContact: parseInt(customerData.primaryContact || '0'),
+        pincode: customerData.pincode ? parseInt(customerData.pincode) : 0,
+        monthlySale: parseInt(customerData.monthlySale || '0'),
+        latitude: 10.00,
+        longitude: -23.00,
+      };
+
+      // Remove firstName and lastName from the payload
+      delete payload.firstName;
+      delete payload.lastName;
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(customerData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         const data = await response.json();
-        const customerId = data.customerId;
-        router.push(`/CustomerDetailPage/${customerId}`);
+        const storeId = data.storeId;
+        const employeeId = data.employeeId; // Get the employee ID from the response
+        router.push(`/CustomerDetailPage/${storeId}?employeeId=${employeeId}`);
       } else {
-        console.error('Failed to create customer');
+        console.error('Failed to update/create customer');
       }
     } catch (error) {
-      console.error('Error creating customer:', error);
+      console.error('Error updating/creating customer:', error);
     }
   };
 
@@ -127,28 +167,26 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose }) 
                 <Input id="storeName" value={customerData.storeName || ''} className="col-span-3" onChange={(e) => handleInputChange('storeName', e.target.value)} />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="clientFirstName" className="text-right">
+                <Label htmlFor="firstName" className="text-right">
                   First Name
                 </Label>
-                <Input id="clientFirstName" value={customerData.clientFirstName || ''} className="col-span-3" onChange={(e) => handleInputChange('clientFirstName', e.target.value)} />
+                <Input
+                  id="firstName"
+                  value={customerData.firstName || ''}
+                  className="col-span-3"
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="clientLastName" className="text-right">
+                <Label htmlFor="lastName" className="text-right">
                   Last Name
                 </Label>
-                <Input id="clientLastName" value={customerData.clientLastName || ''} className="col-span-3" onChange={(e) => handleInputChange('clientLastName', e.target.value)} />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="industry" className="text-right">
-                  Industry
-                </Label>
-                <Input id="industry" value={customerData.industry || ''} className="col-span-3" onChange={(e) => handleInputChange('industry', e.target.value)} />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="companySize" className="text-right">
-                  Company Size
-                </Label>
-                <Input id="companySize" type="number" value={customerData.companySize || ''} className="col-span-3" onChange={(e) => handleInputChange('companySize', e.target.value)} />
+                <Input
+                  id="lastName"
+                  value={customerData.lastName || ''}
+                  className="col-span-3"
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                />
               </div>
             </div>
           </TabsContent>
@@ -170,7 +208,13 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose }) 
                 <Label htmlFor="email" className="text-right">
                   Email
                 </Label>
-                <Input id="email" type="email" value={customerData.email || ''} className="col-span-3" onChange={(e) => handleInputChange('email', e.target.value)} />
+                <Input
+                  id="email"
+                  type="email"
+                  value={customerData.email || ''}
+                  className="col-span-3"
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                />
               </div>
             </div>
           </TabsContent>
@@ -210,7 +254,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose }) 
                 <Label htmlFor="pincode" className="text-right">
                   Pincode
                 </Label>
-                <Input id="pincode" type="number" value={customerData.pincode || ''} className="col-span-3" onChange={(e) => handleInputChange('pincode', e.target.value)} />
+                <Input id="pincode" type="text" value={customerData.pincode || ''} className="col-span-3" onChange={(e) => handleInputChange('pincode', e.target.value)} />
               </div>
             </div>
           </TabsContent>
@@ -226,7 +270,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose }) 
                 <Label htmlFor="monthlySale" className="text-right">
                   Monthly Sale
                 </Label>
-                <Input id="monthlySale" type="number" value={customerData.monthlySale || ''} className="col-span-3" onChange={(e) => handleInputChange('monthlySale', e.target.value)} />
+                <Input id="monthlySale" type="text" value={customerData.monthlySale || ''} className="col-span-3" onChange={(e) => handleInputChange('monthlySale', e.target.value)} />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="clientType" className="text-right">

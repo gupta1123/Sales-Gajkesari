@@ -13,7 +13,7 @@ import NotesSection from "../../components/NotesSection";
 import PerformanceMetrics from "../../components/PerformanceMetrics";
 import "../VisitDetail.css";
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store'; // Updated import path
+import { RootState } from '../../store'; 
 import {
   Avatar,
   AvatarFallback,
@@ -23,7 +23,11 @@ import { UploadProps, UploadFile } from 'antd';
 import { UploadChangeParam } from 'antd/lib/upload/interface';
 
 const { Dragger } = Upload;
-
+interface Attachment {
+  id: number;
+  fileName: string;
+  url: string;
+}
 interface VisitData {
   id?: number;
   storeId?: number;
@@ -33,6 +37,7 @@ interface VisitData {
   employeeId?: number;
   employeeName?: string;
   visit_date?: string;
+  attachmentResponse?: Attachment[];
   scheduledStartTime?: string | null;
   scheduledEndTime?: string | null;
   visitLatitude?: number | null;
@@ -52,17 +57,33 @@ interface VisitData {
   createdTime?: string | null;
   updatedAt?: string | null;
   updatedTime?: string | null;
+  intent?: string | null; 
 }
 
 const VisitDetailPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [visitStatus, setVisitStatus] = useState("pending");
-  const [images, setImages] = useState<UploadFile<any>[]>([]);
+ 
   const router = useRouter();
   const { id } = router.query;
   const [visit, setVisit] = useState<VisitData | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const token = useSelector((state: RootState) => state.auth.token);
-  const [checkInStatus, setCheckInStatus] = useState<'Assigned' | 'Checked In' | 'Checked Out' | 'Completed'>('Assigned');
+  const [checkInStatus, setCheckInStatus] = useState<'Assigned' | 'On Going' | 'Checked Out' | 'Completed'>('Assigned');
+
+  const getStatusIndicator = (status: 'Assigned' | 'On Going' | 'Checked Out' | 'Completed') => {
+    switch (status) {
+      case 'Assigned':
+        return { icon: '📝', bgColor: 'bg-gray-100', textColor: 'text-gray-800' };
+      case 'On Going':
+        return { icon: '⏳', bgColor: 'bg-blue-100', textColor: 'text-blue-800' };
+      case 'Checked Out':
+        return { icon: '🚪', bgColor: 'bg-orange-100', textColor: 'text-orange-800' };
+      case 'Completed':
+        return { icon: '✅', bgColor: 'bg-green-100', textColor: 'text-green-800' };
+      default:
+        return { icon: '', bgColor: 'bg-transparent', textColor: 'text-gray-500' };
+    }
+  };
 
   useEffect(() => {
     const fetchVisitDetails = async () => {
@@ -74,27 +95,9 @@ const VisitDetailPage = () => {
         });
         if (response.data) {
           setVisit(response.data);
-          console.log(visit);
-
-          // Update the check-in/check-out status based on the visit data
-          if (
-            response.data.checkinDate &&
-            response.data.checkinTime &&
-            response.data.checkinLongitude &&
-            response.data.checkinLatitude &&
-            response.data.checkoutDate &&
-            response.data.checkoutTime &&
-            response.data.checkoutLongitude &&
-            response.data.checkoutLatitude
-          ) {
-            setCheckInStatus('Completed');
-          } else if (response.data.checkoutTime && response.data.checkoutLongitude && response.data.checkoutLatitude && response.data.checkoutDate) {
-            setCheckInStatus('Checked Out');
-          } else if (response.data.checkinTime && response.data.checkinLongitude && response.data.checkinLatitude && response.data.checkinDate) {
-            setCheckInStatus('Checked In');
-          } else {
-            setCheckInStatus('Assigned');
-          }
+        
+          const imageUrls = response.data.attachmentResponse?.map((att: Attachment) => constructImageUrl(att.url)) || [];
+          setImages(imageUrls);
         }
       } catch (error) {
         console.error('Error fetching visit details:', error);
@@ -106,11 +109,34 @@ const VisitDetailPage = () => {
     }
   }, [id, token]);
 
+  function constructImageUrl(encodedUrl: string) {
+    return `Your logic to convert '${encodedUrl}' to a usable URL`;
+  }
+  useEffect(() => {
+   
+    if (id && token) {
+      axios.get(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/getFiles?id=${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then(response => {
+         
+          const baseURL = "http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081"; // Adjust if necessary
+          const urls = response.data.map((path: string) => `${baseURL}${path}`);
+          setImages(urls);
+        })
+        .catch(error => console.error("Error fetching images:", error));
+    }
+  }, [id, token]);
+
   const handleImageUpload = (info: UploadChangeParam<UploadFile<any>>) => {
     const { status } = info.file;
     if (status === "done") {
       message.success(`${info.file.name} file uploaded successfully.`);
-      setImages([...images, info.file]);
+      // Extract the URL or path of the uploaded file from the response
+      const fileUrl = info.file.response?.url || '';
+      setImages([...images, fileUrl]);
     } else if (status === "error") {
       message.error(`${info.file.name} file upload failed.`);
     }
@@ -123,56 +149,60 @@ const VisitDetailPage = () => {
     onChange: handleImageUpload,
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-amber-500';
-      case 'completed':
-        return 'bg-emerald-500';
-      case 'canceled':
-        return 'bg-rose-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const getCheckInStatusColor = (status: string) => {
+  function getCheckInStatusColor(status: string) {
     switch (status) {
       case 'Assigned':
-        return 'text-sky-500';
-      case 'Checked In':
-        return 'text-lime-500';
-      case 'Checked Out':
-        return 'text-amber-500';
+        return 'bg-blue-100 text-blue-800'; 
+      case 'On Going':
+        return 'bg-green-100 text-green-800'; 
       case 'Completed':
-        return 'text-fuchsia-500';
+        return 'bg-purple-100 text-purple-800'; 
       default:
-        return 'text-gray-500';
+        return 'bg-gray-100 text-gray-800'; 
     }
+  }
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleString('default', { month: 'short' });
+    return `${day}th ${month}`;
+  };
+
+  const formatTime = (timeString: string | null | undefined) => {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const calculateVisitDuration = () => {
+    if (visit?.checkinTime && visit?.checkoutTime) {
+      const checkinTime = new Date(`2000-01-01T${visit.checkinTime}`);
+      const checkoutTime = new Date(`2000-01-01T${visit.checkoutTime}`);
+      const durationInSeconds = Math.round((checkoutTime.getTime() - checkinTime.getTime()) / 1000);
+
+      if (durationInSeconds > 0) {
+        const durationInMinutes = Math.floor(durationInSeconds / 60);
+
+        if (durationInMinutes >= 60) {
+          const hours = Math.floor(durationInMinutes / 60);
+          const minutes = durationInMinutes % 60;
+          return `${hours} hour${hours > 1 ? 's' : ''}${minutes > 0 ? ` ${minutes} minute${minutes > 1 ? 's' : ''}` : ''}`;
+        } else {
+          return `${durationInMinutes} minute${durationInMinutes > 1 ? 's' : ''}`;
+        }
+      }
+    }
+    return '';
   };
 
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Visit Detail</h1>
-
-      {/* Display the check-in/check-out status */}
-      <div className="mb-8">
-        <span className={`text-2xl font-semibold ${getCheckInStatusColor(checkInStatus)}`}>
-          {checkInStatus}
-        </span>
-        {visit?.checkinDate && visit?.checkinTime && (
-          <div className="mt-2">
-            <span className="text-gray-500">Check-In:</span>{' '}
-            <span className="font-semibold">{visit.checkinDate} {visit.checkinTime}</span>
-          </div>
-        )}
-        {visit?.checkoutDate && visit?.checkoutTime && (
-          <div className="mt-2">
-            <span className="text-gray-500">Check-Out:</span>{' '}
-            <span className="font-semibold">{visit.checkoutDate} {visit.checkoutTime}</span>
-          </div>
-        )}
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
@@ -185,35 +215,27 @@ const VisitDetailPage = () => {
                   <p className="text-sm text-gray-500">Overview of the visit details</p>
                 </div>
                 <div>
-                  <Select value={visitStatus} onValueChange={setVisitStatus}>
-                    <SelectTrigger className="flex items-center space-x-2">
-                      <span className={`inline-block w-2 h-2 rounded-full ${getStatusColor(visitStatus)}`}></span>
-                      <SelectValue placeholder="Select status" />
-                      <CaretDownOutlined className="w-4 h-4 text-gray-500" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">
-                        <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
-                        Pending
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                        Completed
-                      </SelectItem>
-                      <SelectItem value="canceled">
-                        <span className="inline-block w-2 h-2 rounded-full bg-rose-500 mr-2"></span>
-                        Canceled
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold ${getCheckInStatusColor(checkInStatus)}`}>
+                    {getStatusIndicator(checkInStatus).icon}
+                    <span className="ml-2">{checkInStatus}</span>
+                  </span>
+                  {visit?.checkinDate && visit?.checkinTime && (
+                    <div className="mt-2">
+                      <span className="text-gray-500">Check-In:</span>{' '}
+                      <span className="font-semibold">{formatDate(visit.checkinDate)} {formatTime(visit.checkinTime)}</span>
+                    </div>
+                  )}
+                  {visit?.checkoutDate && visit?.checkoutTime && (
+                    <div className="mt-2">
+                      <span className="text-gray-500">Check-Out:</span>{' '}
+                      <span className="font-semibold">{formatDate(visit.checkoutDate)} {formatTime(visit.checkoutTime)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <div className="mb-6">
-                    <p className="text-sm text-gray-500 mb-1">Date & Time</p>
-                    <p className="text-lg font-semibold">{visit?.visit_date}</p>
-                  </div>
                   <div className="mb-6">
                     <p className="text-sm text-gray-500 mb-1">Purpose</p>
                     <p className="text-lg font-semibold">{visit?.purpose}</p>
@@ -249,32 +271,6 @@ const VisitDetailPage = () => {
             </CardContent>
           </Card>
 
-          {/* Visit Details */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Visit Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 mb-4">Detailed notes and observations from the sales executive.</p>
-              <ul className="list-disc pl-6 mb-4">
-                <li>Customer expressed interest in product X</li>
-                <li>Discussed pricing and package options</li>
-                <li>Identified key pain points and requirements</li>
-              </ul>
-              <div className="flex items-center mb-2">
-                <span className="font-semibold mr-2">Intent Level:</span>
-                <span className="text-green-600">High</span>
-              </div>
-              <div className="mb-4">
-                <p className="font-semibold mb-2">Action Items:</p>
-                <ul className="list-disc pl-6">
-                  <li>Prepare a custom proposal for the customer</li>
-                  <li>Schedule a follow-up meeting next week</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Visit Images */}
           <Card className="mb-8">
             <CardHeader>
@@ -290,9 +286,11 @@ const VisitDetailPage = () => {
                   Support for a single or bulk upload. Strictly prohibit from uploading company data or other sensitive files.
                 </p>
               </Dragger>
-              <div className="grid grid-cols-3 gap-4 mt-4">
-                {/* Render visit images */}
-              </div>
+<div className="grid grid-cols-3 gap-4 mt-4">
+  {images.map((url, index) => (
+    <img key={index} src={url} alt={`Attachment ${index + 1}`} className="w-full" />
+  ))}
+</div>
             </CardContent>
           </Card>
 
@@ -302,7 +300,7 @@ const VisitDetailPage = () => {
               <CardTitle>Metrics</CardTitle>
             </CardHeader>
             <CardContent>
-              <PerformanceMetrics />
+              <PerformanceMetrics visitDuration={calculateVisitDuration()} intentLevel={visit?.intent ?? ''} /> {/* Pass intent level */}
             </CardContent>
           </Card>
         </div>

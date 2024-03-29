@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import DownloadExcelButton from './DownloadExcelButton';
 import { Avatar } from "@/components/ui/avatar";
 import {
   Pagination,
@@ -43,6 +44,8 @@ interface User {
   name: string;
   department: string;
   actions: string;
+  city: string; // Add the 'city' property
+  state: string; // Add the 'state' property
   // Add other properties as needed
 }
 const Employeelist = () => {
@@ -50,7 +53,7 @@ const Employeelist = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<number | string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
-  const [selectedColumns, setSelectedColumns] = useState(['name', 'email', 'role', 'department', 'dateOfJoining', 'primaryContact', 'userName', 'password', 'actions']);
+  const [selectedColumns, setSelectedColumns] = useState(['name', 'email','city','state', 'role', 'department', 'dateOfJoining', 'primaryContact', 'userName', 'password', 'actions']);
   const router = useRouter();
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -90,11 +93,29 @@ const Employeelist = () => {
     }
   }, [token]);
 
-  const handleEditUser = (employeeId: number) => {
-    const employee = users.find((user) => user.id === employeeId);
-    setEditingEmployee(employee ?? null);
-  };
-
+const handleEditUser = (employeeId: number) => {
+  const employee = users.find((user) => user.id === employeeId);
+  if (employee) {
+    setEditingEmployee({
+      id: employee.id,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      email: employee.email,
+      role: employee.role,
+      departmentName: employee.departmentName,
+      userName: employee.userName,
+      password: employee.password,
+      primaryContact: employee.primaryContact,
+      dateOfJoining: employee.dateOfJoining, // Add the 'dateOfJoining' property
+      name: `${employee.firstName} ${employee.lastName}`, // Add the 'name' property
+      department: employee.departmentName, // Add the 'department' property
+      actions: '', // Add the 'actions' property (you can set it to an empty string or any other appropriate value)
+      city: employee.city,
+      state: employee.state,
+      // Add other properties as needed
+    });
+  }
+};
   const handleResetPassword = (userId: number | string) => {
     setResetPasswordUserId(userId);
     setIsResetPasswordOpen(true);
@@ -309,7 +330,7 @@ const Employeelist = () => {
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">User List</h1>
+        <h1 className="text-3xl font-bold">Employee List</h1>
         <div className="flex items-center space-x-4">
           <Input
             type="text"
@@ -542,6 +563,7 @@ const Employeelist = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+       
         </div>
       </div>
       <Table>
@@ -592,7 +614,7 @@ const Employeelist = () => {
               <TableHead className="cursor-pointer" onClick={() => handleSort('userName')}>
                 User Name
                 {sortColumn === 'userName' && (
-                  <span className="ml-2">
+                  <span className="w-full">
                     {sortDirection === 'asc' ? '▲' : '▼'}
                   </span>
                 )}
@@ -608,7 +630,6 @@ const Employeelist = () => {
                 )}
               </TableHead>
             )}
-
             {selectedColumns.includes('primaryContact') && (
               <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
                 Phone
@@ -619,7 +640,26 @@ const Employeelist = () => {
                 )}
               </TableHead>
             )}
-
+            {selectedColumns.includes('city') && (
+              <TableHead className="cursor-pointer" onClick={() => handleSort('city')}>
+                City
+                {sortColumn === 'city' && (
+                  <span className="ml-2">
+                    {sortDirection === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </TableHead>
+            )}
+            {selectedColumns.includes('state') && (
+              <TableHead className="cursor-pointer" onClick={() => handleSort('state')}>
+                State
+                {sortColumn === 'state' && (
+                  <span className="ml-2">
+                    {sortDirection === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </TableHead>
+            )}
             {selectedColumns.includes('dateOfJoining') && (
               <TableHead className="cursor-pointer" onClick={() => handleSort('dateOfJoining')}>
                 Date of Joining
@@ -637,17 +677,23 @@ const Employeelist = () => {
         </TableHeader>
 
         <TableBody>
-
           {sortedUsers.map((user) => (
             <TableRow key={user.id}>
               {selectedColumns.includes('name') && (
                 <TableCell className="font-medium text-left px-4">
                   {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="firstName"
-                      value={editingEmployee.firstName}
-                      onChange={handleInputChange}
-                    />
+                    <>
+                      <Input
+                        name="firstName"
+                        value={editingEmployee.firstName}
+                        onChange={handleInputChange}
+                      />
+                      <Input
+                        name="lastName"
+                        value={editingEmployee.lastName}
+                        onChange={handleInputChange}
+                      />
+                    </>
                   ) : (
                     `${user.firstName} ${user.lastName}`
                   )}
@@ -752,14 +798,37 @@ const Employeelist = () => {
                   )}
                 </TableCell>
               )}
-
+              {selectedColumns.includes('city') && (
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="city"
+                      value={editingEmployee.city}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    user.city
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('state') && (
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="state"
+                      value={editingEmployee.state}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    user.state
+                  )}
+                </TableCell>
+              )}
               {selectedColumns.includes('dateOfJoining') && (
                 <TableCell className="text-left px-4">
                   {format(new Date(user.dateOfJoining), 'dd/MM/yyyy')}
                 </TableCell>
               )}
-
-
               {selectedColumns.includes('actions') && (
                 <TableCell className="text-right">
                   {editingEmployee?.id === user.id ? (
