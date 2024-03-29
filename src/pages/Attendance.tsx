@@ -15,29 +15,27 @@ import { utils, writeFile } from 'xlsx';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Input } from '@/components/ui/input';
+
 interface AttendanceRecord {
     id: number;
     employeeName: string;
     attendanceStatus: string;
-    visitCount: number; // Add this line
-    checkinDate: string; // Assuming dates are strings; adjust as necessary
+    visitCount: number;
+    checkinDate: string;
     checkoutDate: string;
     checkinTime: string;
     checkoutTime: string;
-    // Add any other properties that are used but not yet declared
 }
 
 interface DownloadExcelButtonProps {
     attendanceData: AttendanceRecord[];
 }
 
-
-
 const AttendancePage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
     const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
-   
+
     const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
 
     const token = useSelector((state: RootState) => state.auth.token);
@@ -104,7 +102,7 @@ const AttendancePage: React.FC = () => {
                 </div>
 
                 <div className="mr-4">
-                    <DatePicker.default
+                    <DatePicker
                         selected={selectedStartDate}
                         onChange={handleStartDateChange}
                         selectsStart
@@ -116,7 +114,7 @@ const AttendancePage: React.FC = () => {
                 </div>
 
                 <div className="mr-4">
-                    <DatePicker.default
+                    <DatePicker
                         selected={selectedEndDate}
                         onChange={handleEndDateChange}
                         selectsEnd
@@ -128,7 +126,6 @@ const AttendancePage: React.FC = () => {
                     />
                 </div>
 
-             
             </div>
 
             <Table>
@@ -148,7 +145,7 @@ const AttendancePage: React.FC = () => {
                         <TableRow key={attendance.id}>
                             <TableCell>{attendance.employeeName}</TableCell>
                             <TableCell>{attendance.attendanceStatus}</TableCell>
-                            <TableCell>{attendance.visitCount}</TableCell> {/* Now valid */}
+                            <TableCell>{attendance.visitCount}</TableCell>
                             <TableCell>{attendance.checkinDate}</TableCell>
                             <TableCell>{attendance.checkoutDate}</TableCell>
                             <TableCell>{attendance.checkinTime}</TableCell>
