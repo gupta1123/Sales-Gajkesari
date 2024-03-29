@@ -30,21 +30,7 @@ interface AttendanceRecord {
 interface DownloadExcelButtonProps {
     attendanceData: AttendanceRecord[];
 }
-const DownloadExcelButton: React.FC<DownloadExcelButtonProps> = ({ attendanceData }) => {
-    const handleDownloadExcel = () => {
-        const worksheet = utils.json_to_sheet(attendanceData);
-        const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, 'Attendance');
-        writeFile(workbook, 'attendance.xlsx');
-    };
 
-    return (
-        <Button variant="outline" onClick={handleDownloadExcel}>
-            <DownloadIcon className="mr-2 h-4 w-4" />
-            Download as Excel
-        </Button>
-    );
-};
 
 
 const AttendancePage: React.FC = () => {
@@ -142,7 +128,7 @@ const AttendancePage: React.FC = () => {
                     />
                 </div>
 
-                <DownloadExcelButton attendanceData={filteredAttendanceData} />
+             
             </div>
 
             <Table>

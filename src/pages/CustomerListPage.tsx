@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import ChangeFieldOfficerDialog from './ChangeFieldOfficerDialog';
-import DownloadExcelButton from './DownloadExcelButton';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Pagination,
@@ -362,7 +362,7 @@ export default function CustomerListPage() {
                     <Button onClick={toggleViewMode}>
                         {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
                     </Button>
-                    <DownloadExcelButton customers={customers} />
+                  
                 </div>
             </div>
 

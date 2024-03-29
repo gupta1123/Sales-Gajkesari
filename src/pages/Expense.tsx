@@ -36,20 +36,7 @@ interface Expense {
     approvalStatus: string;
 }
 
-const DownloadExcelButton = ({ expenseData }: { expenseData: Expense[] }) => {
-    const handleDownloadExcel = () => {
-        const worksheet = utils.json_to_sheet(expenseData);
-        const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, 'Expenses');
-        writeFile(workbook, 'expenses.xlsx');
-    };
 
-    return (
-        <Button variant="outline" onClick={handleDownloadExcel}>
-            <DownloadIcon className="mr-2 h-4 w-4" /> Download as Excel
-        </Button>
-    );
-};
 
 const ExpensePage = () => {
     const [expenseData, setExpenseData] = useState<Expense[]>([]);
@@ -174,7 +161,7 @@ const ExpensePage = () => {
                         </SelectContent>
                     </Select>
 
-                    <DownloadExcelButton expenseData={filteredExpenseData} />
+                  
                 </div>
             </div>
 
