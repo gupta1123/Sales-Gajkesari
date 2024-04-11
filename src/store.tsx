@@ -5,6 +5,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 interface AuthState {
   user: null | { [key: string]: any };
   token: null | string;
+  employeeId: null | string; // Added employeeId property
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: null | string | { [key: string]: any };
 }
@@ -31,7 +32,7 @@ export const registerUser = createAsyncThunk<string, UserData, { rejectValue: st
   }
 );
 
-export const loginUser = createAsyncThunk<string, UserData, { rejectValue: string }>(
+export const loginUser = createAsyncThunk<{ token: string; employeeId: string }, UserData, { rejectValue: string }>(
   'auth/login',
   async (userData, { rejectWithValue }) => {
     try {
@@ -43,8 +44,21 @@ export const loginUser = createAsyncThunk<string, UserData, { rejectValue: strin
         }
       );
       const token = response.data.split(' ')[1];
-      localStorage.setItem('token', token); // Store the token in localStorage
-      return token;
+      localStorage.setItem('token', token);
+      // Store the token in localStorage
+
+      // Fetch employeeId using the token
+      const employeeResponse = await axios.get(
+        'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/info',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const employeeId = employeeResponse.data.employeeId;
+
+      return { token, employeeId };
     } catch (error: any) {
       console.error('Login User Error:', error);
       return rejectWithValue(error.response?.data || error.message);
@@ -67,6 +81,7 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
 const initialState: AuthState = {
   user: null,
   token: null,
+  employeeId: null, // Added employeeId to initial state
   status: 'idle',
   error: null,
 };
@@ -95,9 +110,10 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.status = 'loading';
       })
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<string>) => {
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<{ token: string; employeeId: string }>) => {
         state.status = 'succeeded';
-        state.token = action.payload;
+        state.token = action.payload.token;
+        state.employeeId = action.payload.employeeId; // Set employeeId in state
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
@@ -109,6 +125,7 @@ const authSlice = createSlice({
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
+        state.employeeId = null; // Reset employeeId on logout
         localStorage.removeItem('token');
         state.status = 'succeeded';
       })

@@ -71,9 +71,6 @@ const CustomerTable = ({
     customers,
     selectedColumns,
     onSelectColumn,
-    onSelectAllRows,
-    selectedRows,
-    onSelectRow,
     onBulkAction,
     onDeleteCustomer,
 }: CustomerTableProps) => {
@@ -81,59 +78,52 @@ const CustomerTable = ({
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead className="w-4">
-                        <Checkbox
-                            checked={selectedRows.length === customers.length}
-                            onCheckedChange={onSelectAllRows}
-                        />
-                    </TableHead>
-                    {selectedColumns.includes('shopName') && <TableHead>Shop Name</TableHead>}
-                    {selectedColumns.includes('ownerName') && <TableHead>Owner Name</TableHead>}
-                    {selectedColumns.includes('phone') && <TableHead>Phone</TableHead>}
-                    {selectedColumns.includes('monthlySales') && <TableHead>Monthly Sales</TableHead>}
-                    {selectedColumns.includes('intentLevel') && <TableHead>Intent Level</TableHead>}
-                    {selectedColumns.includes('fieldOfficer') && <TableHead>Field Officer</TableHead>}
-                    {selectedColumns.includes('clientType') && <TableHead>Client Type</TableHead>}
-                    {selectedColumns.includes('totalVisits') && <TableHead>Total Visits</TableHead>}
-                    {selectedColumns.includes('lastVisitDate') && <TableHead>Last Visit Date</TableHead>}
-                    {selectedColumns.includes('email') && <TableHead>Email</TableHead>}
-                    {selectedColumns.includes('city') && <TableHead>City</TableHead>}
-                    {selectedColumns.includes('state') && <TableHead>State</TableHead>}
-                    <TableHead>Actions</TableHead>
+                    {selectedColumns.includes('shopName') && <TableHead className="min-w-[200px]">Shop Name</TableHead>}
+                    {selectedColumns.includes('ownerName') && <TableHead className="min-w-[200px]">Owner Name</TableHead>}
+                    {selectedColumns.includes('phone') && <TableHead className="min-w-[150px]">Phone</TableHead>}
+                    {selectedColumns.includes('monthlySales') && <TableHead className="min-w-[150px]">Monthly Sales</TableHead>}
+                    {selectedColumns.includes('intentLevel') && <TableHead className="min-w-[150px]">Intent Level</TableHead>}
+                    {selectedColumns.includes('fieldOfficer') && <TableHead className="min-w-[200px]">Field Officer</TableHead>}
+                    {selectedColumns.includes('clientType') && <TableHead className="min-w-[150px]">Client Type</TableHead>}
+                    {selectedColumns.includes('totalVisits') && <TableHead className="min-w-[150px]">Total Visits</TableHead>}
+                    {selectedColumns.includes('lastVisitDate') && <TableHead className="min-w-[200px]">Last Visit Date</TableHead>}
+                    {selectedColumns.includes('email') && <TableHead className="min-w-[350px]">Email</TableHead>}
+                    {selectedColumns.includes('city') && <TableHead className="min-w-[150px]">City</TableHead>}
+                    {selectedColumns.includes('state') && <TableHead className="min-w-[150px]">State</TableHead>}
+                    <TableHead className="min-w-[100px]">Actions</TableHead>
                 </TableRow>
             </TableHeader>
+
+
             <TableBody>
                 {customers.map((customer) => (
                     <TableRow key={customer.storeId}>
-                        <TableCell className="w-4">
-                            <Checkbox
-                                checked={selectedRows.includes(customer.storeId)}
-                                onCheckedChange={() => onSelectRow(customer.storeId)}
-                            />
-                        </TableCell>
-                        {selectedColumns.includes('shopName') && <TableCell>{customer.storeName}</TableCell>}
-                        {selectedColumns.includes('ownerName') && <TableCell>{customer.clientFirstName}</TableCell>}
-                        {selectedColumns.includes('phone') && <TableCell>{customer.primaryContact}</TableCell>}
-                        {selectedColumns.includes('monthlySales') && <TableCell>{customer.monthlySale ? `₹${customer.monthlySale.toLocaleString()}` : ''}</TableCell>}
+                        {selectedColumns.includes('shopName') && <TableCell className="w-64">{customer.storeName}</TableCell>}
+                        {selectedColumns.includes('ownerName') && <TableCell className="w-64">{customer.clientFirstName}</TableCell>}
+                        {selectedColumns.includes('phone') && <TableCell className="w-48">{customer.primaryContact}</TableCell>}
+                        {selectedColumns.includes('monthlySales') && <TableCell className="w-48">{customer.monthlySale ? `₹${customer.monthlySale.toLocaleString()}` : ''}</TableCell>}
                         {selectedColumns.includes('intentLevel') && (
-                            <TableCell>
-                                <Progress value={customer.intent} className="w-20">
-                                    <div className="h-2 bg-blue-500 rounded-full" />
-                                </Progress>
+                            <TableCell className="w-48">
+                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                    <div
+                                        className="h-full bg-black"
+                                        style={{ width: `${(customer.intent / 10) * 100}%` }}
+                                    ></div>
+                                </div>
                             </TableCell>
                         )}
-                        {selectedColumns.includes('fieldOfficer') && <TableCell>{customer.employeeName}</TableCell>}
+                        {selectedColumns.includes('fieldOfficer') && <TableCell className="w-64">{customer.employeeName}</TableCell>}
                         {selectedColumns.includes('clientType') && (
-                            <TableCell>
+                            <TableCell className="w-48">
                                 <Badge variant="outline">{customer.clientType}</Badge>
                             </TableCell>
                         )}
-                        {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisits}</TableCell>}
-                        {selectedColumns.includes('lastVisitDate') && <TableCell>{customer.lastVisitDate}</TableCell>}
-                        {selectedColumns.includes('email') && <TableCell>{customer.email}</TableCell>}
-                        {selectedColumns.includes('city') && <TableCell>{customer.city}</TableCell>}
-                        {selectedColumns.includes('state') && <TableCell>{customer.state}</TableCell>}
-                        <TableCell>
+                        {selectedColumns.includes('totalVisits') && <TableCell className="w-40">{customer.totalVisits}</TableCell>}
+                        {selectedColumns.includes('lastVisitDate') && <TableCell className="w-56">{customer.lastVisitDate}</TableCell>}
+                        {selectedColumns.includes('email') && <TableCell className="w-72">{customer.email}</TableCell>}
+                        {selectedColumns.includes('city') && <TableCell className="w-48">{customer.city}</TableCell>}
+                        {selectedColumns.includes('state') && <TableCell className="w-48">{customer.state}</TableCell>}
+                        <TableCell className="w-40">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -189,7 +179,7 @@ export default function CustomerListPage() {
     const paginatedData = customers.slice(startIndex, endIndex);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const token = useSelector((state: RootState) => state.auth.token);
-
+    const employeeId = useSelector((state: RootState) => state.auth.employeeId);
 
     const openDeleteModal = (customerId: string) => {
         setSelectedCustomerId(customerId);
@@ -330,44 +320,50 @@ export default function CustomerListPage() {
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-4xl font-bold">Customer List</h1>
                 <div className="flex items-center space-x-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline">Columns</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            {['shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer', 'clientType', 'totalVisits', 'lastVisitDate', 'email', 'city', 'state'].map(
-                                (column) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={column}
-                                        checked={selectedColumns.includes(column)}
-                                        onCheckedChange={() => handleSelectColumn(column)}
-                                    >
-                                        {column}
-                                    </DropdownMenuCheckboxItem>
-                                )
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {viewMode === 'table' && (
+                        <>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Columns</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    {['shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer', 'clientType', 'totalVisits', 'lastVisitDate', 'email', 'city', 'state'].map(
+                                        (column) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={column}
+                                                checked={selectedColumns.includes(column)}
+                                                onCheckedChange={() => handleSelectColumn(column)}
+                                            >
+                                                {column}
+                                            </DropdownMenuCheckboxItem>
+                                        )
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Bulk Actions</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onSelect={() => handleBulkAction('changeFieldOfficer')}>
+                                        Change Field Officer
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </>
+                    )}
                     <Button variant="outline" onClick={openModal}>Add Customer</Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline">Bulk Actions</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => handleBulkAction('changeFieldOfficer')}>
-                                Change Field Officer
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                     <Button onClick={toggleViewMode}>
                         {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
                     </Button>
-                  
                 </div>
             </div>
-
-            <AddCustomerModal isOpen={isModalOpen} onClose={closeModal} token={token || ''} />
-
+            <AddCustomerModal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                token={token || ''}
+                employeeId={employeeId ? Number(employeeId) : null} // Convert to number or null
+            />
 
             {viewMode === 'card' ? (
                 <>
@@ -395,6 +391,8 @@ export default function CustomerListPage() {
                                                             View
                                                         </Link>
                                                     </DropdownMenuItem>
+
+
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onSelect={() => openDeleteModal(customer.storeId)}>
                                                         Delete
@@ -430,24 +428,17 @@ export default function CustomerListPage() {
                                         </div>
                                         <div className="space-y-4">
                                             <div>
-                                                <p className="text-lg font-semibold mb-2 flex items-center">
-                                                    Intent Level
-                                                </p>
-                                                <Progress
-                                                    value={customer.intent}
-                                                    className="bg-gray-300 h-3 rounded-full overflow-hidden"
-                                                >
+                                                <p className="text-lg font-semibold mb-2">Intent Level</p>
+                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                                     <div
-                                                        className={`h-full ${customer.intent <= 30
-                                                                ? 'bg-red-500'
-                                                                : customer.intent <= 70
-                                                                    ? 'bg-yellow-500'
-                                                                    : 'bg-green-500'
-                                                            }`}
-                                                        style={{ width: `${customer.intent}%` }}
-                                                    />
-                                                </Progress>
+                                                        className="h-full bg-black"
+                                                        style={{ width: `${(customer.intent / 10) * 100}%` }}
+                                                    ></div>
+                                                </div>
                                             </div>
+
+
+
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-gray-200 rounded-lg p-4">
                                                     <p className="text-lg font-semibold">Total Visits</p>

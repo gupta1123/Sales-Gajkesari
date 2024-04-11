@@ -148,23 +148,35 @@ const handleEditUser = (employeeId: number) => {
       });
 
       if (response.ok) {
-        // Parse the response (assuming it's in JSON format)
-        const data = await response.text(); // Use .json() if your API returns JSON
-        console.log(data); // "Employee Deleted Successfully!"
+        const data = await response.text();
+        console.log(data);
 
-        // Remove the deleted user from the state to update the UI
+        // Delete user credentials
+        const employee = users.find((user) => user.id === employeeId);
+        if (employee) {
+          const deleteUserResponse = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/delete?username=${employee.userName}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (deleteUserResponse.ok) {
+            console.log('User credentials deleted!');
+          } else {
+            console.error('Failed to delete user credentials');
+          }
+        }
+
         setUsers(users.filter(user => user.id !== employeeId));
       } else {
-        // Handle non-200 responses
         const errorData = await response.text();
         console.error('Error:', errorData);
       }
     } catch (error) {
       console.error('Error:', error);
-      // Handle any network or other errors
     }
   };
-
 
   const handleSaveEdit = async () => {
     if (editingEmployee) {
@@ -206,18 +218,16 @@ const handleEditUser = (employeeId: number) => {
     }
   };
   const handleViewUser = (userId: number) => {
-    router.push({
-      pathname: "/SalesExecutivePage",
-      query: { id: userId.toString() },
-    });
+    // This navigates to the dynamic route by passing the userId as a query parameter
+    router.push(`/SalesExecutive/${userId}`);
   };
+
 
 
 
   const handleAddEmployee = () => {
     setIsModalOpen(true);
   };
-
 
 
   const handleSubmit = async () => {
@@ -231,26 +241,80 @@ const handleEditUser = (employeeId: number) => {
         body: JSON.stringify(newEmployee),
       });
       if (response.ok) {
-        const data = await response.text();
+        const data = await response.json();
         console.log(data);
-        setIsModalOpen(false);
-        fetchEmployees();
 
-
-        router.push({
-          pathname: "/SalesExecutivePage",
-          query: { employee: JSON.stringify(newEmployee) },
+        // Create user credentials
+        const createUserResponse = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            username: newEmployee.userName,
+            password: newEmployee.password,
+            employeeId: data.id,
+          }),
         });
+
+        if (createUserResponse.ok) {
+          const createUserData = await createUserResponse.text();
+          console.log(createUserData);
+
+          // Update user password
+          const updateUserResponse = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/update?username=${newEmployee.userName}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              password: newEmployee.password,
+            }),
+          });
+
+          if (updateUserResponse.ok) {
+            console.log('User password updated!');
+          } else {
+            console.error('Failed to update user password');
+          }
+
+          // Add the new employee to the users state
+          const newUser = {
+            id: data.id,
+            firstName: newEmployee.firstName,
+            lastName: newEmployee.lastName,
+            email: newEmployee.email,
+            role: newEmployee.role,
+            departmentName: newEmployee.departmentName,
+            userName: newEmployee.userName, // Include the userName property
+            password: newEmployee.password,
+            primaryContact: newEmployee.primaryContact,
+            dateOfJoining: newEmployee.dateOfJoining,
+            name: `${newEmployee.firstName} ${newEmployee.lastName}`,
+            department: newEmployee.departmentName,
+            actions: '',
+            city: newEmployee.city,
+            state: newEmployee.state,
+          };
+          setUsers([...users, newUser]);
+
+          setIsModalOpen(false);
+
+          // Navigate to the SalesExecutive page with the employee's ID
+          router.push(`/SalesExecutive/${data.id}`);
+        } else {
+          console.error('Failed to create user credentials');
+        }
       } else {
         const errorData = await response.text();
-        console.error('Error:', errorData); // Handle error scenario
+        console.error('Error:', errorData);
       }
     } catch (error) {
       console.error('Error:', error);
-      // Handle any network or other errors
     }
   };
-
 
   const fetchEmployees = async () => {
     try {
@@ -260,6 +324,7 @@ const handleEditUser = (employeeId: number) => {
         },
       });
       const data: User[] = await response.json();
+      console.log('Fetched employees:', data); // Add this line to log the fetched data
       setUsers(data);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -675,193 +740,218 @@ const handleEditUser = (employeeId: number) => {
             )}
           </TableRow>
         </TableHeader>
+<TableBody>
+  {sortedUsers.map((user) => (
+    <TableRow key={user.id}>
+      {selectedColumns.includes('name') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <div className="w-full py-2 px-4" style={{ minWidth: '250px' }}> {/* Wrap Select in a div */}
+              <Select
+                name="role"
+                value={editingEmployee.role}
+                onValueChange={(value) =>
+                  setEditingEmployee({ ...editingEmployee, role: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Field Officer">Field Officer</SelectItem>
+                  <SelectItem value="Office Manager">Office Manager</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            user.role
+          )}
+        </TableCell>
 
-        <TableBody>
-          {sortedUsers.map((user) => (
-            <TableRow key={user.id}>
-              {selectedColumns.includes('name') && (
-                <TableCell className="font-medium text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <>
-                      <Input
-                        name="firstName"
-                        value={editingEmployee.firstName}
-                        onChange={handleInputChange}
-                      />
-                      <Input
-                        name="lastName"
-                        value={editingEmployee.lastName}
-                        onChange={handleInputChange}
-                      />
-                    </>
-                  ) : (
-                    `${user.firstName} ${user.lastName}`
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('email') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="email"
-                      value={editingEmployee.email}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    user.email
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('role') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Select
-                      name="role"
-                      value={editingEmployee.role}
-                      onValueChange={(value) =>
-                        setEditingEmployee({ ...editingEmployee, role: value })
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Field Officer">Field Officer</SelectItem>
-                        <SelectItem value="Office Manager">Office Manager</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    user.role
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('department') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Select
-                      name="departmentName"
-                      value={editingEmployee.departmentName}
-                      onValueChange={(value) =>
-                        setEditingEmployee({ ...editingEmployee, departmentName: value })
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sales">Sales</SelectItem>
-                        <SelectItem value="Office">Office</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    user.departmentName
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('userName') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="userName"
-                      value={editingEmployee.userName}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    user.userName
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('password') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="password"
-                      type="password"
-                      value={editingEmployee.password}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    '********'
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('primaryContact') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="primaryContact"
-                      value={editingEmployee.primaryContact}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    user.primaryContact
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('city') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="city"
-                      value={editingEmployee.city}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    user.city
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('state') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="state"
-                      value={editingEmployee.state}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    user.state
-                  )}
-                </TableCell>
-              )}
-              {selectedColumns.includes('dateOfJoining') && (
-                <TableCell className="text-left px-4">
-                  {format(new Date(user.dateOfJoining), 'dd/MM/yyyy')}
-                </TableCell>
-              )}
-              {selectedColumns.includes('actions') && (
-                <TableCell className="text-right">
-                  {editingEmployee?.id === user.id ? (
-                    <>
-                      <Button variant="outline" size="sm" onClick={handleSaveEdit}>
-                        Save
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingEmployee(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">Actions</Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => handleEditUser(user.id)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleDeleteUser(user.id)}>Delete</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleViewUser(user.id)}>View</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleResetPassword(user.id)}>Reset Password</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
+
+      )}
+      {selectedColumns.includes('email') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <Input
+              name="email"
+              value={editingEmployee.email}
+              onChange={handleInputChange}
+              className="w-full py-2 px-4"
+              style={{ minWidth: '350px' }} // Increase the width here
+            />
+          ) : (
+            user.email
+          )}
+        </TableCell>
+      )}
+      {selectedColumns.includes('role') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <div className="w-full py-2 px-4" style={{ minWidth: '250px' }}> {/* Wrap Select in a div */}
+              <Select
+                name="role"
+                value={editingEmployee.role}
+                onValueChange={(value) =>
+                  setEditingEmployee({ ...editingEmployee, role: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Field Officer">Field Officer</SelectItem>
+                  <SelectItem value="Office Manager">Office Manager</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            user.role
+          )}
+        </TableCell>
+
+      )}
+      {selectedColumns.includes('department') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <div className="w-full py-2 px-4" style={{ minWidth: '250px' }}> {/* Wrap Select in a div */}
+              <Select
+                name="departmentName"
+                value={editingEmployee.departmentName}
+                onValueChange={(value) =>
+                  setEditingEmployee({ ...editingEmployee, departmentName: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Sales">Sales</SelectItem>
+                  <SelectItem value="Office">Office</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            user.departmentName
+          )}
+        </TableCell>
+
+      )}
+      {selectedColumns.includes('userName') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <Input
+              name="userName"
+              value={editingEmployee.userName}
+              onChange={handleInputChange}
+              className="w-full py-2 px-4"
+              style={{ minWidth: '250px' }} // Increase the width here
+            />
+          ) : (
+            user.userName
+          )}
+        </TableCell>
+      )}
+      {selectedColumns.includes('password') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <Input
+              name="password"
+              type="password"
+              value={editingEmployee.password}
+              onChange={handleInputChange}
+              className="w-full py-2 px-4"
+              style={{ minWidth: '250px' }} // Increase the width here
+            />
+          ) : (
+            '********'
+          )}
+        </TableCell>
+      )}
+      {selectedColumns.includes('primaryContact') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <Input
+              name="primaryContact"
+              value={editingEmployee.primaryContact}
+              onChange={handleInputChange}
+              className="w-full py-2 px-4"
+              style={{ minWidth: '250px' }} // Increase the width here
+            />
+          ) : (
+            user.primaryContact
+          )}
+        </TableCell>
+      )}
+      {selectedColumns.includes('city') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <Input
+              name="city"
+              value={editingEmployee.city}
+              onChange={handleInputChange}
+              className="w-full py-2 px-4"
+              style={{ minWidth: '250px' }} // Increase the width here
+            />
+          ) : (
+            user.city
+          )}
+        </TableCell>
+      )}
+      {selectedColumns.includes('state') && (
+        <TableCell className="text-left px-4">
+          {editingEmployee?.id === user.id ? (
+            <Input
+              name="state"
+              value={editingEmployee.state}
+              onChange={handleInputChange}
+              className="w-full py-2 px-4"
+              style={{ minWidth: '250px' }} // Increase the width here
+            />
+          ) : (
+            user.state
+          )}
+        </TableCell>
+      )}
+      {selectedColumns.includes('dateOfJoining') && (
+        <TableCell className="text-left px-4">
+          {format(new Date(user.dateOfJoining), 'dd/MM/yyyy')}
+        </TableCell>
+      )}
+      {selectedColumns.includes('actions') && (
+        <TableCell className="text-right">
+          {editingEmployee?.id === user.id ? (
+            <>
+              <Button variant="outline" size="sm" onClick={handleSaveEdit}>
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingEmployee(null)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">Actions</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => handleEditUser(user.id)}>Edit</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleDeleteUser(user.id)}>Delete</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleViewUser(user.id)}>View</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleResetPassword(user.id)}>Reset Password</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </TableCell>
+      )}
+    </TableRow>
+  ))}
+</TableBody>
+
       </Table>
       <div className="mt-8 flex items-center justify-between">
         <div className="text-sm text-gray-600">

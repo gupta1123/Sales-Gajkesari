@@ -1,64 +1,74 @@
-.timeline {
-    position: relative;
-    padding: 20px 0;
-  }
-  
-  .timeline::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 8px;
-    height: 100%;
-    width: 2px;
-    background-color: #e2e8f0;
-  }
-  
-  .timeline-item {
-    position: relative;
-    padding-left: 30px;
-    margin-bottom: 20px;
-  }
-  
-  .timeline-point {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background-color: #4f46e5;
-  }
-  
-  .timeline-content {
-    padding-left: 20px;
-  }
-  
-  .timeline-date {
-    font-size: 14px;
-    color: #64748b;
-    margin-bottom: 4px;
-  }
-  
-  .timeline-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  
-  .timeline-description {
-    font-size: 14px;
-    color: #64748b;
-  }
-  .timeline-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  
-  .timeline-visit-id {
-    font-size: 14px;
-    color: #555;
-    text-decoration: underline;
-    cursor: pointer;
-  }
+.visits-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.visit-item {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.visit-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.visit-status .icon {
+  margin-right: 8px;
+}
+
+.visit-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visit-id {
+  font-size: 16px;
+  font-weight: bold;
+  color: #4f46e5;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.visit-date {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.visit-purpose,
+.visit-store,
+.visit-employee,
+.visit-feedback {
+  font-size: 14px;
+}
+
+.visit-timeline-details {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visit-checkin,
+.visit-checkout,
+.visit-intent {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.visit-checkin .icon,
+.visit-checkout .icon,
+.visit-intent .icon {
+  margin-right: 8px;
+}

@@ -30,10 +30,11 @@ type RootState = {
 };
 
 export default function BrandsSection({ storeId }: BrandsSectionProps) {
-  const token = useSelector((state: RootState) => state.auth.token);
+
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const token = useSelector((state: RootState) => state.auth.token);
   const [newBrand, setNewBrand] = useState<NewBrand>({
     name: "",
     pros: [],

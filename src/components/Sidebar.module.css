@@ -1,43 +1,60 @@
+/* components/Sidebar.module.css */
+
 .sidebar {
   width: 250px;
   height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
-  background: linear-gradient(180deg, #333, #222); /* Smooth gradient for a professional look */
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+  background: linear-gradient(180deg, #333, #222);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Align items to the start (left) */
-  padding: 20px; /* Consistent padding */
-  color: white; /* Ensures all text inside is white */
+  align-items: flex-start;
+  padding: 20px;
+  color: white;
 }
 
 .sidebarList {
   list-style: none;
   width: 100%;
   padding: 0;
-  margin: 0; /* Reset margin to ensure alignment */
+  margin: 0;
 }
 
 .sidebarItem {
   width: 100%;
-  padding: 10px 0; /* Vertical padding for each item */
+  padding: 10px 0;
 }
 
 .sidebarLink {
-  display: block;
-  width: 100%;
-  padding: 10px 20px; /* Adequate padding for clickability and comfort */
-  text-align: left; /* Text aligned to the left */
-  color: white; /* White text for readability */
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: inherit;
   text-decoration: none;
-  transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effect */
-  border-left: 3px solid transparent; /* Subtle indicator for active state */
 }
 
-.sidebarLink:hover, .sidebarLink.active {
-  background-color: #444; /* Slightly lighter background on hover */
-  border-left-color: #007bff; /* Highlight color for active/ hover state */
-  color: #fff; /* Maintain white text on hover */
+.sidebarLink:hover,
+.sidebarLink.active {
+  background-color: #444;
+  border-left-color: #007bff;
+  color: #fff;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding: 1rem;
+}
+
+.logoutButton {
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.sidebarIcon {
+  margin-right: 0.5rem;
 }

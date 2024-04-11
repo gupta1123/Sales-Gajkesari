@@ -13,7 +13,8 @@ import NotesSection from "../../components/NotesSection";
 import PerformanceMetrics from "../../components/PerformanceMetrics";
 import "../VisitDetail.css";
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store'; 
+import { RootState } from '../../store';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Avatar,
   AvatarFallback,
@@ -27,6 +28,7 @@ interface Attachment {
   id: number;
   fileName: string;
   url: string;
+  tag: string;
 }
 interface VisitData {
   id?: number;
@@ -57,19 +59,20 @@ interface VisitData {
   createdTime?: string | null;
   updatedAt?: string | null;
   updatedTime?: string | null;
-  intent?: string | null; 
+  intent?: string | null;
 }
 
 const VisitDetailPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
- 
+
   const router = useRouter();
   const { id } = router.query;
   const [visit, setVisit] = useState<VisitData | null>(null);
-  const [images, setImages] = useState<string[]>([]);
+  const [checkinImages, setCheckinImages] = useState<string[]>([]);
+  const [checkoutImages, setCheckoutImages] = useState<string[]>([]);
   const token = useSelector((state: RootState) => state.auth.token);
   const [checkInStatus, setCheckInStatus] = useState<'Assigned' | 'On Going' | 'Checked Out' | 'Completed'>('Assigned');
-
+  const [activeTab, setActiveTab] = useState('checkin');
   const getStatusIndicator = (status: 'Assigned' | 'On Going' | 'Checked Out' | 'Completed') => {
     switch (status) {
       case 'Assigned':
@@ -85,6 +88,12 @@ const VisitDetailPage = () => {
     }
   };
 
+  const handleViewStore = () => {
+    if (visit?.storeId) {
+      router.push(`/CustomerDetailPage/${visit.storeId}`);
+    }
+  };
+
   useEffect(() => {
     const fetchVisitDetails = async () => {
       try {
@@ -95,9 +104,51 @@ const VisitDetailPage = () => {
         });
         if (response.data) {
           setVisit(response.data);
-        
-          const imageUrls = response.data.attachmentResponse?.map((att: Attachment) => constructImageUrl(att.url)) || [];
-          setImages(imageUrls);
+
+          const attachmentResponse = response.data.attachmentResponse || [];
+          const checkinImageUrls = await Promise.all(
+            attachmentResponse
+              .filter((attachment: any) => attachment.tag === 'check-in')
+              .map(async (attachment: any) => {
+                const response = await axios.get(
+                  `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/downloadFile/${id}/check-in/${attachment.fileName}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                    responseType: 'blob',
+                  }
+                );
+                return URL.createObjectURL(response.data);
+              })
+          );
+          const checkoutImageUrls = await Promise.all(
+            attachmentResponse
+              .filter((attachment: any) => attachment.tag === 'check-out')
+              .map(async (attachment: any) => {
+                const response = await axios.get(
+                  `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/downloadFile/${id}/check-out/${attachment.fileName}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                    responseType: 'blob',
+                  }
+                );
+                return URL.createObjectURL(response.data);
+              })
+          );
+          setCheckinImages(checkinImageUrls);
+          setCheckoutImages(checkoutImageUrls);
+
+          // Update checkInStatus based on checkinTime and checkoutTime
+          if (response.data.checkoutTime) {
+            setCheckInStatus('Completed');
+          } else if (response.data.checkinTime) {
+            setCheckInStatus('On Going');
+          } else {
+            setCheckInStatus('Assigned');
+          }
         }
       } catch (error) {
         console.error('Error fetching visit details:', error);
@@ -109,34 +160,13 @@ const VisitDetailPage = () => {
     }
   }, [id, token]);
 
-  function constructImageUrl(encodedUrl: string) {
-    return `Your logic to convert '${encodedUrl}' to a usable URL`;
-  }
-  useEffect(() => {
-   
-    if (id && token) {
-      axios.get(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/getFiles?id=${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then(response => {
-         
-          const baseURL = "http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081"; // Adjust if necessary
-          const urls = response.data.map((path: string) => `${baseURL}${path}`);
-          setImages(urls);
-        })
-        .catch(error => console.error("Error fetching images:", error));
-    }
-  }, [id, token]);
-
   const handleImageUpload = (info: UploadChangeParam<UploadFile<any>>) => {
     const { status } = info.file;
     if (status === "done") {
       message.success(`${info.file.name} file uploaded successfully.`);
       // Extract the URL or path of the uploaded file from the response
       const fileUrl = info.file.response?.url || '';
-      setImages([...images, fileUrl]);
+      setCheckinImages([...checkinImages, fileUrl]);
     } else if (status === "error") {
       message.error(`${info.file.name} file upload failed.`);
     }
@@ -152,13 +182,13 @@ const VisitDetailPage = () => {
   function getCheckInStatusColor(status: string) {
     switch (status) {
       case 'Assigned':
-        return 'bg-blue-100 text-blue-800'; 
+        return 'bg-blue-100 text-blue-800';
       case 'On Going':
-        return 'bg-green-100 text-green-800'; 
+        return 'bg-green-100 text-green-800';
       case 'Completed':
-        return 'bg-purple-100 text-purple-800'; 
+        return 'bg-purple-100 text-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800'; 
+        return 'bg-gray-100 text-gray-800';
     }
   }
 
@@ -255,7 +285,12 @@ const VisitDetailPage = () => {
                   <div className="bg-gray-100 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm text-gray-500">Store</p>
-                      <button className="text-sm text-blue-500 hover:underline focus:outline-none">View Store</button>
+                      <button
+                        className="text-sm text-blue-500 hover:underline focus:outline-none"
+                        onClick={handleViewStore}
+                      >
+                        View Store
+                      </button>
                     </div>
                     <p className="text-lg font-semibold">{visit?.storeName}</p>
                   </div>
@@ -277,20 +312,26 @@ const VisitDetailPage = () => {
               <CardTitle>Visit Images</CardTitle>
             </CardHeader>
             <CardContent>
-              <Dragger {...uploadProps}>
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag file to this area to upload</p>
-                <p className="ant-upload-hint">
-                  Support for a single or bulk upload. Strictly prohibit from uploading company data or other sensitive files.
-                </p>
-              </Dragger>
-<div className="grid grid-cols-3 gap-4 mt-4">
-  {images.map((url, index) => (
-    <img key={index} src={url} alt={`Attachment ${index + 1}`} className="w-full" />
-  ))}
-</div>
+              <Tabs defaultValue="check-in">
+                <TabsList>
+                  <TabsTrigger value="check-in">Check-In Images</TabsTrigger>
+                  <TabsTrigger value="check-out">Check-Out Images</TabsTrigger>
+                </TabsList>
+                <TabsContent value="check-in">
+                  <div className="grid grid-cols-3 gap-4">
+                    {checkinImages.map((url, index) => (
+                      <img key={index} src={url} alt={`Check-In Image ${index + 1}`} className="w-full" />
+                    ))}
+                  </div>
+                </TabsContent>
+                <TabsContent value="check-out">
+                  <div className="grid grid-cols-3 gap-4">
+                    {checkoutImages.map((url, index) => (
+                      <img key={index} src={url} alt={`Check-Out Image ${index + 1}`} className="w-full" />
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 

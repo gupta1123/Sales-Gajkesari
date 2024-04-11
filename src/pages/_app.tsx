@@ -4,8 +4,8 @@ import { AppProps } from 'next/app';
 import Sidebar from '../components/Sidebar';
 import styles from './App.module.css';
 import { Provider, useSelector } from 'react-redux';
-import { store, loginUser, logoutUser } from '../store';
-import React, { useState, ReactNode } from 'react';
+import { store, loginUser, logoutUser, setToken } from '../store';
+import React, { useState, ReactNode, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import Image from 'next/image';
@@ -137,8 +137,18 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
 
 const AuthWrapper = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const authStatus = useSelector((state: any) => state.auth.status);
   const token = useSelector((state: any) => state.auth.token);
+
+  useEffect(() => {
+    // Check if a token exists in localStorage
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && !token) {
+      // If a token exists in localStorage but not in the Redux store, set the token in the store
+      dispatch(setToken(storedToken));
+    }
+  }, [dispatch, token]);
+
+  const authStatus = useSelector((state: any) => state.auth.status);
 
   const handleLogout = () => {
     dispatch(logoutUser() as any);
@@ -148,14 +158,7 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
     return <LoginPage />;
   }
 
-  return (
-    <>
-      {children}
-      <Button className="fixed top-4 right-4" onClick={handleLogout}>
-        Logout
-      </Button>
-    </>
-  );
+  return <>{children}</>;
 };
 
 export default MyApp;

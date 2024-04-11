@@ -8,6 +8,13 @@ import { useRouter } from 'next/router';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu"; // Update the path according to your file structure
 
 type EventIconProps = {
   type: 'task' | 'event' | 'notification'; // Add more types as needed
@@ -27,23 +34,24 @@ interface CustomerData {
   storeName?: string;
   firstName?: string;
   lastName?: string;
-  primaryContact?: string;
-  secondaryContact?: string;
+  primaryContact?: string | number;
+  secondaryContact?: string | number;
   email?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
   state?: string;
   country?: string;
-  pincode?: string;
+  pincode?: string | number;
   gstNumber?: string;
-  monthlySale?: string;
+  monthlySale?: string | number;
   clientType?: string;
 }
 
 interface AddCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  employeeId: number | null;
   token: string;
   existingData?: {
     id: number;
@@ -58,6 +66,7 @@ interface AddCustomerModalProps {
 const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   isOpen,
   onClose,
+  employeeId,
   token,
   existingData,
 }) => {
@@ -73,53 +82,59 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   const router = useRouter();
 
   const handleInputChange = (field: string, value: string) => {
+    let parsedValue: string | number = value;
+    // Assuming 'pincode', 'monthlySale', 'primaryContact', and other similar fields are intended to be numbers
+    const numberFields = ['pincode', 'monthlySale', 'primaryContact', 'secondaryContact'];
+    if (numberFields.includes(field)) {
+      parsedValue = value === '' ? '' : parseInt(value, 10); // Parse to integer, or you can use parseFloat for decimal numbers
+    }
+
     setCustomerData((prevData) => ({
       ...prevData,
-      [field]: value,
+      [field]: parsedValue,
     }));
   };
 
   const handleSubmit = async () => {
     try {
+      // Construct the request body with appropriate type conversions
+      const requestBody = {
+        ...customerData,
+        primaryContact: customerData.primaryContact ? parseInt(customerData.primaryContact.toString(), 10) : undefined,
+        pincode: customerData.pincode ? parseInt(customerData.pincode.toString(), 10) : undefined,
+        monthlySale: customerData.monthlySale ? parseInt(customerData.monthlySale.toString(), 10) : undefined,
+        latitude: 10.00, // Assuming static values for demonstration
+        longitude: -23.00, // Assuming static values for demonstration
+        employeeId: employeeId, // Explicitly include employeeId
+      };
+
+      // Determine the URL and method based on whether you're updating or creating a new entry
       const url = existingData
         ? `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/update?id=${existingData.id}`
         : 'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/create';
-
       const method = existingData ? 'PUT' : 'POST';
 
-      const payload = {
-        ...customerData,
-        clientFirstName: customerData.firstName,
-        clientLastName: customerData.lastName,
-        primaryContact: parseInt(customerData.primaryContact || '0'),
-        pincode: customerData.pincode ? parseInt(customerData.pincode) : 0,
-        monthlySale: parseInt(customerData.monthlySale || '0'),
-        latitude: 10.00,
-        longitude: -23.00,
-      };
-
-      // Remove firstName and lastName from the payload
-      delete payload.firstName;
-      delete payload.lastName;
-
+      // Execute the fetch request with the prepared URL, method, and request body
       const response = await fetch(url, {
-        method,
+        method: method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`, // Ensure the token is correctly passed and used
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
       });
 
+      // Process the response
       if (response.ok) {
         const data = await response.json();
-        const storeId = data.storeId;
-        const employeeId = data.employeeId; // Get the employee ID from the response
-        router.push(`/CustomerDetailPage/${storeId}?employeeId=${employeeId}`);
+        // Assuming you want to navigate to a new page with the storeId from response
+        router.push(`/CustomerDetailPage/${data.storeId}`);
       } else {
+        // Handle HTTP error responses
         console.error('Failed to update/create customer');
       }
     } catch (error) {
+      // Handle exceptions during the fetch operation
       console.error('Error updating/creating customer:', error);
     }
   };
@@ -254,7 +269,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Label htmlFor="pincode" className="text-right">
                   Pincode
                 </Label>
-                <Input id="pincode" type="text" value={customerData.pincode || ''} className="col-span-3" onChange={(e) => handleInputChange('pincode', e.target.value)} />
+                <Input id="pincode" type="number" value={customerData.pincode || ''} className="col-span-3" onChange={(e) => handleInputChange('pincode', e.target.value)} />
               </div>
             </div>
           </TabsContent>
@@ -270,13 +285,38 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Label htmlFor="monthlySale" className="text-right">
                   Monthly Sale
                 </Label>
-                <Input id="monthlySale" type="text" value={customerData.monthlySale || ''} className="col-span-3" onChange={(e) => handleInputChange('monthlySale', e.target.value)} />
+                <Input id="monthlySale" type="number" value={customerData.monthlySale || ''} className="col-span-3" onChange={(e) => handleInputChange('monthlySale', e.target.value)} />
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="clientType" className="text-right">
                   Client Type
                 </Label>
-                <Input id="clientType" value={customerData.clientType || ''} className="col-span-3" onChange={(e) => handleInputChange('clientType', e.target.value)} />
+                <div className="col-span-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="w-full">
+                      <Input
+                        id="clientType"
+                        value={customerData.clientType || ''}
+                        placeholder="Select Client Type"
+                        readOnly
+                        className="cursor-pointer text-gray-400"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={() => handleInputChange('clientType', 'Project')}
+                      >
+                        project
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleInputChange('clientType', 'Shop')}
+                      >
+                        shop
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </div>
           </TabsContent>

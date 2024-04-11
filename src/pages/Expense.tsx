@@ -25,6 +25,7 @@ import { DownloadIcon } from '@radix-ui/react-icons';
 import { utils, writeFile } from 'xlsx';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface Expense {
     id: string;
@@ -36,12 +37,11 @@ interface Expense {
     approvalStatus: string;
 }
 
-
-
 const ExpensePage = () => {
     const [expenseData, setExpenseData] = useState<Expense[]>([]);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [selectedFieldOfficer, setSelectedFieldOfficer] = useState('');
+    const [fieldOfficers, setFieldOfficers] = useState<string[]>([]);
     const token = useSelector((state: RootState) => state.auth.token);
 
     useEffect(() => {
@@ -57,6 +57,10 @@ const ExpensePage = () => {
             });
             const data = await response.json();
             setExpenseData(data);
+
+            // Extract unique field officer names
+            const officers = Array.from(new Set(data.map((expense: Expense) => expense.employeeName))) as string[];
+            setFieldOfficers(officers);
         } catch (error) {
             console.error('Error fetching expense data:', error);
         }
@@ -125,86 +129,107 @@ const ExpensePage = () => {
     };
 
     const filteredExpenseData = expenseData.filter((expense) => {
-        if (selectedStatus && expense.approvalStatus !== selectedStatus) {
+        if (selectedStatus && selectedStatus !== 'all' && expense.approvalStatus !== selectedStatus) {
             return false;
         }
-        if (selectedFieldOfficer && expense.employeeName !== selectedFieldOfficer) {
+        if (selectedFieldOfficer && selectedFieldOfficer !== 'all' && expense.employeeName !== selectedFieldOfficer) {
             return false;
         }
         return true;
     });
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-3xl font-bold">Expense</h1>
-                <div className="flex items-center space-x-4">
-                    <Select onValueChange={handleStatusChange}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Approved">Approved</SelectItem>
-                            <SelectItem value="Rejected">Rejected</SelectItem>
-                        </SelectContent>
-                    </Select>
+        <div className="container mx-auto py-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold">
+                        Expense Management
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                            <Select onValueChange={handleStatusChange}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="Pending">Pending</SelectItem>
+                                    <SelectItem value="Approved">Approved</SelectItem>
+                                    <SelectItem value="Rejected">Rejected</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                    <Select onValueChange={handleFieldOfficerChange}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by Field Officer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            {/* Add more field officer options based on the fetched data */}
-                        </SelectContent>
-                    </Select>
+                            <Select onValueChange={handleFieldOfficerChange}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by Field Officer" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    {fieldOfficers.map((officer) => (
+                                        <SelectItem key={officer} value={officer}>
+                                            {officer}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
 
-                  
-                </div>
-            </div>
-
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Field Officer Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Expense Category</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredExpenseData.map((expense) => (
-                        <TableRow key={expense.id}>
-                            <TableCell>{expense.employeeName}</TableCell>
-                            <TableCell>{expense.expenseDate}</TableCell>
-                            <TableCell>{expense.type}</TableCell>
-                            <TableCell>{expense.amount}</TableCell>
-                            <TableCell>{expense.description}</TableCell>
-                            <TableCell>{expense.approvalStatus}</TableCell>
-                            <TableCell>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline">Actions</Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onSelect={() => handleApprove(expense.id)}>
-                                            Approve
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={() => handleReject(expense.id)}>
-                                            Reject
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Field Officer Name</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Expense Category</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredExpenseData.map((expense) => (
+                                <TableRow key={expense.id}>
+                                    <TableCell>{expense.employeeName}</TableCell>
+                                    <TableCell>{expense.expenseDate}</TableCell>
+                                    <TableCell>{expense.type}</TableCell>
+                                    <TableCell>{expense.amount}</TableCell>
+                                    <TableCell>{expense.description}</TableCell>
+                                    <TableCell>
+                                        <span
+                                            className={`px-2 py-1 rounded-full font-semibold ${expense.approvalStatus === 'Approved'
+                                                ? 'bg-green-100 text-green-800'
+                                                : expense.approvalStatus === 'Rejected'
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
+                                                }`}
+                                        >
+                                            {expense.approvalStatus}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline">Actions</Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                <DropdownMenuItem onSelect={() => handleApprove(expense.id)}>
+                                                    Approve
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleReject(expense.id)}>
+                                                    Reject
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 };

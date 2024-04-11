@@ -1,12 +1,75 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import * as React from "react";
+import { useRouter } from 'next/router';
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
+const Tabs = TabsPrimitive.Root;
+
+const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+));
+
+TabsList.displayName = TabsPrimitive.List.displayName;
+
+const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      className
+    )}
+    {...props}
+  />
+));
+
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
+
+const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+    {...props}
+  />
+));
+
+TabsContent.displayName = TabsPrimitive.Content.displayName;
 
 interface Visit {
+  id: string; // Add the 'id' property
   storeId: string;
   employeeId: string;
   employeeName: string;
@@ -20,6 +83,7 @@ const Dashboard = () => {
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const token = useSelector((state: RootState) => state.auth.token);
+  const router = useRouter();
   console.log(token)
 
   useEffect(() => {
@@ -27,7 +91,9 @@ const Dashboard = () => {
       fetchVisits();
     }
   }, [startDate, endDate, token]);
-
+  const handleViewDetails = (visitId: string) => {
+    router.push(`/VisitDetailPage/${visitId}`);
+  };
   const fetchVisits = async () => {
     try {
       const response = await fetch(
@@ -177,27 +243,47 @@ const Dashboard = () => {
           <CardTitle>Recent Visits</CardTitle>
         </CardHeader>
         <CardContent>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Store</th>
-                <th className="px-4 py-2">Employee</th>
-                <th className="px-4 py-2">Date</th>
-                <th className="px-4 py-2">Purpose</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(visits) &&
-                visits.slice(0, 10).map((visit, index) => (
-                  <tr key={index}>
-                    <td className="px-4 py-2">{visit.storeName}</td>
-                    <td className="px-4 py-2">{visit.employeeName}</td>
-                    <td className="px-4 py-2">{formatDate(visit.visit_date)}</td>
-                    <td className="px-4 py-2">{visit.purpose}</td>
+          <Tabs defaultValue="table">
+            <TabsList>
+              <TabsTrigger value="table">Table</TabsTrigger>
+            </TabsList>
+            <TabsContent value="table">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2">Store</th>
+                    <th className="px-4 py-2">Employee</th>
+                    <th className="px-4 py-2">Date</th>
+                    <th className="px-4 py-2">Purpose</th>
+                    <th className="px-4 py-2">Actions</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {Array.isArray(visits) &&
+                    visits.slice(0, 10).map((visit, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-2">{visit.storeName}</td>
+                        <td className="px-4 py-2">{visit.employeeName}</td>
+                        <td className="px-4 py-2">{formatDate(visit.visit_date)}</td>
+                        <td className="px-4 py-2">{visit.purpose}</td>
+                        <td className="px-4 py-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <ChevronDownIcon className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handleViewDetails(visit.id.toString())}>
+                                View Details
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
@@ -205,4 +291,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

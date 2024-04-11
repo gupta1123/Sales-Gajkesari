@@ -1,15 +1,21 @@
 // components/Sidebar.js
 import Link from 'next/link';
 import styles from './Sidebar.module.css';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../store';
+import { FiLogOut } from 'react-icons/fi';
 
 export default function Sidebar() {
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logoutUser() as any);
+  };
+
   return (
     <div className={styles.sidebar}>
       <ul className={styles.sidebarList}>
         <li className={styles.sidebarItem}>
-          <Link href="/" className={styles.sidebarLink}>
-            Home
-          </Link>
         </li>
         <li className={styles.sidebarItem}>
           <Link href="/Dashboard" className={styles.sidebarLink}>
@@ -58,6 +64,12 @@ export default function Sidebar() {
           </Link>
         </li> */}
       </ul>
+      <div className={styles.sidebarFooter}>
+        <button className={styles.sidebarLink} onClick={handleLogout}>
+          <FiLogOut className={styles.sidebarIcon} />
+          <span>Logout</span>
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import {
     Table,
@@ -7,14 +9,17 @@ import {
     TableBody,
     TableCell,
 } from '@/components/ui/table';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import { Button } from '@/components/ui/button';
 import { DownloadIcon } from '@radix-ui/react-icons';
 import { utils, writeFile } from 'xlsx';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from '@/components/ui/pagination';
 
 interface AttendanceRecord {
     id: number;
@@ -27,24 +32,21 @@ interface AttendanceRecord {
     checkoutTime: string;
 }
 
-interface DownloadExcelButtonProps {
-    attendanceData: AttendanceRecord[];
-}
-
 const AttendancePage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
-    const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
-
+    const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(undefined);
+    const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(undefined);
     const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const token = useSelector((state: RootState) => state.auth.token);
 
     useEffect(() => {
         const fetchAttendanceData = async () => {
             try {
-                const startDate = selectedStartDate ? selectedStartDate.toISOString().split('T')[0] : '';
-                const endDate = selectedEndDate ? selectedEndDate.toISOString().split('T')[0] : '';
+                const startDate = selectedStartDate ? format(selectedStartDate, 'yyyy-MM-dd') : '';
+                const endDate = selectedEndDate ? format(selectedEndDate, 'yyyy-MM-dd') : '';
 
                 const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`, {
                     headers: {
@@ -70,14 +72,7 @@ const AttendancePage: React.FC = () => {
 
     const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
-    };
-
-    const handleStartDateChange = (date: Date | null) => {
-        setSelectedStartDate(date);
-    };
-
-    const handleEndDateChange = (date: Date | null) => {
-        setSelectedEndDate(date);
+        setCurrentPage(1); // Reset to the first page when the search query changes
     };
 
     const filteredAttendanceData = attendanceData.filter((attendance) => {
@@ -86,74 +81,144 @@ const AttendancePage: React.FC = () => {
         return fieldOfficerName.includes(searchTerm);
     });
 
+    const totalPages = Math.ceil(filteredAttendanceData.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredAttendanceData.slice(indexOfFirstItem, indexOfLastItem);
+
     return (
-        <div>
-            <h1 className="text-3xl font-bold">Attendance</h1>
+        <div className="container mx-auto py-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold">Attendance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="mb-4 flex items-center">
+                        <div className="mr-4">
+                            <Input
+                                type="text"
+                                placeholder="Search by Field Officer"
+                                value={searchQuery}
+                                onChange={handleSearchQueryChange}
+                                className="w-[300px]"
+                            />
+                        </div>
 
-            <div className="mb-4 flex items-center">
-                <div className="mr-4">
-                    <Input
-                        type="text"
-                        placeholder="Search by Field Officer"
-                        value={searchQuery}
-                        onChange={handleSearchQueryChange}
-                        className="w-[180px]"
-                    />
-                </div>
+                        <div className="mr-4">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline">
+                                        {selectedStartDate ? format(selectedStartDate, 'MMM d, yyyy') : 'Start Date'}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedStartDate}
+                                        onSelect={setSelectedStartDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
 
-                <div className="mr-4">
-                    <DatePicker
-                        selected={selectedStartDate}
-                        onChange={handleStartDateChange}
-                        selectsStart
-                        startDate={selectedStartDate}
-                        endDate={selectedEndDate}
-                        placeholderText="Start Date"
-                        className="w-[180px]"
-                    />
-                </div>
+                        <div className="mr-4">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline">
+                                        {selectedEndDate ? format(selectedEndDate, 'MMM d, yyyy') : 'End Date'}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedEndDate}
+                                        onSelect={setSelectedEndDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                    </div>
 
-                <div className="mr-4">
-                    <DatePicker
-                        selected={selectedEndDate}
-                        onChange={handleEndDateChange}
-                        selectsEnd
-                        startDate={selectedStartDate}
-                        endDate={selectedEndDate}
-                        minDate={selectedStartDate}
-                        placeholderText="End Date"
-                        className="w-[180px]"
-                    />
-                </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Field Officer</TableHead>
+                                <TableHead>Attendance Status</TableHead>
+                                <TableHead>Visit Count</TableHead>
+                                <TableHead>Check-in Date</TableHead>
+                                <TableHead>Check-out Date</TableHead>
+                                <TableHead>Check-in Time</TableHead>
+                                <TableHead>Check-out Time</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {currentItems.map((attendance) => (
+                                <TableRow key={attendance.id}>
+                                    <TableCell>{attendance.employeeName}</TableCell>
+                                    <TableCell>
+                                        <span
+                                            className={`px-2 py-1 rounded-full font-semibold ${attendance.attendanceStatus === 'Present'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                                }`}
+                                        >
+                                            {attendance.attendanceStatus}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>{attendance.visitCount}</TableCell>
+                                    <TableCell>{attendance.checkinDate}</TableCell>
+                                    <TableCell>{attendance.checkoutDate}</TableCell>
+                                    <TableCell>{attendance.checkinTime}</TableCell>
+                                    <TableCell>{attendance.checkoutTime}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
 
-            </div>
-
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Field Officer</TableHead>
-                        <TableHead>Attendance Status</TableHead>
-                        <TableHead>Visit Count</TableHead>
-                        <TableHead>Check-in Date</TableHead>
-                        <TableHead>Check-out Date</TableHead>
-                        <TableHead>Check-in Time</TableHead>
-                        <TableHead>Check-out Time</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {attendanceData.map((attendance) => (
-                        <TableRow key={attendance.id}>
-                            <TableCell>{attendance.employeeName}</TableCell>
-                            <TableCell>{attendance.attendanceStatus}</TableCell>
-                            <TableCell>{attendance.visitCount}</TableCell>
-                            <TableCell>{attendance.checkinDate}</TableCell>
-                            <TableCell>{attendance.checkoutDate}</TableCell>
-                            <TableCell>{attendance.checkinTime}</TableCell>
-                            <TableCell>{attendance.checkoutTime}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    <Pagination className="mt-4">
+                        <PaginationContent>
+                            {currentPage !== 1 && (
+                                <PaginationPrevious onClick={() => setCurrentPage(currentPage - 1)} />
+                            )}
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <PaginationItem key={i}>
+                                    <PaginationLink
+                                        isActive={currentPage === i + 1}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                    >
+                                        {i + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                            {totalPages > 5 && (
+                                <>
+                                    {currentPage < 4 && <PaginationEllipsis />}
+                                    {currentPage > 3 && currentPage < totalPages - 2 && (
+                                        <>
+                                            <PaginationEllipsis />
+                                            <PaginationItem>
+                                                <PaginationLink
+                                                    isActive={currentPage === currentPage}
+                                                    onClick={() => setCurrentPage(currentPage)}
+                                                >
+                                                    {currentPage}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                            <PaginationEllipsis />
+                                        </>
+                                    )}
+                                    {currentPage > totalPages - 3 && <PaginationEllipsis />}
+                                </>
+                            )}
+                            {currentPage !== totalPages && (
+                                <PaginationNext onClick={() => setCurrentPage(currentPage + 1)} />
+                            )}
+                        </PaginationContent>
+                    </Pagination>
+                </CardContent>
+            </Card>
         </div>
     );
 };
