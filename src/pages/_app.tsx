@@ -105,7 +105,7 @@ const LoginPage = () => {
             </span>
           </div>
           <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={(e) => handleLogin(e)}>
-            Loading...
+            Login
           </Button>
         </div>
       </Card>

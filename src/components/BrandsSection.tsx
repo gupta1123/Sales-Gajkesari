@@ -30,11 +30,10 @@ type RootState = {
 };
 
 export default function BrandsSection({ storeId }: BrandsSectionProps) {
-
+  const token = useSelector((state: RootState) => state.auth.token);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const token = useSelector((state: RootState) => state.auth.token);
   const [newBrand, setNewBrand] = useState<NewBrand>({
     name: "",
     pros: [],
@@ -54,7 +53,12 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
         },
       });
       const data = await response.json();
-      const brandsData: Brand[] = data.proCons || [];
+      const brandsData: Brand[] = data.brandProCons?.map((brand: any) => ({
+        id: brand.id,
+        brand: brand.brandName,
+        pros: brand.pros.join(", "),
+        cons: brand.cons.join(", "),
+      })) || [];
       setBrands(brandsData);
     } catch (error) {
       console.error("Error fetching brands:", error);

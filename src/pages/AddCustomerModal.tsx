@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -138,6 +138,9 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       console.error('Error updating/creating customer:', error);
     }
   };
+  useEffect(() => {
+    console.log("Current Employee ID: ", employeeId);
+  }, [employeeId]);
 
   const handleNext = () => {
     if (activeTab === 'basic') {

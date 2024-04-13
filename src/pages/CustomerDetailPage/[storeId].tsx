@@ -199,22 +199,12 @@ export default function CustomerDetailPage() {
     if (storeId && token) {
       fetchCustomerData();
     }
+  }, [storeId, token]);
 
+  useEffect(() => {
     // Set the customClientType when customerData changes
     setCustomClientType(customerData.clientType || null);
-  }, [storeId, token, customerData]);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!customerData) {
-    return <div>Customer not found</div>;
-  }
+  }, [customerData]);
 
   return (
     <div className="container mx-auto py-8">
@@ -242,7 +232,7 @@ export default function CustomerDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Monthly Sales</p>
-                <p className="text-xl font-semibold text-gray-800">{customerData.monthlySale}</p>
+                <p className="text-xl font-semibold text-gray-800">{customerData.monthlySale} tonnes</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -288,103 +278,95 @@ export default function CustomerDetailPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div style={{ marginTop: '20px' }}> {/* Adjusted margin-top for "Shop Name" */}
-                    <Label htmlFor="storeName" className="text-xs font-medium text-gray-600">Shop Name</Label>
-                    <Input id="storeName" value={customerData.storeName || ''} onChange={(e) => handleInputChange('storeName', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="Acme Store" disabled={!isEditing} />
+                    <Label htmlFor="storeName" className="text-xs font-medium text-black">Shop Name</Label>
+                    <Input id="storeName" value={customerData.storeName || ''} onChange={(e) => handleInputChange('storeName', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="clientFirstName" className="text-xs font-medium text-gray-600">First Name</Label>
-                    <Input id="clientFirstName" value={customerData.clientFirstName || ''} onChange={(e) => handleInputChange('clientFirstName', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="John" disabled={!isEditing} />
+                    <Label htmlFor="clientFirstName" className="text-xs font-medium text-black">First Name</Label>
+                    <Input id="clientFirstName" value={customerData.clientFirstName || ''} onChange={(e) => handleInputChange('clientFirstName', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div className="md:col-span-1 hidden md:block"></div> {/* Keeping the layout responsive */}
                   <div>
-                    <Label htmlFor="clientLastName" className="text-xs font-medium text-gray-600">Last Name</Label>
-                    <Input id="clientLastName" value={customerData.clientLastName || ''} onChange={(e) => handleInputChange('clientLastName', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="Doe" disabled={!isEditing} />
+                    <Label htmlFor="clientLastName" className="text-xs font-medium text-black">Last Name</Label>
+                    <Input id="clientLastName" value={customerData.clientLastName || ''} onChange={(e) => handleInputChange('clientLastName', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                 </div>
               </div>
             </TabsContent>
-
-
-
-
-
-
 
             {/* Contact Tab */}
             <TabsContent value="contact" className="mt-4">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="primaryContact" className="text-xs font-medium text-gray-600">Primary Phone Number</Label>
-                    <Input id="primaryContact" type="tel" value={customerData.primaryContact || ''} onChange={(e) => handleInputChange('primaryContact', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="+1 123-456-7890" disabled={!isEditing} />
+                    <Label htmlFor="primaryContact" className="text-xs font-medium text-black">Primary Phone Number</Label>
+                    <Input id="primaryContact" type="tel" value={customerData.primaryContact || ''} onChange={(e) => handleInputChange('primaryContact', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="secondaryContact" className="text-xs font-medium text-gray-600">Secondary Phone Number</Label>
-                    <Input id="secondaryContact" type="tel" value={customerData.secondaryContact || ''} onChange={(e) => handleInputChange('secondaryContact', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="+1 098-765-4321" disabled={!isEditing} />
+                    <Label htmlFor="secondaryContact" className="text-xs font-medium text-black">Secondary Phone Number</Label>
+                    <Input id="secondaryContact" type="tel" value={customerData.secondaryContact || ''} onChange={(e) => handleInputChange('secondaryContact', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="email" className="text-xs font-medium text-gray-600">Email</Label>
-                    <Input id="email" type="email" value={customerData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="john.doe@example.com" disabled={!isEditing} />
+                    <Label htmlFor="email" className="text-xs font-medium text-black">Email</Label>
+                    <Input id="email" type="email" value={customerData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                 </div>
               </div>
             </TabsContent>
-
 
             {/* Address Tab */}
             <TabsContent value="address" className="mt-4">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="addressLine1" className="text-xs font-medium text-gray-600">Address Line 1</Label>
-                    <Input id="addressLine1" value={customerData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="123 Main St" disabled={!isEditing} />
+                    <Label htmlFor="addressLine1" className="text-xs font-medium text-black">Address Line 1</Label>
+                    <Input id="addressLine1" value={customerData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="addressLine2" className="text-xs font-medium text-gray-600">Address Line 2</Label>
-                    <Input id="addressLine2" value={customerData.addressLine2 || ''} onChange={(e) => handleInputChange('addressLine2', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="Apartment, studio, or floor" disabled={!isEditing} />
+                    <Label htmlFor="addressLine2" className="text-xs font-medium text-black">Address Line 2</Label>
+                    <Input id="addressLine2" value={customerData.addressLine2 || ''} onChange={(e) => handleInputChange('addressLine2', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="city" className="text-xs font-medium text-gray-600">City</Label>
-                    <Input id="city" value={customerData.city || ''} onChange={(e) => handleInputChange('city', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="New York" disabled={!isEditing} />
+                    <Label htmlFor="city" className="text-xs font-medium text-black">City</Label>
+                    <Input id="city" value={customerData.city || ''} onChange={(e) => handleInputChange('city', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="state" className="text-xs font-medium text-gray-600">State</Label>
-                    <Input id="state" value={customerData.state || ''} onChange={(e) => handleInputChange('state', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="NY" disabled={!isEditing} />
+                    <Label htmlFor="state" className="text-xs font-medium text-black">State</Label>
+                    <Input id="state" value={customerData.state || ''} onChange={(e) => handleInputChange('state', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="district" className="text-xs font-medium text-gray-600">District</Label>
-                    <Input id="district" value={customerData.district || ''} onChange={(e) => handleInputChange('district', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="Manhattan" disabled={!isEditing} />
+                    <Label htmlFor="district" className="text-xs font-medium text-black">Taluka</Label>
+                    <Input id="district" value={customerData.district || ''} onChange={(e) => handleInputChange('district', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="subDistrict" className="text-xs font-medium text-gray-600">Sub District</Label>
-                    <Input id="subDistrict" value={customerData.subDistrict || ''} onChange={(e) => handleInputChange('subDistrict', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="Optional" disabled={!isEditing} />
+                    <Label htmlFor="subDistrict" className="text-xs font-medium text-black">Village</Label>
+                    <Input id="subDistrict" value={customerData.subDistrict || ''} onChange={(e) => handleInputChange('subDistrict', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="country" className="text-xs font-medium text-gray-600">Country</Label>
-                    <Input id="country" value={customerData.country || ''} onChange={(e) => handleInputChange('country', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="USA" disabled={!isEditing} />
+                    <Label htmlFor="country" className="text-xs font-medium text-black">Country</Label>
+                    <Input id="country" value={customerData.country || ''} onChange={(e) => handleInputChange('country', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="pincode" className="text-xs font-medium text-gray-600">Pincode</Label>
-                    <Input id="pincode" type="number" value={customerData.pincode || ''} onChange={(e) => handleInputChange('pincode', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="10001" disabled={!isEditing} />
+                    <Label htmlFor="pincode" className="text-xs font-medium text-black">Pincode</Label>
+                    <Input id="pincode" type="number" value={customerData.pincode || ''} onChange={(e) => handleInputChange('pincode', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                 </div>
               </div>
             </TabsContent>
-
 
             {/* Additional Tab */}
             <TabsContent value="additional" className="mt-4">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="monthlySale" className="text-xs font-medium text-gray-600">Monthly Sale</Label>
-                    <Input id="monthlySale" type="number" value={customerData.monthlySale || ''} onChange={(e) => handleInputChange('monthlySale', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="$50,000" disabled={!isEditing} />
+                    <Label htmlFor="monthlySale" className="text-xs font-medium text-black">Monthly Sale</Label>
+                    <Input id="monthlySale" type="number" value={customerData.monthlySale || ''} onChange={(e) => handleInputChange('monthlySale', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   <div>
-                    <Label htmlFor="intent" className="text-xs font-medium text-gray-600">Intent Level</Label>
+                    <Label htmlFor="intent" className="text-xs font-medium text-black">Intent Level</Label>
                     <Select value={customerData.intent ? String(customerData.intent) : ''} onValueChange={(value) => handleInputChange('intent', Number(value))} disabled={!isEditing}>
                       <SelectTrigger className="px-2 py-1">
-                        <SelectValue placeholder="Select level" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {[...Array(10)].map((_, index) => (
@@ -394,14 +376,14 @@ export default function CustomerDetailPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="clientType" className="text-xs font-medium text-gray-600">Client Type</Label>
+                    <Label htmlFor="clientType" className="text-xs font-medium text-black">Client Type</Label>
                     <Select
                       value={customClientType || ''}
                       onValueChange={(value) => setCustomClientType(value)}
                       disabled={!isEditing}
                     >
                       <SelectTrigger className="px-2 py-1">
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Shop" className="text-xs">shop</SelectItem>
@@ -414,8 +396,8 @@ export default function CustomerDetailPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="industry" className="text-xs font-medium text-gray-600">Industry</Label>
-                    <Input id="industry" value={customerData.industry || ''} onChange={(e) => handleInputChange('industry', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1" placeholder="Retail" disabled={!isEditing} />
+                    <Label htmlFor="industry" className="text-xs font-medium text-black">Industry</Label>
+                    <Input id="industry" value={customerData.industry || ''} onChange={(e) => handleInputChange('industry', e.target.value)} className="w-full max-w-xs mt-1 text-xs rounded-md px-2 py-1 text-black" disabled={!isEditing} />
                   </div>
                   {/* Additional fields can be added following the same pattern */}
                 </div>

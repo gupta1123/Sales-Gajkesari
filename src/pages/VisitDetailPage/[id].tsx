@@ -10,6 +10,8 @@ import { Upload, message } from "antd";
 import { InboxOutlined, CaretDownOutlined, PushpinOutlined } from "@ant-design/icons";
 import VisitsTimeline from "../VisitsTimeline";
 import NotesSection from "../../components/NotesSection";
+import LikesSection from "../../components/BrandsSection";
+import BrandsSection from "../../components/LikesSection";
 import PerformanceMetrics from "../../components/PerformanceMetrics";
 import "../VisitDetail.css";
 import { useSelector } from 'react-redux';
@@ -298,7 +300,14 @@ const VisitDetailPage = () => {
                     <p className="text-sm text-gray-500 mb-1">Location</p>
                     <div className="flex items-center space-x-2">
                       <PushpinOutlined className="w-4 h-4 text-gray-500" />
-                      <p className="text-lg font-semibold">{visit?.storeLatitude}, {visit?.storeLongitude}</p>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${visit?.storeLatitude},${visit?.storeLongitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-lg font-semibold text-blue-500 hover:underline"
+                      >
+                        {visit?.storeLatitude}, {visit?.storeLongitude}
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -306,30 +315,19 @@ const VisitDetailPage = () => {
             </CardContent>
           </Card>
 
-          {/* Visit Images */}
+          {/* Likes and Brands */}
           <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Visit Images</CardTitle>
-            </CardHeader>
             <CardContent>
-              <Tabs defaultValue="check-in">
+              <Tabs defaultValue="likes">
                 <TabsList>
-                  <TabsTrigger value="check-in">Check-In Images</TabsTrigger>
-                  <TabsTrigger value="check-out">Check-Out Images</TabsTrigger>
+                  <TabsTrigger value="likes">Likes</TabsTrigger>
+                  <TabsTrigger value="brands">Brands</TabsTrigger>
                 </TabsList>
-                <TabsContent value="check-in">
-                  <div className="grid grid-cols-3 gap-4">
-                    {checkinImages.map((url, index) => (
-                      <img key={index} src={url} alt={`Check-In Image ${index + 1}`} className="w-full" />
-                    ))}
-                  </div>
+                <TabsContent value="likes">
+                  <LikesSection storeId={visit?.storeId?.toString() ?? '0'} />
                 </TabsContent>
-                <TabsContent value="check-out">
-                  <div className="grid grid-cols-3 gap-4">
-                    {checkoutImages.map((url, index) => (
-                      <img key={index} src={url} alt={`Check-Out Image ${index + 1}`} className="w-full" />
-                    ))}
-                  </div>
+                <TabsContent value="brands">
+                  <BrandsSection storeId={visit?.storeId?.toString() ?? '0'} />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -341,7 +339,7 @@ const VisitDetailPage = () => {
               <CardTitle>Metrics</CardTitle>
             </CardHeader>
             <CardContent>
-              <PerformanceMetrics visitDuration={calculateVisitDuration()} intentLevel={visit?.intent ?? ''} /> {/* Pass intent level */}
+              <PerformanceMetrics visitDuration={calculateVisitDuration()} intentLevel={visit?.intent ?? ''} />
             </CardContent>
           </Card>
         </div>

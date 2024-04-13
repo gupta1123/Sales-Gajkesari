@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 interface User {
@@ -53,7 +54,7 @@ const Employeelist = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<number | string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
-  const [selectedColumns, setSelectedColumns] = useState(['name', 'email','city','state', 'role', 'department', 'dateOfJoining', 'primaryContact', 'userName', 'password', 'actions']);
+  const [selectedColumns, setSelectedColumns] = useState(['name', 'email', 'city', 'state', 'role', 'department', 'dateOfJoining', 'primaryContact', 'userName', 'password', 'actions']);
   const router = useRouter();
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -64,8 +65,54 @@ const Employeelist = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
+  const [selectedTab, setSelectedTab] = useState("tab1");
+  const [activeTab, setActiveTab] = useState('tab1');
 
 
+
+  const handleNextClick = async () => {
+    try {
+      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/add', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName: newEmployee.firstName,
+          lastName: newEmployee.lastName,
+          primaryContact: newEmployee.primaryContact,
+          departmentName: newEmployee.departmentName,
+          email: newEmployee.email,
+          role: newEmployee.role,
+          employeeId: "E101",
+          addressLine1: newEmployee.addressLine1,
+          addressLine2: newEmployee.addressLine2,
+          city: newEmployee.city,
+          state: newEmployee.state,
+          country: newEmployee.country,
+          pincode: newEmployee.pincode,
+          dateOfJoining: newEmployee.dateOfJoining
+        }),
+      });
+
+      const data = await response.json();
+      if (data && data.id) {
+        setNewEmployee({ ...newEmployee, employeeId: data.id });
+        setActiveTab('tab2');
+      } else {
+        // Handle error scenario
+        console.error('Error adding employee:', data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+  };
 
   const [newEmployee, setNewEmployee] = useState({
     firstName: "",
@@ -93,29 +140,29 @@ const Employeelist = () => {
     }
   }, [token]);
 
-const handleEditUser = (employeeId: number) => {
-  const employee = users.find((user) => user.id === employeeId);
-  if (employee) {
-    setEditingEmployee({
-      id: employee.id,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      email: employee.email,
-      role: employee.role,
-      departmentName: employee.departmentName,
-      userName: employee.userName,
-      password: employee.password,
-      primaryContact: employee.primaryContact,
-      dateOfJoining: employee.dateOfJoining, // Add the 'dateOfJoining' property
-      name: `${employee.firstName} ${employee.lastName}`, // Add the 'name' property
-      department: employee.departmentName, // Add the 'department' property
-      actions: '', // Add the 'actions' property (you can set it to an empty string or any other appropriate value)
-      city: employee.city,
-      state: employee.state,
-      // Add other properties as needed
-    });
-  }
-};
+  const handleEditUser = (employeeId: number) => {
+    const employee = users.find((user) => user.id === employeeId);
+    if (employee) {
+      setEditingEmployee({
+        id: employee.id,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        email: employee.email,
+        role: employee.role,
+        departmentName: employee.departmentName,
+        userName: employee.userName,
+        password: employee.password,
+        primaryContact: employee.primaryContact,
+        dateOfJoining: employee.dateOfJoining, // Add the 'dateOfJoining' property
+        name: `${employee.firstName} ${employee.lastName}`, // Add the 'name' property
+        department: employee.departmentName, // Add the 'department' property
+        actions: '', // Add the 'actions' property (you can set it to an empty string or any other appropriate value)
+        city: employee.city,
+        state: employee.state,
+        // Add other properties as needed
+      });
+    }
+  };
   const handleResetPassword = (userId: number | string) => {
     setResetPasswordUserId(userId);
     setIsResetPasswordOpen(true);
@@ -135,7 +182,11 @@ const handleEditUser = (employeeId: number) => {
     setConfirmPassword('');
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewEmployee({ ...newEmployee, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setNewEmployee((prevEmployee) => ({
+      ...prevEmployee,
+      [name]: value,
+    }));
   };
 
   const handleDeleteUser = async (employeeId: number) => {
@@ -232,81 +283,23 @@ const handleEditUser = (employeeId: number) => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/add', {
-        method: 'PUT',
+      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/create', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newEmployee),
+        body: JSON.stringify({
+          username: newEmployee.userName,
+          password: newEmployee.password,
+          employeeId: newEmployee.employeeId,
+        }),
       });
+
       if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-
-        // Create user credentials
-        const createUserResponse = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            username: newEmployee.userName,
-            password: newEmployee.password,
-            employeeId: data.id,
-          }),
-        });
-
-        if (createUserResponse.ok) {
-          const createUserData = await createUserResponse.text();
-          console.log(createUserData);
-
-          // Update user password
-          const updateUserResponse = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/update?username=${newEmployee.userName}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              password: newEmployee.password,
-            }),
-          });
-
-          if (updateUserResponse.ok) {
-            console.log('User password updated!');
-          } else {
-            console.error('Failed to update user password');
-          }
-
-          // Add the new employee to the users state
-          const newUser = {
-            id: data.id,
-            firstName: newEmployee.firstName,
-            lastName: newEmployee.lastName,
-            email: newEmployee.email,
-            role: newEmployee.role,
-            departmentName: newEmployee.departmentName,
-            userName: newEmployee.userName, // Include the userName property
-            password: newEmployee.password,
-            primaryContact: newEmployee.primaryContact,
-            dateOfJoining: newEmployee.dateOfJoining,
-            name: `${newEmployee.firstName} ${newEmployee.lastName}`,
-            department: newEmployee.departmentName,
-            actions: '',
-            city: newEmployee.city,
-            state: newEmployee.state,
-          };
-          setUsers([...users, newUser]);
-
-          setIsModalOpen(false);
-
-          // Navigate to the SalesExecutive page with the employee's ID
-          router.push(`/SalesExecutive/${data.id}`);
-        } else {
-          console.error('Failed to create user credentials');
-        }
+        console.log('User credentials created successfully!');
+        setIsModalOpen(false); // Close the modal after successful operations
+        // Update the UI to show the new employee, or fetch the employee list again if necessary
       } else {
         const errorData = await response.text();
         console.error('Error:', errorData);
@@ -315,6 +308,7 @@ const handleEditUser = (employeeId: number) => {
       console.error('Error:', error);
     }
   };
+
 
   const fetchEmployees = async () => {
     try {
@@ -433,18 +427,18 @@ const handleEditUser = (employeeId: number) => {
               >
                 Department
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedColumns.includes('userName')}
-                onCheckedChange={() => handleColumnSelection('userName')}
-              >
-                User Name
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedColumns.includes('password')}
-                onCheckedChange={() => handleColumnSelection('password')}
-              >
-                Password
-              </DropdownMenuCheckboxItem>
+              {/* <DropdownMenuCheckboxItem
+                checked={selectedColumns.includes('userName')}
+                onCheckedChange={() => handleColumnSelection('userName')}
+              >
+                User Name
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={selectedColumns.includes('password')}
+                onCheckedChange={() => handleColumnSelection('password')}
+              >
+                Password
+              </DropdownMenuCheckboxItem> */}
               <DropdownMenuCheckboxItem
                 checked={selectedColumns.includes('dateOfJoining')}
                 onCheckedChange={() => handleColumnSelection('dateOfJoining')}
@@ -508,127 +502,204 @@ const handleEditUser = (employeeId: number) => {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Add Employee</DialogTitle>
-                <DialogDescription>
-                  Fill out the form below to add a new employee.
-                </DialogDescription>
+
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" name="firstName" value={newEmployee.firstName} onChange={handleInputChange} />
+              <Tabs defaultValue="tab1" className="mt-6">
+                <TabsList>
+                  <TabsTrigger value="tab1">Personal & Work</TabsTrigger>
+                  <TabsTrigger value="tab2">Credentials</TabsTrigger>
+                </TabsList>
+                <TabsContent value="tab1">
+                  <div className="grid gap-4 py-4">
+                    <div className="text-lg font-semibold mb-2">Personal Information</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          value={newEmployee.firstName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          value={newEmployee.lastName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          value={newEmployee.email}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="primaryContact">Primary Contact</Label>
+                        <Input
+                          id="primaryContact"
+                          name="primaryContact"
+                          value={newEmployee.primaryContact}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+
+                    {/* <div className="text-lg font-semibold mt-6 mb-2">Address</div> */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="addressLine1">Address Line 1</Label>
+                      <Input
+                        id="addressLine1"
+                        name="addressLine1"
+                        value={newEmployee.addressLine1}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="addressLine2">Address Line 2</Label>
+                      <Input
+                        id="addressLine2"
+                        name="addressLine2"
+                        value={newEmployee.addressLine2}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={newEmployee.city}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input
+                          id="state"
+                          name="state"
+                          value={newEmployee.state}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          name="country"
+                          value={newEmployee.country}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="pincode">Pincode</Label>
+                      <Input
+                        id="pincode"
+                        name="pincode"
+                        value={newEmployee.pincode}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="text-lg font-semibold mt-6 mb-2">Work Information</div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="departmentName">Department</Label>
+                        <Select
+                          value={newEmployee.departmentName}
+                          onValueChange={(value) =>
+                            setNewEmployee({ ...newEmployee, departmentName: value })
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sales">Sales</SelectItem>
+                            <SelectItem value="Office">Office</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Select
+                          name="role"
+                          value={newEmployee.role}
+                          onValueChange={(value) =>
+                            setNewEmployee({ ...newEmployee, role: value })
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Field Officer">Field Officer</SelectItem>
+                            <SelectItem value="Office Manager">Office Manager</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="dateOfJoining">Date of Joining</Label>
+                        <Input
+                          id="dateOfJoining"
+                          name="dateOfJoining"
+                          type="date"
+                          value={newEmployee.dateOfJoining}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" name="lastName" value={newEmployee.lastName} onChange={handleInputChange} />
+                  <div className="flex justify-end">
+                    {activeTab === 'tab1' ? (
+                      <Button onClick={handleNextClick}>Next</Button>
+                    ) : (
+                      <div>Loading...</div>
+                    )}
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="employeeId">Employee ID</Label>
-                    <Input id="employeeId" name="employeeId" value={newEmployee.employeeId} onChange={handleInputChange} />
+                </TabsContent>
+                <TabsContent value="tab2">
+                  <div className="grid gap-4 py-4">
+                    <div className="text-lg font-semibold mb-2">User Credentials</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="userName">User Name</Label>
+                        <Input
+                          id="userName"
+                          name="userName"
+                          value={newEmployee.userName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          value={newEmployee.password}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" value={newEmployee.email} onChange={handleInputChange} />
+                  <div className="mt-4">
+                    <Button onClick={handleSubmit}>Add Employee</Button>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="primaryContact">Primary Contact</Label>
-                    <Input id="primaryContact" name="primaryContact" value={newEmployee.primaryContact} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="secondaryContact">Secondary Contact</Label>
-                    <Input id="secondaryContact" name="secondaryContact" value={newEmployee.secondaryContact} onChange={handleInputChange} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="departmentName">Department</Label>
-                    <Select
-                      value={newEmployee.departmentName}
-                      onValueChange={(value) =>
-                        setNewEmployee({ ...newEmployee, departmentName: value })
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sales">Sales</SelectItem>
-                        <SelectItem value="Office">Office</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="userName">User Name</Label>
-                    <Input id="userName" name="userName" value={newEmployee.userName} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" value={newEmployee.password} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select
-                      name="role"
-                      value={newEmployee.role}
-                      onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value })}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Field Officer">Field Officer</SelectItem>
-                        <SelectItem value="Office Manager">Office Manager</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="addressLine1">Address Line 1</Label>
-                    <Input id="addressLine1" name="addressLine1" value={newEmployee.addressLine1} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="addressLine2">Address Line 2</Label>
-                    <Input id="addressLine2" name="addressLine2" value={newEmployee.addressLine2} onChange={handleInputChange} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" name="city" value={newEmployee.city} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input id="state" name="state" value={newEmployee.state} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Input id="country" name="country" value={newEmployee.country} onChange={handleInputChange} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="pincode">Pincode</Label>
-                    <Input id="pincode" name="pincode" value={newEmployee.pincode} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="dateOfJoining">Date of Joining</Label>
-                    <Input id="dateOfJoining" name="dateOfJoining" type="date" value={newEmployee.dateOfJoining} onChange={handleInputChange} />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleSubmit}>Add Employee</Button>
-              </DialogFooter>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
-       
         </div>
       </div>
       <Table>
@@ -675,26 +746,26 @@ const handleEditUser = (employeeId: number) => {
                 )}
               </TableHead>
             )}
-            {selectedColumns.includes('userName') && (
-              <TableHead className="cursor-pointer" onClick={() => handleSort('userName')}>
-                User Name
-                {sortColumn === 'userName' && (
-                  <span className="w-full">
-                    {sortDirection === 'asc' ? '▲' : '▼'}
-                  </span>
-                )}
-              </TableHead>
-            )}
-            {selectedColumns.includes('password') && (
-              <TableHead className="cursor-pointer" onClick={() => handleSort('password')}>
-                Password
-                {sortColumn === 'password' && (
-                  <span className="ml-2">
-                    {sortDirection === 'asc' ? '▲' : '▼'}
-                  </span>
-                )}
-              </TableHead>
-            )}
+            {/* {selectedColumns.includes('userName') && (
+              <TableHead className="cursor-pointer" onClick={() => handleSort('userName')}>
+                User Name
+                {sortColumn === 'userName' && (
+                  <span className="w-full">
+                    {sortDirection === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </TableHead>
+            )}
+            {selectedColumns.includes('password') && (
+              <TableHead className="cursor-pointer" onClick={() => handleSort('password')}>
+                Password
+                {sortColumn === 'password' && (
+                  <span className="ml-2">
+                    {sortDirection === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </TableHead>
+            )} */}
             {selectedColumns.includes('primaryContact') && (
               <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
                 Phone
@@ -740,217 +811,191 @@ const handleEditUser = (employeeId: number) => {
             )}
           </TableRow>
         </TableHeader>
-<TableBody>
-  {sortedUsers.map((user) => (
-    <TableRow key={user.id}>
-      {selectedColumns.includes('name') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <div className="w-full py-2 px-4" style={{ minWidth: '250px' }}> {/* Wrap Select in a div */}
-              <Select
-                name="role"
-                value={editingEmployee.role}
-                onValueChange={(value) =>
-                  setEditingEmployee({ ...editingEmployee, role: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Field Officer">Field Officer</SelectItem>
-                  <SelectItem value="Office Manager">Office Manager</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            user.role
-          )}
-        </TableCell>
+        <TableBody>
+          {sortedUsers.map((user) => (
+            <TableRow key={user.id}>
+              {selectedColumns.includes('name') && (
+                <TableCell className="text-left px-4" style={{ width: '200px' }}>
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="name"
+                      value={`${editingEmployee.firstName} ${editingEmployee.lastName}`}
+                      onChange={(e) =>
+                        setEditingEmployee({
+                          ...editingEmployee,
+                          firstName: e.target.value.split(' ')[0] || '',
+                          lastName: e.target.value.split(' ')[1] || '',
+                        })
+                      }
+                      className="w-full py-2 px-4"
+                    />
+                  ) : (
+                    `${user.firstName || ''} ${user.lastName || ''}`
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('email') && (
+                <TableCell className="text-left px-4" style={{ width: '250px' }}>
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="email"
+                      value={editingEmployee.email}
+                      onChange={handleInputChange}
+                      className="w-full py-2 px-4"
+                    />
+                  ) : (
+                    user.email
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('role') && (
+                <TableCell className="text-left px-4" style={{ width: '150px' }}>
+                  {editingEmployee?.id === user.id ? (
+                    <Select
+                      name="role"
+                      value={editingEmployee.role}
+                      onValueChange={(value) =>
+                        setEditingEmployee({ ...editingEmployee, role: value })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Field Officer">Field Officer</SelectItem>
+                        <SelectItem value="Office Manager">Office Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    user.role
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('department') && (
+                <TableCell className="text-left px-4" style={{ width: '150px' }}>
+                  {editingEmployee?.id === user.id ? (
+                    <Select
+                      name="departmentName"
+                      value={editingEmployee.departmentName}
+                      onValueChange={(value) =>
+                        setEditingEmployee({ ...editingEmployee, departmentName: value })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sales">Sales</SelectItem>
+                        <SelectItem value="Office">Office</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    user.departmentName
+                  )}
+                </TableCell>
+
+              )}
 
 
-      )}
-      {selectedColumns.includes('email') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <Input
-              name="email"
-              value={editingEmployee.email}
-              onChange={handleInputChange}
-              className="w-full py-2 px-4"
-              style={{ minWidth: '350px' }} // Increase the width here
-            />
-          ) : (
-            user.email
-          )}
-        </TableCell>
-      )}
-      {selectedColumns.includes('role') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <div className="w-full py-2 px-4" style={{ minWidth: '250px' }}> {/* Wrap Select in a div */}
-              <Select
-                name="role"
-                value={editingEmployee.role}
-                onValueChange={(value) =>
-                  setEditingEmployee({ ...editingEmployee, role: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Field Officer">Field Officer</SelectItem>
-                  <SelectItem value="Office Manager">Office Manager</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            user.role
-          )}
-        </TableCell>
-
-      )}
-      {selectedColumns.includes('department') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <div className="w-full py-2 px-4" style={{ minWidth: '250px' }}> {/* Wrap Select in a div */}
-              <Select
-                name="departmentName"
-                value={editingEmployee.departmentName}
-                onValueChange={(value) =>
-                  setEditingEmployee({ ...editingEmployee, departmentName: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sales">Sales</SelectItem>
-                  <SelectItem value="Office">Office</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            user.departmentName
-          )}
-        </TableCell>
-
-      )}
-      {selectedColumns.includes('userName') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <Input
-              name="userName"
-              value={editingEmployee.userName}
-              onChange={handleInputChange}
-              className="w-full py-2 px-4"
-              style={{ minWidth: '250px' }} // Increase the width here
-            />
-          ) : (
-            user.userName
-          )}
-        </TableCell>
-      )}
-      {selectedColumns.includes('password') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <Input
-              name="password"
-              type="password"
-              value={editingEmployee.password}
-              onChange={handleInputChange}
-              className="w-full py-2 px-4"
-              style={{ minWidth: '250px' }} // Increase the width here
-            />
-          ) : (
-            '********'
-          )}
-        </TableCell>
-      )}
-      {selectedColumns.includes('primaryContact') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <Input
-              name="primaryContact"
-              value={editingEmployee.primaryContact}
-              onChange={handleInputChange}
-              className="w-full py-2 px-4"
-              style={{ minWidth: '250px' }} // Increase the width here
-            />
-          ) : (
-            user.primaryContact
-          )}
-        </TableCell>
-      )}
-      {selectedColumns.includes('city') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <Input
-              name="city"
-              value={editingEmployee.city}
-              onChange={handleInputChange}
-              className="w-full py-2 px-4"
-              style={{ minWidth: '250px' }} // Increase the width here
-            />
-          ) : (
-            user.city
-          )}
-        </TableCell>
-      )}
-      {selectedColumns.includes('state') && (
-        <TableCell className="text-left px-4">
-          {editingEmployee?.id === user.id ? (
-            <Input
-              name="state"
-              value={editingEmployee.state}
-              onChange={handleInputChange}
-              className="w-full py-2 px-4"
-              style={{ minWidth: '250px' }} // Increase the width here
-            />
-          ) : (
-            user.state
-          )}
-        </TableCell>
-      )}
-      {selectedColumns.includes('dateOfJoining') && (
-        <TableCell className="text-left px-4">
-          {format(new Date(user.dateOfJoining), 'dd/MM/yyyy')}
-        </TableCell>
-      )}
-      {selectedColumns.includes('actions') && (
-        <TableCell className="text-right">
-          {editingEmployee?.id === user.id ? (
-            <>
-              <Button variant="outline" size="sm" onClick={handleSaveEdit}>
-                Save
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingEmployee(null)}
-              >
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">Actions</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => handleEditUser(user.id)}>Edit</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleDeleteUser(user.id)}>Delete</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleViewUser(user.id)}>View</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleResetPassword(user.id)}>Reset Password</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </TableCell>
-      )}
-    </TableRow>
-  ))}
-</TableBody>
+              {/* {selectedColumns.includes('password') && (
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="password"
+                      type="password"
+                      value={editingEmployee.password}
+                      onChange={handleInputChange}
+                      className="w-full py-2 px-4"
+                      style={{ minWidth: '250px' }} // Increase the width here
+                    />
+                  ) : (
+                    '********'
+                  )}
+                </TableCell>
+              )} */}
+              {selectedColumns.includes('primaryContact') && (
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="primaryContact"
+                      value={editingEmployee.primaryContact}
+                      onChange={handleInputChange}
+                      className="w-full py-2 px-4"
+                      style={{ minWidth: '250px' }} // Increase the width here
+                    />
+                  ) : (
+                    user.primaryContact
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('city') && (
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="city"
+                      value={editingEmployee.city}
+                      onChange={handleInputChange}
+                      className="w-full py-2 px-4"
+                      style={{ minWidth: '250px' }} // Increase the width here
+                    />
+                  ) : (
+                    user.city
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('state') && (
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="state"
+                      value={editingEmployee.state}
+                      onChange={handleInputChange}
+                      className="w-full py-2 px-4"
+                      style={{ minWidth: '250px' }} // Increase the width here
+                    />
+                  ) : (
+                    user.state
+                  )}
+                </TableCell>
+              )}
+              {selectedColumns.includes('dateOfJoining') && (
+                <TableCell className="text-left px-4">
+                  {format(new Date(user.dateOfJoining), 'dd/MM/yyyy')}
+                </TableCell>
+              )}
+              {selectedColumns.includes('actions') && (
+                <TableCell className="text-right">
+                  {editingEmployee?.id === user.id ? (
+                    <>
+                      <Button variant="outline" size="sm" onClick={handleSaveEdit}>
+                        Save
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingEmployee(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">Actions</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => handleEditUser(user.id)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDeleteUser(user.id)}>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleViewUser(user.id)}>View</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleResetPassword(user.id)}>Reset Password</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
 
       </Table>
       <div className="mt-8 flex items-center justify-between">
@@ -991,4 +1036,4 @@ const handleEditUser = (employeeId: number) => {
   );
 };
 
-export default Employeelist; 
+export default Employeelist; 

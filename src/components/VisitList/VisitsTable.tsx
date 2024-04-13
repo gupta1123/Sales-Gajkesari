@@ -21,6 +21,16 @@ interface VisitsTableProps {
     onBulkAction: (action: string) => void;
 }
 
+
+const formatLocation = (latitude: number | null | undefined, longitude: number | null | undefined) => {
+    if (latitude && longitude) {
+        const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+        return <a href={url} target="_blank" rel="noopener noreferrer">View Location</a>;
+    }
+    return '';
+};
+
+
 const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
     if (date && time) {
         const [hours, minutes] = time.split(':');
@@ -54,13 +64,13 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
 
     const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
         if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
-            return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
+            return { emoji: ' ', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
         } else if (visit.checkoutDate && visit.checkoutTime) {
-            return { emoji: '🚪', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
+            return { emoji: ' ', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
         } else if (visit.checkinDate && visit.checkinTime) {
-            return { emoji: '⏳', status: 'On Going', color: 'bg-green-100 text-green-800' };
+            return { emoji: ' ', status: 'On Going', color: 'bg-green-100 text-green-800' };
         }
-        return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
+        return { emoji: ' ', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
     };
 
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -93,6 +103,11 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 Date {sortColumn === 'visit_date' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
+                        {selectedColumns.includes('outcome') && (
+                            <th className="px-4 py-2 cursor-pointer min-w-[180px]" onClick={() => onSort('outcome')}>
+                                Status {sortColumn === 'outcome' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </th>
+                        )}
                         {selectedColumns.includes('location') && (
                             <th className="px-4 py-2 cursor-pointer min-w-[250px]" onClick={() => onSort('location')}>
                                 Location {sortColumn === 'location' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -101,11 +116,6 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                         {selectedColumns.includes('purpose') && (
                             <th className="px-4 py-2 cursor-pointer min-w-[250px]" onClick={() => onSort('purpose')}>
                                 Purpose {sortColumn === 'purpose' && (sortDirection === 'asc' ? '↑' : '↓')}
-                            </th>
-                        )}
-                        {selectedColumns.includes('outcome') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[180px]" onClick={() => onSort('outcome')}>
-                                Status {sortColumn === 'outcome' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('visitStart') && (
@@ -117,12 +127,12 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                         {selectedColumns.includes('intent') && (
                             <th className="px-4 py-2 min-w-[250px]">Intent</th>
                         )}
-                        {selectedColumns.includes('city') && (
+                        {/* {selectedColumns.includes('city') && (
                             <th className="px-4 py-2 min-w-[150px]">City</th>
                         )}
                         {selectedColumns.includes('state') && (
                             <th className="px-4 py-2 min-w-[150px]">State</th>
-                        )}
+                        )} */}
                         <th className="px-4 py-2 min-w-[200px]">Actions</th>
                     </tr>
                 </thead>
@@ -147,18 +157,19 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 {selectedColumns.includes('visit_date') && (
                                     <td className="px-4 py-2">{visit.visit_date}</td>
                                 )}
-                                {selectedColumns.includes('location') && (
-                                    <td className="px-4 py-2">{visit.location}</td>
-                                )}
-                                {selectedColumns.includes('purpose') && (
-                                    <td className="px-4 py-2">{visit.purpose}</td>
-                                )}
                                 {selectedColumns.includes('outcome') && (
                                     <td className="px-4 py-2">
                                         <Badge className={`${color} px-3 py-1 rounded-full font-semibold`}>
                                             {emoji} {status}
                                         </Badge>
                                     </td>
+                                )}
+                                {selectedColumns.includes('location') && (
+                                    <td className="px-4 py-2">Location not available</td>
+                                )}
+
+                                {selectedColumns.includes('purpose') && (
+                                    <td className="px-4 py-2">{visit.purpose}</td>
                                 )}
                                 {selectedColumns.includes('visitStart') && (
                                     <td className="px-4 py-2">
@@ -173,12 +184,12 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 {selectedColumns.includes('intent') && (
                                     <td className="px-4 py-2">{visit.intent}</td>
                                 )}
-                                {selectedColumns.includes('city') && (
+                                {/* {selectedColumns.includes('city') && (
                                     <td className="px-4 py-2">{visit.city}</td>
                                 )}
                                 {selectedColumns.includes('state') && (
                                     <td className="px-4 py-2">{visit.state}</td>
-                                )}
+                                )} */}
                                 <td className="px-4 py-2">
                                     <Button
                                         variant="outline"

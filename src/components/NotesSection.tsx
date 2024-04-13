@@ -151,7 +151,11 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
             </div>
           </div>
         )}
-        {!showTextarea && <Button onClick={handleAddNote} className="w-full">Add Note</Button>}
+        {!showTextarea && (
+          <div className="flex justify-center">
+            <Button onClick={handleAddNote} className="px-4">Add Note</Button>
+          </div>
+        )}
         {notes.length > 0 && (
           <div className="notes-timeline">
             {notes.map(note => (
@@ -175,7 +179,6 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
                 </div>
               </div>
             ))}
-
           </div>
         )}
       </CardContent>

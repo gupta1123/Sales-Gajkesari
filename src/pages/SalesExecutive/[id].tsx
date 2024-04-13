@@ -119,34 +119,34 @@ const SalesExecutivePage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white shadow-md rounded-lg p-6">
-              <CardContent>
-                <h2 className="text-2xl font-semibold mb-6">KPIs</h2>
-                <div className="space-y-4">
-                  <div className="bg-blue-500 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-white">Stores Visited</p>
-                      <p className="text-3xl font-bold text-white">{stats.stores}</p>
-                    </div>
-                    <FaStore className="text-white w-12 h-12" />
-                  </div>
-                  <div className="bg-green-500 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-white">Visits This Month</p>
-                      <p className="text-3xl font-bold text-white">{stats.visitsThisMonth}</p>
-                    </div>
-                    <FaCalendarAlt className="text-white w-12 h-12" />
-                  </div>
-                  <div className="bg-yellow-500 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-white">Visits Today</p>
-                      <p className="text-3xl font-bold text-white">{stats.visitsToday}</p>
-                    </div>
-                    <FaMapMarkerAlt className="text-white w-12 h-12" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* <Card className="bg-white shadow-md rounded-lg p-6">
+              <CardContent>
+                <h2 className="text-2xl font-semibold mb-6">KPIs</h2>
+                <div className="space-y-4">
+                  <div className="bg-blue-500 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">Stores Visited</p>
+                      <p className="text-3xl font-bold text-white">{stats.stores}</p>
+                    </div>
+                    <FaStore className="text-white w-12 h-12" />
+                  </div>
+                  <div className="bg-green-500 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">Visits This Month</p>
+                      <p className="text-3xl font-bold text-white">{stats.visitsThisMonth}</p>
+                    </div>
+                    <FaCalendarAlt className="text-white w-12 h-12" />
+                  </div>
+                  <div className="bg-yellow-500 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">Visits Today</p>
+                      <p className="text-3xl font-bold text-white">{stats.visitsToday}</p>
+                    </div>
+                    <FaMapMarkerAlt className="text-white w-12 h-12" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card> */}
           </div>
           <div className="md:col-span-2">
             <Card className="bg-white shadow-md rounded-lg p-6">
@@ -161,20 +161,20 @@ const SalesExecutivePage: React.FC = () => {
                   {visits.map((visit) => {
                     let status = 'Assigned';
                     let statusColor = 'bg-blue-100 text-blue-800';
-                    let statusEmoji = '📝';
+                    let statusEmoji = ' ';
 
                     if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
                       status = 'Completed';
                       statusColor = 'bg-purple-100 text-purple-800';
-                      statusEmoji = '✅';
+                      statusEmoji = ' ';
                     } else if (visit.checkoutDate && visit.checkoutTime) {
                       status = 'Checked Out';
                       statusColor = 'bg-orange-100 text-orange-800';
-                      statusEmoji = '🚪';
+                      statusEmoji = ' ';
                     } else if (visit.checkinDate && visit.checkinTime) {
                       status = 'On Going';
                       statusColor = 'bg-green-100 text-green-800';
-                      statusEmoji = '⏳';
+                      statusEmoji = ' ';
                     }
 
                     return (

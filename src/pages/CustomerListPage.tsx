@@ -152,19 +152,15 @@ const CustomerTable = ({
 export default function CustomerListPage() {
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
-        'shopName',
-        'ownerName',
-        'phone',
-        'monthlySales',
-        'intentLevel',
-        'fieldOfficer',
-        'clientType',
-        'totalVisits',
-        'lastVisitDate',
-        'email',
-        'city',
-        'state',
+        'shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer',
+        'clientType', 'totalVisits', 'lastVisitDate', 'email', 'city', 'state',
     ]);
+    const [filters, setFilters] = useState({
+        city: '',
+        name: '',
+        owner: '',
+        phone: '',
+    });
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState<number>(10);
     const [currentPage, setCurrentPage] = useState<number>(1);
@@ -176,7 +172,7 @@ export default function CustomerListPage() {
     const [error, setError] = useState<string | null>(null);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const paginatedData = customers.slice(startIndex, endIndex);
+ 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const token = useSelector((state: RootState) => state.auth.token);
     const employeeId = useSelector((state: RootState) => state.auth.employeeId);
@@ -191,6 +187,34 @@ export default function CustomerListPage() {
         setIsDeleteModalOpen(false);
     };
 
+    const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
+        setFilters((prevFilters) => ({
+            ...prevFilters,
+            [filterName]: value,
+        }));
+    };
+
+    const handleFilterClear = (filterName: keyof typeof filters) => {
+        setFilters((prevFilters) => ({
+            ...prevFilters,
+            [filterName]: '',
+        }));
+    };
+
+    const applyFilters = (customers: Customer[]) => {
+        return customers.filter((customer) => {
+            const { city, name, owner, phone } = filters;
+            return (
+                (customer.city?.toLowerCase() || '').includes(city.toLowerCase()) &&
+                (customer.storeName?.toLowerCase() || '').includes(name.toLowerCase()) &&
+                (customer.clientFirstName?.toLowerCase() || '').includes(owner.toLowerCase()) &&
+                (customer.primaryContact?.toString() || '').includes(phone)
+            );
+        });
+    };
+
+    const filteredCustomers = applyFilters(customers);
+    const paginatedData = filteredCustomers.slice(startIndex, endIndex);
 
     const handleDeleteConfirm = async () => {
         if (selectedCustomerId) {
@@ -314,7 +338,6 @@ export default function CustomerListPage() {
     };
 
 
-
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-8">
@@ -342,7 +365,7 @@ export default function CustomerListPage() {
                             </DropdownMenu>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">Bulk Actions</Button>
+                                    {/*  <Button variant="outline">Bulk Actions</Button> */}
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
                                     <DropdownMenuItem onSelect={() => handleBulkAction('changeFieldOfficer')}>
@@ -353,19 +376,17 @@ export default function CustomerListPage() {
                         </>
                     )}
                     <Button variant="outline" onClick={openModal}>Add Customer</Button>
-                    <Button onClick={toggleViewMode}>
-                        {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
-                    </Button>
+                   
                 </div>
             </div>
             <AddCustomerModal
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 token={token || ''}
-                employeeId={employeeId ? Number(employeeId) : null} // Convert to number or null
+                employeeId={employeeId ? Number(employeeId) : null}
             />
 
-            {viewMode === 'card' ? (
+            {/* {viewMode === 'card' ? (
                 <>
                     <div className="space-y-8">
                         {paginatedData.map((customer) => (
@@ -392,7 +413,6 @@ export default function CustomerListPage() {
                                                         </Link>
                                                     </DropdownMenuItem>
 
-
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onSelect={() => openDeleteModal(customer.storeId)}>
                                                         Delete
@@ -417,11 +437,10 @@ export default function CustomerListPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center">
-                        <span className="font-semibold">Monthly Sales:</span>
-                        <span className="ml-2">₹{customer.monthlySale ? customer.monthlySale.toLocaleString() : ''}</span>
-                      </div>
+                                                <span className="font-semibold">Monthly Sales:</span>
+                                                <span className="ml-2">₹{customer.monthlySale ? customer.monthlySale.toLocaleString() : ''}</span>
+                                            </div>
                                             <div className="flex items-center">
-                                            
                                                 <span className="font-semibold">Field Officer:</span>
                                                 <span className="ml-2">{customer.employeeName}</span>
                                             </div>
@@ -437,8 +456,6 @@ export default function CustomerListPage() {
                                                 </div>
                                             </div>
 
-
-
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-gray-200 rounded-lg p-4">
                                                     <p className="text-lg font-semibold">Total Visits</p>
@@ -448,7 +465,6 @@ export default function CustomerListPage() {
                                                     <p className="text-lg font-semibold">Last Visit</p>
                                                     <p className="text-xl font-bold">{customer.lastVisitDate}</p>
                                                 </div>
-                                         
                                             </div>
                                         </div>
                                     </div>
@@ -461,8 +477,7 @@ export default function CustomerListPage() {
                             {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
                                 <button
                                     key={index}
-                                    className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                                        }`}
+                                    className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
                                     onClick={() => handlePageChange(index + 1)}
                                 >
                                     {index + 1}
@@ -484,8 +499,78 @@ export default function CustomerListPage() {
                         </div>
                     </div>
                 </>
-            ) : (
-                <>
+            ) : (*/}
+            <> <div className="mb-4 flex space-x-4">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Filter by city"
+                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                        value={filters.city}
+                        onChange={(e) => handleFilterChange('city', e.target.value)}
+                    />
+                    {filters.city && (
+                        <button
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            onClick={() => handleFilterClear('city')}
+                        >
+                            &times;
+                        </button>
+                    )}
+                </div>
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Filter by  Shop Name"
+                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                        value={filters.name}
+                        onChange={(e) => handleFilterChange('name', e.target.value)}
+                    />
+                    {filters.name && (
+                        <button
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            onClick={() => handleFilterClear('name')}
+                        >
+                            &times;
+                        </button>
+                    )}
+                </div>
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Filter by owner"
+                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                        value={filters.owner}
+                        onChange={(e) => handleFilterChange('owner', e.target.value)}
+                    />
+                    {filters.owner && (
+                        <button
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            onClick={() => handleFilterClear('owner')}
+                        >
+                            &times;
+                        </button>
+                    )}
+                </div>
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Filter by phone number"
+                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                        value={filters.phone}
+                        onChange={(e) => handleFilterChange('phone', e.target.value)}
+                    />
+                    {filters.phone && (
+                        <button
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            onClick={() => handleFilterClear('phone')}
+                        >
+                            &times;
+                        </button>
+                    )}
+                </div>
+            </div>
+
                     <CustomerTable
                         customers={paginatedData}
                         selectedColumns={selectedColumns}
@@ -496,35 +581,35 @@ export default function CustomerListPage() {
                         onBulkAction={handleBulkAction}
                         onDeleteCustomer={openDeleteModal}
                     />
-                        <div className="mt-8 flex justify-between items-center">
-                            <div>
-                                {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
-                                    <button
-                                        key={index}
-                                        className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                                            }`}
-                                        onClick={() => handlePageChange(index + 1)}
-                                    >
-                                        {index + 1}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <span>Items per page:</span>
-                                <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-                                    <SelectTrigger className="w-20">
-                                        <SelectValue placeholder={itemsPerPage.toString()} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="20">20</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+
+                    <div className="mt-8 flex justify-between items-center">
+                        <div>
+                            {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
+                                <button
+                                    key={index}
+                                    className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                                    onClick={() => handlePageChange(index + 1)}
+                                >
+                                    {index + 1}
+                                </button>
+                            ))}
                         </div>
+                        <div className="flex items-center space-x-2">
+                            <span>Items per page:</span>
+                            <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                                <SelectTrigger className="w-20">
+                                    <SelectValue placeholder={itemsPerPage.toString()} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="20">20</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                 </>
-            )}
+          
 
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}

@@ -6,16 +6,30 @@ import { RootState } from '../store';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import VisitCard from '../components/VisitList/VisitCard';
+//import VisitCard from '../components/VisitList/VisitCard';
 import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
+import { format } from "date-fns";
 
 const VisitsList: React.FC = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [filteredVisits, setFilteredVisits] = useState<Visit[]>([]);
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
   const token = useSelector((state: RootState) => state.auth.token);
+  const [purposes, setPurposes] = useState<string[]>([]);
+
+  const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
+    if (date && time) {
+      const [hours, minutes] = time.split(':');
+      const formattedTime = format(
+        new Date(`${date}T${hours}:${minutes}`),
+        'dd MMM h:mm a'
+      );
+      return formattedTime;
+    }
+    return '';
+  };
 
   useEffect(() => {
     const fetchVisits = async () => {
@@ -27,6 +41,12 @@ const VisitsList: React.FC = () => {
         });
         setVisits(response.data);
         setFilteredVisits(response.data);
+
+        // Extract unique purposes from the visits, excluding empty values
+        // Extract unique purposes from the visits, excluding empty values
+        // Extract unique purposes from the visits, excluding empty values
+        const uniquePurposes = Array.from(new Set(response.data.map((visit: Visit) => visit.purpose))).filter(Boolean) as string[];
+        setPurposes(uniquePurposes);
       } catch (error) {
         console.error('Error fetching visits:', error);
       }
@@ -44,13 +64,23 @@ const VisitsList: React.FC = () => {
   const handleFilter = (filters: { storeName: string; employeeName: string; purpose: string }) => {
     const { storeName, employeeName, purpose } = filters;
 
-    const filtered = visits.filter((visit) => {
-      const customerMatch = visit.storeName.toLowerCase().includes(storeName.toLowerCase());
-      const executiveMatch = visit.employeeName.toLowerCase().includes(employeeName.toLowerCase());
-      const purposeMatch = purpose === 'all' || visit.purpose === purpose;
+    let filtered = visits;
 
-      return customerMatch && executiveMatch && purposeMatch;
-    });
+    if (storeName) {
+      filtered = filtered.filter((visit) =>
+        visit.storeName.toLowerCase().includes(storeName.toLowerCase())
+      );
+    }
+
+    if (employeeName) {
+      filtered = filtered.filter((visit) =>
+        visit.employeeName.toLowerCase().includes(employeeName.toLowerCase())
+      );
+    }
+
+    if (purpose !== 'all') {
+      filtered = filtered.filter((visit) => visit.purpose === purpose);
+    }
 
     setFilteredVisits(filtered);
   };
@@ -116,6 +146,50 @@ const VisitsList: React.FC = () => {
     }
   };
 
+  const handleExport = () => {
+    const headers = selectedColumns.map((column) => {
+      switch (column) {
+        case 'storeName':
+          return 'Customer Name';
+        case 'employeeName':
+          return 'Executive';
+        case 'visit_date':
+          return 'Date';
+        case 'outcome':
+          return 'Status';
+        case 'location':
+          return 'Location';
+        case 'purpose':
+          return 'Purpose';
+        case 'visitStart':
+          return 'Visit Start';
+        case 'visitEnd':
+          return 'Visit End';
+        case 'intent':
+          return 'Intent';
+        default:
+          return column;
+      }
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [
+      headers.join(","),
+      ...sortedVisits.map((visit) => {
+        const { id, storeName, employeeName, visit_date, purpose, outcome, location, checkinDate, checkinTime, checkoutDate, checkoutTime, visitStart, visitEnd, intent } = visit;
+        const visitStartFormatted = formatDateTime(checkinDate, checkinTime);
+        const visitEndFormatted = formatDateTime(checkoutDate, checkoutTime);
+        return [id, storeName, employeeName, visit_date, purpose, outcome, location, visitStartFormatted, visitEndFormatted, intent].join(",");
+      })
+    ].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "visits.csv");
+    document.body.appendChild(link);
+    link.click();
+  };
+
   const sortedVisits = [...filteredVisits].sort((a, b) => {
     if (sortColumn) {
       const valueA = a[sortColumn as keyof Visit];
@@ -144,34 +218,26 @@ const VisitsList: React.FC = () => {
       <VisitsFilter
         onFilter={handleFilter}
         onColumnSelect={handleColumnSelect}
-        onBulkAction={handleBulkAction}
-        onViewModeChange={toggleViewMode}
+        onExport={handleExport}
         selectedColumns={selectedColumns}
         viewMode={viewMode}
+        purposes={purposes}
       />
 
       <br />
-      {viewMode === 'card' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {sortedVisits.slice(0, itemsPerPage).map((visit) => (
-            <VisitCard key={visit.id} visit={visit} />
-          ))}
-        </div>
-      ) : (
-        <VisitsTable
-          visits={sortedVisits}
-          selectedColumns={selectedColumns}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
-          itemsPerPage={itemsPerPage}
-          currentPage={currentPage}
-          onSort={handleSort}
-          onSelectAllRows={handleSelectAllRows}
-          selectedRows={selectedRows}
-          onSelectRow={handleSelectRow}
-          onBulkAction={handleBulkAction}
-        />
-      )}
+      <VisitsTable
+        visits={sortedVisits}
+        selectedColumns={selectedColumns}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onSort={handleSort}
+        onSelectAllRows={handleSelectAllRows}
+        selectedRows={selectedRows}
+        onSelectRow={handleSelectRow}
+        onBulkAction={handleBulkAction}
+      />
 
       <div className="mt-8 flex justify-between items-center">
         <div className="flex items-center space-x-2">

@@ -14,10 +14,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ visitDuration, 
             <p className="text-sm text-blue-500 font-medium">Visit Duration</p>
             <p className="text-2xl font-bold text-blue-800">{visitDuration}</p>
           </div>
-          <div className="bg-green-100 rounded-lg p-4">
-            <p className="text-sm text-green-500 font-medium">Sales Generated</p>
-            <p className="text-2xl font-bold text-green-800">$1,500</p>
-          </div>
+         
           <div className="bg-purple-100 rounded-lg p-4">
             <p className="text-sm text-purple-500 font-medium">Intent Level</p>
             <p className="text-2xl font-bold text-purple-800">{intentLevel}</p>

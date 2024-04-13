@@ -44,10 +44,8 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
         }
       );
       const token = response.data.split(' ')[1];
-      localStorage.setItem('token', token);
       // Store the token in localStorage
-
-      // Fetch employeeId using the token
+      localStorage.setItem('token', token);
       const employeeResponse = await axios.get(
         'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/info',
         {
@@ -57,7 +55,6 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
         }
       );
       const employeeId = employeeResponse.data.employeeId;
-
       return { token, employeeId };
     } catch (error: any) {
       console.error('Login User Error:', error);
@@ -66,11 +63,14 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
   }
 );
 
+
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
       await axios.post('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/logout');
+      // Remove the token from localStorage
+      localStorage.removeItem('token');
     } catch (error: any) {
       console.error('Logout User Error:', error);
       return rejectWithValue(error.response?.data || error.message);
@@ -126,7 +126,6 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.employeeId = null; // Reset employeeId on logout
-        localStorage.removeItem('token');
         state.status = 'succeeded';
       })
       .addCase(logoutUser.rejected, (state, action) => {

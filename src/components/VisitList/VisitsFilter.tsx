@@ -1,3 +1,4 @@
+// VisitsFilter.tsx
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,19 +9,34 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckb
 interface VisitsFilterProps {
     onFilter: (filters: { storeName: string; employeeName: string; purpose: string }) => void;
     onColumnSelect: (column: string) => void;
-    onBulkAction: (action: string) => void;
-    onViewModeChange: () => void;
+    onExport: () => void;
     selectedColumns: string[];
     viewMode: 'card' | 'table';
+    purposes: string[];
 }
 
-const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, onBulkAction, onViewModeChange, selectedColumns, viewMode }) => {
+const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, onExport, selectedColumns, viewMode, purposes }) => {
     const [storeName, setStoreName] = useState('');
     const [employeeName, setEmployeeName] = useState('');
     const [purpose, setPurpose] = useState('all');
 
     const handleFilter = () => {
         onFilter({ storeName, employeeName, purpose });
+    };
+
+    const handleAllowClearStoreName = () => {
+        setStoreName('');
+        onFilter({ storeName: '', employeeName, purpose });
+    };
+
+    const handleAllowClearEmployeeName = () => {
+        setEmployeeName('');
+        onFilter({ storeName, employeeName: '', purpose });
+    };
+
+    const handleAllowClearPurpose = () => {
+        setPurpose('all');
+        onFilter({ storeName, employeeName, purpose: 'all' });
     };
 
     return (
@@ -30,35 +46,76 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, o
             <CardContent>
                 <div className="flex justify-between flex-wrap gap-4">
                     <div className="flex flex-grow items-center space-x-4">
-                        <Input
-                            type="text"
-                            placeholder="Customer Name"
-                            value={storeName}
-                            onChange={(e) => setStoreName(e.target.value)}
-                        />
-                        <Input
-                            type="text"
-                            placeholder="Sales Executive Name"
-                            value={employeeName}
-                            onChange={(e) => setEmployeeName(e.target.value)}
-                        />
-                        <Select value={purpose} onValueChange={setPurpose}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Purpose" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="Sales ">Sales</SelectItem>
-                                <SelectItem value="Follow up">Follow up</SelectItem>
-                      
-                            </SelectContent>
-                        </Select>
+                        <div className="relative">
+                            <Input
+                                type="text"
+                                placeholder="Customer Name"
+                                value={storeName}
+                                onChange={(e) => {
+                                    setStoreName(e.target.value);
+                                    handleFilter();
+                                }}
+                            />
+                            {storeName && (
+                                <button
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={handleAllowClearStoreName}
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
+                        <div className="relative">
+                            <Input
+                                type="text"
+                                placeholder="Sales Executive Name"
+                                value={employeeName}
+                                onChange={(e) => {
+                                    setEmployeeName(e.target.value);
+                                    handleFilter();
+                                }}
+                            />
+                            {employeeName && (
+                                <button
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={handleAllowClearEmployeeName}
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
+                        <div className="relative">
+                            <Select
+                                value={purpose}
+                                onValueChange={(value) => {
+                                    setPurpose(value);
+                                    handleFilter();
+                                }}
+                            >
+                                <SelectTrigger className="w-48 h-10">
+                                    <SelectValue placeholder="Purpose" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    {purposes.map((purpose) => (
+                                        <SelectItem key={purpose} value={purpose}>
+                                            {purpose}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {purpose !== 'all' && (
+                                <button
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={handleAllowClearPurpose}
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                        <Button onClick={handleFilter}>
-                            Apply Filters
-                        </Button>
                         {viewMode === 'table' && (
                             <>
                                 <DropdownMenu>
@@ -83,15 +140,11 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, o
                                         <Button variant="outline">Bulk Actions</Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
-                                        <DropdownMenuItem onSelect={() => onBulkAction('delete')}>Delete</DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={() => onBulkAction('export')}>Export</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={onExport}>Export</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </>
                         )}
-                        <Button onClick={onViewModeChange}>
-                            {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
-                        </Button>
                     </div>
                 </div>
             </CardContent>
