@@ -85,25 +85,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, o
                             )}
                         </div>
                         <div className="relative">
-                            <Select
-                                value={purpose}
-                                onValueChange={(value) => {
-                                    setPurpose(value);
-                                    handleFilter();
-                                }}
-                            >
-                                <SelectTrigger className="w-48 h-10">
-                                    <SelectValue placeholder="Purpose" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    {purposes.map((purpose) => (
-                                        <SelectItem key={purpose} value={purpose}>
-                                            {purpose}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                           
                             {purpose !== 'all' && (
                                 <button
                                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"

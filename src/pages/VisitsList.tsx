@@ -11,6 +11,7 @@ import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
 import { format } from "date-fns";
+import { stringify } from 'csv-stringify';
 
 const VisitsList: React.FC = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -42,8 +43,6 @@ const VisitsList: React.FC = () => {
         setVisits(response.data);
         setFilteredVisits(response.data);
 
-        // Extract unique purposes from the visits, excluding empty values
-        // Extract unique purposes from the visits, excluding empty values
         // Extract unique purposes from the visits, excluding empty values
         const uniquePurposes = Array.from(new Set(response.data.map((visit: Visit) => visit.purpose))).filter(Boolean) as string[];
         setPurposes(uniquePurposes);
@@ -172,22 +171,34 @@ const VisitsList: React.FC = () => {
       }
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [
-      headers.join(","),
-      ...sortedVisits.map((visit) => {
-        const { id, storeName, employeeName, visit_date, purpose, outcome, location, checkinDate, checkinTime, checkoutDate, checkoutTime, visitStart, visitEnd, intent } = visit;
-        const visitStartFormatted = formatDateTime(checkinDate, checkinTime);
-        const visitEndFormatted = formatDateTime(checkoutDate, checkoutTime);
-        return [id, storeName, employeeName, visit_date, purpose, outcome, location, visitStartFormatted, visitEndFormatted, intent].join(",");
-      })
-    ].join("\n");
+    const data = sortedVisits.map((visit) => {
+      const row: any = {};
+      selectedColumns.forEach((column) => {
+        switch (column) {
+          case 'visitStart':
+            row[column] = formatDateTime(visit.checkinDate, visit.checkinTime);
+            break;
+          case 'visitEnd':
+            row[column] = formatDateTime(visit.checkoutDate, visit.checkoutTime);
+            break;
+          default:
+            row[column] = visit[column as keyof Visit];
+        }
+      });
+      return Object.values(row);
+    });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "visits.csv");
-    document.body.appendChild(link);
-    link.click();
+    stringify(data, { header: true, columns: headers }, (err, output) => {
+      if (err) {
+        console.error('Error converting data to CSV:', err);
+        return;
+      }
+      const blob = new Blob([output], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'visits.csv';
+      link.click();
+    });
   };
 
   const sortedVisits = [...filteredVisits].sort((a, b) => {

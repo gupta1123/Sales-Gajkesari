@@ -21,16 +21,6 @@ interface VisitsTableProps {
     onBulkAction: (action: string) => void;
 }
 
-
-const formatLocation = (latitude: number | null | undefined, longitude: number | null | undefined) => {
-    if (latitude && longitude) {
-        const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-        return <a href={url} target="_blank" rel="noopener noreferrer">View Location</a>;
-    }
-    return '';
-};
-
-
 const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
     if (date && time) {
         const [hours, minutes] = time.split(':');
@@ -108,11 +98,6 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 Status {sortColumn === 'outcome' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
-                        {selectedColumns.includes('location') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[250px]" onClick={() => onSort('location')}>
-                                Location {sortColumn === 'location' && (sortDirection === 'asc' ? '↑' : '↓')}
-                            </th>
-                        )}
                         {selectedColumns.includes('purpose') && (
                             <th className="px-4 py-2 cursor-pointer min-w-[250px]" onClick={() => onSort('purpose')}>
                                 Purpose {sortColumn === 'purpose' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -164,10 +149,6 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                         </Badge>
                                     </td>
                                 )}
-                                {selectedColumns.includes('location') && (
-                                    <td className="px-4 py-2">Location not available</td>
-                                )}
-
                                 {selectedColumns.includes('purpose') && (
                                     <td className="px-4 py-2">{visit.purpose}</td>
                                 )}
