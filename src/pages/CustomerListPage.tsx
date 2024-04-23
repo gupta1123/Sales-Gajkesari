@@ -523,9 +523,9 @@ export default function CustomerListPage() {
                         </>
                     )}
                     {/* <Button variant="outline" onClick={openModal}>Add Customer</Button> */}
-                    <Button onClick={toggleViewMode}>
+                    {/* <Button onClick={toggleViewMode}>
                         {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
             <AddCustomerModal

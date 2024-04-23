@@ -192,6 +192,7 @@ const Employeelist = () => {
       console.error('Error:', error);
     }
   };
+  
 
   const handleSaveEdit = async () => {
     if (editingEmployee) {
@@ -412,23 +413,10 @@ const Employeelist = () => {
               >
                 Department
               </DropdownMenuCheckboxItem>
-              {/* <DropdownMenuCheckboxItem
-                checked={selectedColumns.includes('userName')}
-                onCheckedChange={() => handleColumnSelection('userName')}
-              >
-                User Name
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedColumns.includes('password')}
-                onCheckedChange={() => handleColumnSelection('password')}
-              >
-                Password
-              </DropdownMenuCheckboxItem> */}
               <DropdownMenuCheckboxItem
                 checked={selectedColumns.includes('dateOfJoining')}
                 onCheckedChange={() => handleColumnSelection('dateOfJoining')}
               >
-
                 Date of Joining
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
@@ -437,7 +425,6 @@ const Employeelist = () => {
               >
                 Phone
               </DropdownMenuCheckboxItem>
-
               <DropdownMenuCheckboxItem
                 checked={selectedColumns.includes('actions')}
                 onCheckedChange={() => handleColumnSelection('actions')}
@@ -487,7 +474,6 @@ const Employeelist = () => {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Add Employee</DialogTitle>
-
               </DialogHeader>
               <Tabs value={activeTab} className="mt-6">
                 <TabsList>
@@ -619,7 +605,6 @@ const Employeelist = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Sales">Sales</SelectItem>
-                            <SelectItem value="Office">Office</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -637,7 +622,6 @@ const Employeelist = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Field Officer">Field Officer</SelectItem>
-                     
                           </SelectContent>
                         </Select>
                       </div>
@@ -657,21 +641,7 @@ const Employeelist = () => {
                     {activeTab === 'tab1' ? (
                       <Button
                         onClick={handleNextClick}
-                        disabled={
-                          !newEmployee.firstName ||
-                          !newEmployee.lastName ||
-                          !newEmployee.email ||
-                          !newEmployee.employeeId ||
-                          !newEmployee.primaryContact ||
-                          !newEmployee.addressLine1 ||
-                          !newEmployee.city ||
-                          !newEmployee.state ||
-                          !newEmployee.country ||
-                          !newEmployee.pincode ||
-                          !newEmployee.departmentName ||
-                          !newEmployee.role ||
-                          !newEmployee.dateOfJoining
-                        }
+                        disabled={!newEmployee.firstName || !newEmployee.lastName || !newEmployee.primaryContact}
                       >
                         Next
                       </Button>
@@ -758,26 +728,6 @@ const Employeelist = () => {
                 )}
               </TableHead>
             )}
-            {/* {selectedColumns.includes('userName') && (
-              <TableHead className="cursor-pointer" onClick={() => handleSort('userName')}>
-                User Name
-                {sortColumn === 'userName' && (
-                  <span className="w-full">
-                    {sortDirection === 'asc' ? '▲' : '▼'}
-                  </span>
-                )}
-              </TableHead>
-            )}
-            {selectedColumns.includes('password') && (
-              <TableHead className="cursor-pointer" onClick={() => handleSort('password')}>
-                Password
-                {sortColumn === 'password' && (
-                  <span className="ml-2">
-                    {sortDirection === 'asc' ? '▲' : '▼'}
-                  </span>
-                )}
-              </TableHead>
-            )} */}
             {selectedColumns.includes('primaryContact') && (
               <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
                 Phone
@@ -840,6 +790,7 @@ const Employeelist = () => {
                         })
                       }
                       className="w-full py-2 px-4"
+                      style={{ width: '200px' }}
                     />
                   ) : (
                     `${user.firstName || ''} ${user.lastName || ''}`
@@ -852,7 +803,9 @@ const Employeelist = () => {
                     <Input
                       name="email"
                       value={editingEmployee.email}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setEditingEmployee({ ...editingEmployee, email: e.target.value })
+                      }
                       className="w-full py-2 px-4"
                     />
                   ) : (
@@ -862,52 +815,14 @@ const Employeelist = () => {
               )}
               {selectedColumns.includes('role') && (
                 <TableCell className="text-left px-4" style={{ width: '150px' }}>
-                  {editingEmployee?.id === user.id ? (
-                    <Select
-                      name="role"
-                      value={editingEmployee.role}
-                      onValueChange={(value) =>
-                        setEditingEmployee({ ...editingEmployee, role: value })
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Field Officer">Field Officer</SelectItem>
-                        <SelectItem value="Office Manager">Office Manager</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    user.role
-                  )}
+                  {user.role}
                 </TableCell>
               )}
               {selectedColumns.includes('department') && (
                 <TableCell className="text-left px-4" style={{ width: '150px' }}>
-                  {editingEmployee?.id === user.id ? (
-                    <Select
-                      name="departmentName"
-                      value={editingEmployee.departmentName}
-                      onValueChange={(value) =>
-                        setEditingEmployee({ ...editingEmployee, departmentName: value })
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Sales">Sales</SelectItem>
-                        <SelectItem value="Office">Office</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    user.departmentName
-                  )}
+                  {user.departmentName}
                 </TableCell>
-
               )}
-
 
               {/* {selectedColumns.includes('password') && (
                 <TableCell className="text-left px-4">
@@ -931,9 +846,11 @@ const Employeelist = () => {
                     <Input
                       name="primaryContact"
                       value={editingEmployee.primaryContact}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setEditingEmployee({ ...editingEmployee, primaryContact: e.target.value })
+                      }
                       className="w-full py-2 px-4"
-                      style={{ minWidth: '250px' }} // Increase the width here
+                      style={{ minWidth: '250px' }}
                     />
                   ) : (
                     user.primaryContact
@@ -946,9 +863,11 @@ const Employeelist = () => {
                     <Input
                       name="city"
                       value={editingEmployee.city}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setEditingEmployee({ ...editingEmployee, city: e.target.value })
+                      }
                       className="w-full py-2 px-4"
-                      style={{ minWidth: '250px' }} // Increase the width here
+                      style={{ minWidth: '250px' }}
                     />
                   ) : (
                     user.city
@@ -961,9 +880,11 @@ const Employeelist = () => {
                     <Input
                       name="state"
                       value={editingEmployee.state}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setEditingEmployee({ ...editingEmployee, state: e.target.value })
+                      }
                       className="w-full py-2 px-4"
-                      style={{ minWidth: '250px' }} // Increase the width here
+                      style={{ minWidth: '250px' }}
                     />
                   ) : (
                     user.state

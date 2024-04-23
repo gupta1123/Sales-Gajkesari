@@ -12,6 +12,7 @@ import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
 import { format } from "date-fns";
 import { stringify } from 'csv-stringify';
+import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from "@/components/ui/pagination";
 
 const VisitsList: React.FC = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -82,6 +83,7 @@ const VisitsList: React.FC = () => {
     }
 
     setFilteredVisits(filtered);
+    setCurrentPage(1); // Reset to the first page when filters change
   };
 
   const [selectedColumns, setSelectedColumns] = useState([
@@ -222,6 +224,11 @@ const VisitsList: React.FC = () => {
     }
   };
 
+  const totalPages = Math.ceil(filteredVisits.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentVisits = sortedVisits.slice(startIndex, endIndex);
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Customer Visits</h2>
@@ -237,7 +244,7 @@ const VisitsList: React.FC = () => {
 
       <br />
       <VisitsTable
-        visits={sortedVisits}
+        visits={currentVisits}
         selectedColumns={selectedColumns}
         sortColumn={sortColumn}
         sortDirection={sortDirection}
@@ -264,6 +271,31 @@ const VisitsList: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+
+        <Pagination>
+          <PaginationContent>
+            {currentPage !== 1 && (
+              <PaginationPrevious
+                onClick={() => handlePageChange(currentPage - 1)}
+              />
+            )}
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  isActive={page === currentPage}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            {currentPage !== totalPages && (
+              <PaginationNext
+                onClick={() => handlePageChange(currentPage + 1)}
+              />
+            )}
+          </PaginationContent>
+        </Pagination>
       </div>
     </div>
   );

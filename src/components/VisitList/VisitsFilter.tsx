@@ -39,6 +39,21 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, o
         onFilter({ storeName, employeeName, purpose: 'all' });
     };
 
+    const columnMapping: Record<string, string> = {
+        'Customer Name': 'storeName',
+        'Executive': 'employeeName',
+        'visit_date': 'visit_date',
+        'Status': 'outcome',
+        'purpose': 'purpose',
+        'visitStart': 'visitStart',
+        'visitEnd': 'visitEnd',
+        'intent': 'intent',
+    };
+
+    const handleColumnSelect = (column: string) => {
+        onColumnSelect(columnMapping[column]);
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -85,7 +100,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, o
                             )}
                         </div>
                         <div className="relative">
-                           
+
                             {purpose !== 'all' && (
                                 <button
                                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -99,23 +114,22 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({ onFilter, onColumnSelect, o
 
                     <div className="flex items-center space-x-2">
                         {viewMode === 'table' && (
-                            <>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline">Columns</Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        {['storeName', 'employeeName', 'visit_date', 'location', 'purpose', 'outcome'].map(column => (
-                                            <DropdownMenuCheckboxItem
-                                                key={column}
-                                                checked={selectedColumns.includes(column)}
-                                                onCheckedChange={() => onColumnSelect(column)}
-                                            >
-                                                {column}
-                                            </DropdownMenuCheckboxItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                            <>                                <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Columns</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    {['Customer Name', 'Executive', 'visit_date', 'Status', 'purpose', 'visitStart', 'visitEnd', 'intent'].map(column => (
+                                        <DropdownMenuCheckboxItem
+                                            key={column}
+                                            checked={selectedColumns.includes(columnMapping[column])}
+                                            onCheckedChange={() => handleColumnSelect(column)}
+                                        >
+                                            {column}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
