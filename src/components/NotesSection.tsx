@@ -62,8 +62,8 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
     if (!newNote.trim()) return;
 
     const url = editingNoteId
-      ? `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/edit?id=${editingNoteId}`
-      : "http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/create";
+      ? `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/notes/edit?id=${editingNoteId}`
+      : "hhttp://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/create";
     const method = editingNoteId ? "PUT" : "POST";
 
     try {
@@ -166,7 +166,7 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
                     {format(new Date(note.createdDate), "MMM d, yyyy")}
                   </div>
                   <div className="notes-timeline-text">{note.content}</div>
-                  <div className="text-gray-500">Employee: {note.employeeName}</div>
+                  {/* <div className="text-gray-500">Employee: {note.employeeName}</div> */}
                   {note.visitId && (
                     <Link href={`/VisitDetailPage/${note.visitId}`} className="visit-id-display">
                       Visit ID: {note.visitId}

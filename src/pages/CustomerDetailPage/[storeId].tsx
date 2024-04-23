@@ -88,55 +88,57 @@ export default function CustomerDetailPage() {
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          managers: customerData.managers || [],
-          latitude: customerData.latitude || 0,
-          longitude: customerData.longitude || 0,
-          brandsInUse: customerData.brandsInUse || [],
-          monthlySale: customerData.monthlySale || "",
-          brandProCons: customerData.brandProCons || [],
-          notes: customerData.notes || null,
-          clientType: customClientType || customerData.clientType || "",
-          createdAt: customerData.createdAt || "",
-          updatedAt: customerData.updatedAt || "",
-          storeId: storeId,
-          storeName: customerData.storeName || "",
-          clientFirstName: customerData.clientFirstName || "",
-          clientLastName: customerData.clientLastName || "",
-          primaryContact: customerData.primaryContact || "",
-          secondaryContact: customerData.secondaryContact || "",
-          email: customerData.email || "",
-          industry: customerData.industry || "",
-          companySize: customerData.companySize || 0,
-          gstNumber: customerData.gstNumber || "",
-          addressLine1: customerData.addressLine1 || "",
-          addressLine2: customerData.addressLine2 || "",
-          city: customerData.city || "",
-          district: customerData.district || "",
-          subDistrict: customerData.subDistrict || "",
-          state: customerData.state || "",
-          country: customerData.country || "",
-          pincode: customerData.pincode || "",
-        }),
-      });
+const handleSave = async () => {
+  try {
+    const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        managers: customerData.managers || [],
+        latitude: customerData.latitude || 0,
+        longitude: customerData.longitude || 0,
+        brandsInUse: customerData.brandsInUse || [],
+        monthlySale: customerData.monthlySale || "",
+        brandProCons: customerData.brandProCons || [],
+        notes: customerData.notes || null,
+        clientType: customerData.clientType === 'custom' ? 'custom' : customerData.clientType,
+        customClientType: customerData.clientType === 'custom' ? (customClientType || null) : null,
+        createdAt: customerData.createdAt || "",
+        updatedAt: customerData.updatedAt || "",
+        storeId: storeId,
+        storeName: customerData.storeName || "",
+        clientFirstName: customerData.clientFirstName || "",
+        clientLastName: customerData.clientLastName || "",
+        primaryContact: customerData.primaryContact || "",
+        secondaryContact: customerData.secondaryContact || "",
+        email: customerData.email || "",
+        industry: customerData.industry || "",
+        companySize: customerData.companySize || 0,
+        gstNumber: customerData.gstNumber || "",
+        addressLine1: customerData.addressLine1 || "",
+        addressLine2: customerData.addressLine2 || "",
+        city: customerData.city || "",
+        district: customerData.district || "",
+        subDistrict: customerData.subDistrict || "",
+        state: customerData.state || "",
+        country: customerData.country || "",
+        pincode: customerData.pincode || "",
+        intent: customerData.intent,
+      }),
+    });
 
-      if (response.ok) {
-        setIsEditing(false);
-      } else {
-        console.error("Error updating customer:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error updating customer:", error);
+    if (response.ok) {
+      setIsEditing(false);
+    } else {
+      console.error("Error updating customer:", await response.text());
     }
-  };
+  } catch (error) {
+    console.error("Error updating customer:", error);
+  }
+};
 
   const handleInputChange = (field: keyof CustomerData, value: string | number) => {
     setCustomerData((prevData) => ({
@@ -145,27 +147,31 @@ export default function CustomerDetailPage() {
     }));
   };
 
-  useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data: CustomerData = await response.json();
-        setCustomerData(data);
-        setIsLoading(false);
-      } catch (error) {
-        setError('Customer not found!');
-        setIsLoading(false);
+useEffect(() => {
+  const fetchCustomerData = async () => {
+    try {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      setCustomerData(data);
+      if (data.clientType === 'custom') {
+        setCustomClientType(data.customClientType);
       }
-    };
-
-    if (storeId && token) {
-      fetchCustomerData();
+      setIsLoading(false);
+    } catch (error) {
+      setError('Customer not found!');
+      setIsLoading(false);
     }
-  }, [storeId, token]);
+  };
+
+  if (storeId && token) {
+    fetchCustomerData();
+  }
+}, [storeId, token]);
+
 
   useEffect(() => {
     setCustomClientType(customerData.clientType || null);
@@ -291,7 +297,14 @@ export default function CustomerDetailPage() {
                     </div>
                     <div>
                       <Label htmlFor="clientType" className="text-sm font-medium text-gray-700">Client Type</Label>
-                      <Select value={customerData.clientType || ''} onValueChange={(value) => handleInputChange('clientType', value)} disabled={!isEditing}>
+                      <Select value={customClientType || customerData.clientType || ''} onValueChange={(value) => {
+                        if (value === 'custom') {
+                          setCustomClientType(customerData.customClientType || '');
+                        } else {
+                          setCustomClientType(null);
+                          handleInputChange('clientType', value);
+                        }
+                      }} disabled={!isEditing}>
                         <SelectTrigger className="w-full mt-1 text-sm px-3 py-2">
                           <SelectValue placeholder="Select a type" />
                         </SelectTrigger>
@@ -304,15 +317,17 @@ export default function CustomerDetailPage() {
                           <SelectItem value="custom" className="text-sm">Others</SelectItem>
                         </SelectContent>
                       </Select>
+
                       {customerData.clientType === 'custom' && (
                         <Input
                           id="customClientType"
-                          value={customerData.customClientType || ''}
-                          onChange={(e) => handleInputChange('customClientType', e.target.value)}
+                          value={customClientType || ''}
+                          onChange={(e) => setCustomClientType(e.target.value)}
                           className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800"
                           disabled={!isEditing}
                         />
                       )}
+
                     </div>
                   </div>
                 </TabsContent>

@@ -68,6 +68,12 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
             const dateA = new Date(a.updatedAt!);
             const dateB = new Date(b.updatedAt!);
             return sortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+        } else if (sortColumn === 'intent') {
+            const intentA = String(a.intent || '');
+            const intentB = String(b.intent || '');
+            return sortDirection === 'asc'
+                ? intentA.localeCompare(intentB)
+                : intentB.localeCompare(intentA);
         }
         return 0;
     };
@@ -120,7 +126,9 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             <th className="px-4 py-2">Visit End</th>
                         )}
                         {selectedColumns.includes('intent') && (
-                            <th className="px-4 py-2">Intent</th>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('intent')}>
+                                Intent {sortColumn === 'intent' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </th>
                         )}
                         <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('updatedAt')}>
                             Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'asc' ? '↑' : '↓')}

@@ -177,28 +177,29 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
   };
 
   const handleDeleteBrand = async (id: number) => {
+    const deletedBrand = brands.find((brand) => brand.id === id);
     const updatedBrands = brands.filter((brand) => brand.id !== id);
-    setBrands(updatedBrands);
 
-    try {
-      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/editProCons?id=${storeId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedBrands.map((brand) => ({
-          brandName: brand.brand,
-          pros: brand.pros,
-          cons: brand.cons,
-        }))),
-      });
+    if (deletedBrand) {
+      try {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/deleteProCons?id=${storeId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify([{ brandName: deletedBrand.brand }]),
+        });
 
-      if (!response.ok) {
-        console.error("Error deleting brand:", response.statusText);
+        if (response.ok) {
+          setBrands(updatedBrands);
+          console.log("Pros Cons Deleted Successfully!");
+        } else {
+          console.error("Error deleting brand:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error deleting brand:", error);
       }
-    } catch (error) {
-      console.error("Error deleting brand:", error);
     }
   };
 
