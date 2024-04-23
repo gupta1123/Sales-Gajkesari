@@ -1,4 +1,3 @@
-// types.ts
 export interface Visit {
     id: string;
     storeName: string;
@@ -12,6 +11,8 @@ export interface Visit {
     checkinTime?: string | null;
     checkoutDate?: string | null;
     checkoutTime?: string | null;
+    updatedAt: string;  // Added as a non-nullable string
+    updatedTime?: string | null;  // Added as an optional string
     visitStart?: string | null;
     visitEnd?: string | null;
     intent?: string | null;

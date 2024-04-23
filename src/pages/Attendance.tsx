@@ -48,7 +48,7 @@ const AttendancePage: React.FC = () => {
                 const startDate = selectedStartDate ? format(selectedStartDate, 'yyyy-MM-dd') : '';
                 const endDate = selectedEndDate ? format(selectedEndDate, 'yyyy-MM-dd') : '';
 
-                const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`, {
+                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

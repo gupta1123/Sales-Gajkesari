@@ -29,7 +29,7 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
 
   const fetchVisits = async () => {
     try {
-      const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/getByStore?id=${storeId}`, {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByStore?id=${storeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

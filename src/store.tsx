@@ -21,7 +21,7 @@ export const registerUser = createAsyncThunk<string, UserData, { rejectValue: st
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/register',
+        'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/register',
         userData
       );
       return response.data;
@@ -37,7 +37,7 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/token',
+        'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/token',
         {
           username: userData.username,
           password: userData.password,
@@ -47,7 +47,7 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
       // Store the token in localStorage
       localStorage.setItem('token', token);
       const employeeResponse = await axios.get(
-        'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/info',
+        'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/info',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -68,7 +68,7 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/logout');
+      await axios.post('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/logout');
       // Remove the token from localStorage
       localStorage.removeItem('token');
     } catch (error: any) {

@@ -9,8 +9,8 @@ import { useSelector } from 'react-redux';
 type Brand = {
   id?: number;
   brand: string;
-  pros: string;
-  cons: string;
+  pros: string[];
+  cons: string[];
 };
 
 type NewBrand = {
@@ -47,7 +47,7 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
 
   const fetchBrands = async () => {
     try {
-      const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -56,8 +56,8 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
       const brandsData: Brand[] = data.brandProCons?.map((brand: any) => ({
         id: brand.id,
         brand: brand.brandName,
-        pros: brand.pros.join(", "),
-        cons: brand.cons.join(", "),
+        pros: brand.pros,
+        cons: brand.cons,
       })) || [];
       setBrands(brandsData);
     } catch (error) {
@@ -91,13 +91,13 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
   const handleAddBrand = async () => {
     if (newBrand.name.trim() !== "") {
       const brand = {
-        brand: newBrand.name,
-        pros: newBrand.pros.join(", "),
-        cons: newBrand.cons.join(", "),
+        brandName: newBrand.name,
+        pros: newBrand.pros.filter((pro) => pro.trim() !== ""),
+        cons: newBrand.cons.filter((con) => con.trim() !== ""),
       };
 
       try {
-        const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/editProCons?id=${storeId}`, {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/editProCons?id=${storeId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -107,7 +107,7 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
         });
 
         if (response.ok) {
-          setBrands([...brands, brand]);
+          setBrands([...brands, { ...brand, brand: newBrand.name }]);
           setNewBrand({ name: "", pros: [], cons: [] });
           setIsAdding(false);
         } else {
@@ -119,15 +119,15 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
     }
   };
 
-  const handleEditBrand = (id: number) => {
+  const handleEditBrand = (brandId: number) => {
     setIsEditing(true);
-    setEditingBrandId(id);
-    const brand = brands.find((b) => b.id === id);
+    setEditingBrandId(brandId);
+    const brand = brands.find((b) => b.id === brandId);
     if (brand) {
       setNewBrand({
         name: brand.brand,
-        pros: brand.pros.split(", "),
-        cons: brand.cons.split(", "),
+        pros: brand.pros,
+        cons: brand.cons,
       });
     } else {
       console.error("Brand not found");
@@ -141,21 +141,25 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
           return {
             ...brand,
             brand: newBrand.name,
-            pros: newBrand.pros.join(", "),
-            cons: newBrand.cons.join(", "),
+            pros: newBrand.pros.filter((pro) => pro.trim() !== ""),
+            cons: newBrand.cons.filter((con) => con.trim() !== ""),
           };
         }
         return brand;
       });
 
       try {
-        const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/editProCons?id=${storeId}`, {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/editProCons?id=${storeId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(updatedBrands),
+          body: JSON.stringify(updatedBrands.map((brand) => ({
+            brandName: brand.brand,
+            pros: brand.pros,
+            cons: brand.cons,
+          }))),
         });
 
         if (response.ok) {
@@ -172,9 +176,30 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
     }
   };
 
-  const handleDeleteBrand = (id: number) => {
+  const handleDeleteBrand = async (id: number) => {
     const updatedBrands = brands.filter((brand) => brand.id !== id);
     setBrands(updatedBrands);
+
+    try {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/editProCons?id=${storeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedBrands.map((brand) => ({
+          brandName: brand.brand,
+          pros: brand.pros,
+          cons: brand.cons,
+        }))),
+      });
+
+      if (!response.ok) {
+        console.error("Error deleting brand:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting brand:", error);
+    }
   };
 
   return (
@@ -211,9 +236,7 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
                   <Input
                     key={index}
                     value={pro}
-                    onChange={(e) =>
-                      handleProConChange("pros", index, e.target.value)
-                    }
+                    onChange={(e) => handleProConChange("pros", index, e.target.value)}
                     placeholder={`Pro ${index + 1}`}
                     className="mb-2"
                   />
@@ -236,9 +259,7 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
                   <Input
                     key={index}
                     value={con}
-                    onChange={(e) =>
-                      handleProConChange("cons", index, e.target.value)
-                    }
+                    onChange={(e) => handleProConChange("cons", index, e.target.value)}
                     placeholder={`Con ${index + 1}`}
                     className="mb-2"
                   />
@@ -281,23 +302,23 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
         {brands.length > 0 && (
           <>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {brands.map((brand, index) => (
+              {brands.map((brand) => (
                 <div
-                  key={index}
+                  key={brand.id}
                   className="p-4 bg-gray-100 rounded-lg shadow-md"
                 >
                   <div className="flex justify-between items-center mb-2">
                     <div className="font-bold text-lg">{brand.brand}</div>
                     <div className="flex space-x-2">
                       <Button
-                        onClick={() => handleEditBrand(index)}
+                        onClick={() => handleEditBrand(brand.id!)}
                         variant="ghost"
                         size="sm"
                       >
                         <Edit className="text-gray-500" />
                       </Button>
                       <Button
-                        onClick={() => handleDeleteBrand(index)}
+                        onClick={() => handleDeleteBrand(brand.id!)}
                         variant="ghost"
                         size="sm"
                       >
@@ -312,7 +333,7 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
                         Pros
                       </div>
                       <ul className="text-gray-600 text-sm list-disc pl-4">
-                        {brand.pros && brand.pros.split(", ").map((pro, index) => (
+                        {brand.pros.map((pro, index) => (
                           <li key={index}>{pro}</li>
                         ))}
                       </ul>
@@ -323,7 +344,7 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
                         Cons
                       </div>
                       <ul className="text-gray-600 text-sm list-disc pl-4">
-                        {brand.cons && brand.cons.split(", ").map((con, index) => (
+                        {brand.cons.map((con, index) => (
                           <li key={index}>{con}</li>
                         ))}
                       </ul>

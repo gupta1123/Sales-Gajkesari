@@ -41,7 +41,7 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
   // Fetch notes from the server
   const fetchNotes = async () => {
     try {
-      const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/notes/getByStore?id=${storeId}`, {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/getByStore?id=${storeId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -62,8 +62,8 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
     if (!newNote.trim()) return;
 
     const url = editingNoteId
-      ? `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/notes/edit?id=${editingNoteId}`
-      : "http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/notes/create";
+      ? `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/edit?id=${editingNoteId}`
+      : "http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/create";
     const method = editingNoteId ? "PUT" : "POST";
 
     try {
@@ -109,7 +109,7 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
   // Delete a note
   const handleDeleteNote = async (id: string) => {
     try {
-      const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/notes/delete?id=${id}`, {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/delete?id=${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -168,8 +168,8 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
                   <div className="notes-timeline-text">{note.content}</div>
                   <div className="text-gray-500">Employee: {note.employeeName}</div>
                   {note.visitId && (
-                    <Link href={`/VisitDetailPage/${note.visitId}`}>
-                      <a className="visit-id-display">Visit ID: {note.visitId}</a>
+                    <Link href={`/VisitDetailPage/${note.visitId}`} className="visit-id-display">
+                      Visit ID: {note.visitId}
                     </Link>
                   )}
                   <div className="notes-timeline-actions">

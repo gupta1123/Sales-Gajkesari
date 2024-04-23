@@ -209,7 +209,7 @@ const Dashboard = () => {
       }
 
       const response = await fetch(
-        `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${startDate}&end=${endDate}`,
+        `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${startDate}&end=${endDate}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

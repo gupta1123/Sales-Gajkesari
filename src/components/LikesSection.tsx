@@ -39,7 +39,7 @@ export default function LikesSection({ storeId }: LikesSectionProps) {
 
   const fetchLikes = async () => {
     try {
-      const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -67,7 +67,7 @@ export default function LikesSection({ storeId }: LikesSectionProps) {
       const updatedLikes = [...likes, like];
 
       try {
-        const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export default function LikesSection({ storeId }: LikesSectionProps) {
       });
 
       try {
-        const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",

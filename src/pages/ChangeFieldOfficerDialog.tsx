@@ -25,7 +25,7 @@ const ChangeFieldOfficerDialog = ({ isOpen, onClose, onConfirm }: ChangeFieldOff
   useEffect(() => {
     const fetchFieldOfficers = async () => {
       try {
-        const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
+        const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

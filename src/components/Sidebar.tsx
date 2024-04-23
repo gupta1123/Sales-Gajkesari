@@ -16,8 +16,6 @@ export default function Sidebar() {
     <div className={styles.sidebar}>
       <ul className={styles.sidebarList}>
         <li className={styles.sidebarItem}>
-        </li>
-        <li className={styles.sidebarItem}>
           <Link href="/Dashboard" className={styles.sidebarLink}>
             Dashboard
           </Link>
@@ -38,7 +36,7 @@ export default function Sidebar() {
           </Link>
         </li>
         {/* Add the new sidebar items */}
-       {/* <li className={styles.sidebarItem}>
+        {/* <li className={styles.sidebarItem}>
           <Link href="/Expense" className={styles.sidebarLink}>
             Expense
           </Link>
@@ -47,7 +45,7 @@ export default function Sidebar() {
           <Link href="/Attendance" className={styles.sidebarLink}>
             Attendance
           </Link>
-  </li>
+        </li>
         {/* <li className={styles.sidebarItem}>
           <Link href="/CustomerDetailPage" className={styles.sidebarLink}>
             Customer Details

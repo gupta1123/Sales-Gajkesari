@@ -35,7 +35,7 @@ const VisitsList: React.FC = () => {
   useEffect(() => {
     const fetchVisits = async () => {
       try {
-        const response = await axios.get('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/getAll', {
+        const response = await axios.get('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getAll', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

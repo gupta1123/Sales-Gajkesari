@@ -44,6 +44,7 @@ interface Visit {
 
 const SalesExecutivePage: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
+
   const [employeeData, setEmployeeData] = useState<{
     id: number;
     firstName: string;
@@ -72,7 +73,7 @@ const SalesExecutivePage: React.FC = () => {
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
-        const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/getById?id=${id}`, {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getById?id=${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -92,6 +93,26 @@ const SalesExecutivePage: React.FC = () => {
 
     if (token && id) {
       fetchEmployeeData();
+    }
+  }, [token, id]);
+
+  useEffect(() => {
+    const fetchVisits = async () => {
+      try {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/by-employee?employeeId=${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data: Visit[] = await response.json();
+        setVisits(data);
+      } catch (error) {
+        console.error("Error fetching visits:", error);
+      }
+    };
+
+    if (token && id) {
+      fetchVisits();
     }
   }, [token, id]);
 
@@ -120,33 +141,33 @@ const SalesExecutivePage: React.FC = () => {
               </CardContent>
             </Card>
             {/* <Card className="bg-white shadow-md rounded-lg p-6">
-              <CardContent>
-                <h2 className="text-2xl font-semibold mb-6">KPIs</h2>
-                <div className="space-y-4">
-                  <div className="bg-blue-500 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-white">Stores Visited</p>
-                      <p className="text-3xl font-bold text-white">{stats.stores}</p>
-                    </div>
-                    <FaStore className="text-white w-12 h-12" />
-                  </div>
-                  <div className="bg-green-500 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-white">Visits This Month</p>
-                      <p className="text-3xl font-bold text-white">{stats.visitsThisMonth}</p>
-                    </div>
-                    <FaCalendarAlt className="text-white w-12 h-12" />
-                  </div>
-                  <div className="bg-yellow-500 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-white">Visits Today</p>
-                      <p className="text-3xl font-bold text-white">{stats.visitsToday}</p>
-                    </div>
-                    <FaMapMarkerAlt className="text-white w-12 h-12" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
+              <CardContent>
+                <h2 className="text-2xl font-semibold mb-6">KPIs</h2>
+                <div className="space-y-4">
+                  <div className="bg-blue-500 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">Stores Visited</p>
+                      <p className="text-3xl font-bold text-white">{stats.stores}</p>
+                    </div>
+                    <FaStore className="text-white w-12 h-12" />
+                  </div>
+                  <div className="bg-green-500 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">Visits This Month</p>
+                      <p className="text-3xl font-bold text-white">{stats.visitsThisMonth}</p>
+                    </div>
+                    <FaCalendarAlt className="text-white w-12 h-12" />
+                  </div>
+                  <div className="bg-yellow-500 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-semibold text-white">Visits Today</p>
+                      <p className="text-3xl font-bold text-white">{stats.visitsToday}</p>
+                    </div>
+                    <FaMapMarkerAlt className="text-white w-12 h-12" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card> */}
           </div>
           <div className="md:col-span-2">
             <Card className="bg-white shadow-md rounded-lg p-6">

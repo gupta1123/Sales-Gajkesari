@@ -26,7 +26,7 @@ const formatDateTime = (date: string | null | undefined, time: string | null | u
         const [hours, minutes] = time.split(':');
         const formattedTime = format(
             new Date(`${date}T${hours}:${minutes}`),
-            'dd MMM h:mm a'
+            'dd MMM yyyy h:mm a'
         );
         return formattedTime;
     }
@@ -63,9 +63,19 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
         return { emoji: ' ', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
     };
 
+    const sortVisits = (a: Visit, b: Visit) => {
+        if (sortColumn === 'updatedAt') {
+            const dateA = new Date(a.updatedAt!);
+            const dateB = new Date(b.updatedAt!);
+            return sortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+        }
+        return 0;
+    };
+
+    const sortedVisits = [...visits].sort(sortVisits);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const displayedVisits = visits.slice(startIndex, endIndex);
+    const displayedVisits = sortedVisits.slice(startIndex, endIndex);
 
     return (
         <div className="overflow-x-auto">
@@ -79,46 +89,43 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             />
                         </th>
                         {selectedColumns.includes('storeName') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[200px]" onClick={() => onSort('storeName')}>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('storeName')}>
                                 Customer Name {sortColumn === 'storeName' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('employeeName') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[200px]" onClick={() => onSort('employeeName')}>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('employeeName')}>
                                 Executive {sortColumn === 'employeeName' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('visit_date') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[150px]" onClick={() => onSort('visit_date')}>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visit_date')}>
                                 Date {sortColumn === 'visit_date' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('outcome') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[180px]" onClick={() => onSort('outcome')}>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('outcome')}>
                                 Status {sortColumn === 'outcome' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('purpose') && (
-                            <th className="px-4 py-2 cursor-pointer min-w-[250px]" onClick={() => onSort('purpose')}>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('purpose')}>
                                 Purpose {sortColumn === 'purpose' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('visitStart') && (
-                            <th className="px-4 py-2 min-w-[180px]">Visit Start</th>
+                            <th className="px-4 py-2">Visit Start</th>
                         )}
                         {selectedColumns.includes('visitEnd') && (
-                            <th className="px-4 py-2 min-w-[180px]">Visit End</th>
+                            <th className="px-4 py-2">Visit End</th>
                         )}
                         {selectedColumns.includes('intent') && (
-                            <th className="px-4 py-2 min-w-[250px]">Intent</th>
+                            <th className="px-4 py-2">Intent</th>
                         )}
-                        {/* {selectedColumns.includes('city') && (
-                            <th className="px-4 py-2 min-w-[150px]">City</th>
-                        )}
-                        {selectedColumns.includes('state') && (
-                            <th className="px-4 py-2 min-w-[150px]">State</th>
-                        )} */}
-                        <th className="px-4 py-2 min-w-[200px]">Actions</th>
+                        <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('updatedAt')}>
+                            Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'asc' ? '↑' : '↓')}
+                        </th>
+                        <th className="px-4 py-2">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -134,13 +141,13 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                     />
                                 </td>
                                 {selectedColumns.includes('storeName') && (
-                                    <td className="px-4 py-2">{visit.storeName}</td>
+                                    <td className="px-4 py-2 max-w-xs truncate">{visit.storeName}</td>
                                 )}
                                 {selectedColumns.includes('employeeName') && (
-                                    <td className="px-4 py-2">{visit.employeeName}</td>
+                                    <td className="px-4 py-2 max-w-xs truncate">{visit.employeeName}</td>
                                 )}
                                 {selectedColumns.includes('visit_date') && (
-                                    <td className="px-4 py-2">{visit.visit_date}</td>
+                                    <td className="px-4 py-2 max-w-xs truncate">{visit.visit_date}</td>
                                 )}
                                 {selectedColumns.includes('outcome') && (
                                     <td className="px-4 py-2">
@@ -150,27 +157,24 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                     </td>
                                 )}
                                 {selectedColumns.includes('purpose') && (
-                                    <td className="px-4 py-2">{visit.purpose}</td>
+                                    <td className="px-4 py-2 max-w-xs truncate">{visit.purpose}</td>
                                 )}
                                 {selectedColumns.includes('visitStart') && (
-                                    <td className="px-4 py-2">
+                                    <td className="px-4 py-2 max-w-xs truncate">
                                         {formatDateTime(visit.checkinDate, visit.checkinTime)}
                                     </td>
                                 )}
                                 {selectedColumns.includes('visitEnd') && (
-                                    <td className="px-4 py-2">
+                                    <td className="px-4 py-2 max-w-xs truncate">
                                         {formatDateTime(visit.checkoutDate, visit.checkoutTime)}
                                     </td>
                                 )}
                                 {selectedColumns.includes('intent') && (
-                                    <td className="px-4 py-2">{visit.intent}</td>
+                                    <td className="px-4 py-2 max-w-xs truncate">{visit.intent}</td>
                                 )}
-                                {/* {selectedColumns.includes('city') && (
-                                    <td className="px-4 py-2">{visit.city}</td>
-                                )}
-                                {selectedColumns.includes('state') && (
-                                    <td className="px-4 py-2">{visit.state}</td>
-                                )} */}
+                                <td className="px-4 py-2 max-w-xs truncate">
+                                    {formatDateTime(visit.updatedAt, visit.updatedTime)}
+                                </td>
                                 <td className="px-4 py-2">
                                     <Button
                                         variant="outline"

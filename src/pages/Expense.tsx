@@ -50,7 +50,7 @@ const ExpensePage = () => {
 
     const fetchExpenseData = async () => {
         try {
-            const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/expense/getAll', {
+            const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081expense/getAll', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -76,7 +76,7 @@ const ExpensePage = () => {
 
     const handleApprove = async (expenseId: string) => {
         try {
-            const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/expense/updateApproval?id=${expenseId}`, {
+            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/updateApproval?id=${expenseId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ const ExpensePage = () => {
 
     const handleReject = async (expenseId: string) => {
         try {
-            const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/expense/reject?id=${expenseId}`, {
+            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/reject?id=${expenseId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

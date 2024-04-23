@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Upload, message } from "antd";
-import { InboxOutlined, CaretDownOutlined, PushpinOutlined } from "@ant-design/icons";
+import { InboxOutlined, CaretDownOutlined, PushpinOutlined, ClockCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { SyncOutlined } from '@ant-design/icons';
 import VisitsTimeline from "../VisitsTimeline";
 import NotesSection from "../../components/NotesSection";
 import LikesSection from "../../components/BrandsSection";
 import BrandsSection from "../../components/LikesSection";
 import PerformanceMetrics from "../../components/PerformanceMetrics";
 import "../VisitDetail.css";
+import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -24,6 +26,8 @@ import {
 } from "@/components/ui/avatar"
 import { UploadProps, UploadFile } from 'antd';
 import { UploadChangeParam } from 'antd/lib/upload/interface';
+import ImageGallery from '../ImageGallery';
+
 
 const { Dragger } = Upload;
 interface Attachment {
@@ -78,13 +82,13 @@ const VisitDetailPage = () => {
   const getStatusIndicator = (status: 'Assigned' | 'On Going' | 'Checked Out' | 'Completed') => {
     switch (status) {
       case 'Assigned':
-        return { icon: '📝', bgColor: 'bg-gray-100', textColor: 'text-gray-800' };
+        return { icon: ' ', bgColor: 'bg-gray-100', textColor: 'text-gray-800' };
       case 'On Going':
-        return { icon: '⏳', bgColor: 'bg-blue-100', textColor: 'text-blue-800' };
+        return { icon: ' ', bgColor: 'bg-blue-100', textColor: 'text-blue-800' };
       case 'Checked Out':
-        return { icon: '🚪', bgColor: 'bg-orange-100', textColor: 'text-orange-800' };
+        return { icon: ' ', bgColor: 'bg-orange-100', textColor: 'text-orange-800' };
       case 'Completed':
-        return { icon: '✅', bgColor: 'bg-green-100', textColor: 'text-green-800' };
+        return { icon: ' ', bgColor: 'bg-green-100', textColor: 'text-green-800' };
       default:
         return { icon: '', bgColor: 'bg-transparent', textColor: 'text-gray-500' };
     }
@@ -99,7 +103,7 @@ const VisitDetailPage = () => {
   useEffect(() => {
     const fetchVisitDetails = async () => {
       try {
-        const response = await axios.get(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/getById?id=${id}`, {
+        const response = await axios.get(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getById?id=${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -113,7 +117,7 @@ const VisitDetailPage = () => {
               .filter((attachment: any) => attachment.tag === 'check-in')
               .map(async (attachment: any) => {
                 const response = await axios.get(
-                  `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/downloadFile/${id}/check-in/${attachment.fileName}`,
+                  `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/downloadFile/${id}/check-in/${attachment.fileName}`,
                   {
                     headers: {
                       Authorization: `Bearer ${token}`,
@@ -129,7 +133,7 @@ const VisitDetailPage = () => {
               .filter((attachment: any) => attachment.tag === 'check-out')
               .map(async (attachment: any) => {
                 const response = await axios.get(
-                  `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/visit/downloadFile/${id}/check-out/${attachment.fileName}`,
+                  `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/downloadFile/${id}/check-out/${attachment.fileName}`,
                   {
                     headers: {
                       Authorization: `Bearer ${token}`,
@@ -232,6 +236,23 @@ const VisitDetailPage = () => {
     return '';
   };
 
+
+  const getStatusIcon = (status: 'Assigned' | 'On Going' | 'Checked Out' | 'Completed') => {
+    switch (status) {
+      case 'Assigned':
+        return <ClockCircleOutlined className="w-4 h-4 mr-2" />;
+      case 'On Going':
+        return <SyncOutlined className="w-4 h-4 mr-2" />;
+      case 'Checked Out':
+        return <CheckCircleOutlined className="w-4 h-4 mr-2" />;
+      case 'Completed':
+        return <CheckCircleOutlined className="w-4 h-4 mr-2" />;
+      default:
+        return null;
+    }
+  };
+
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Visit Detail</h1>
@@ -239,30 +260,18 @@ const VisitDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           {/* Visit Summary */}
-          <Card className="mb-8">
-            <CardContent>
-              <div className="flex items-center justify-between mb-6">
+          <Card className="mb-8 border-none shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Visit Summary</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-1">Visit Summary</h2>
                   <p className="text-sm text-gray-500">Overview of the visit details</p>
                 </div>
-                <div>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold ${getCheckInStatusColor(checkInStatus)}`}>
-                    {getStatusIndicator(checkInStatus).icon}
+                <div className="flex items-center">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getCheckInStatusColor(checkInStatus)}`}>
+                    {getStatusIcon(checkInStatus)}
                     <span className="ml-2">{checkInStatus}</span>
                   </span>
-                  {visit?.checkinDate && visit?.checkinTime && (
-                    <div className="mt-2">
-                      <span className="text-gray-500">Check-In:</span>{' '}
-                      <span className="font-semibold">{formatDate(visit.checkinDate)} {formatTime(visit.checkinTime)}</span>
-                    </div>
-                  )}
-                  {visit?.checkoutDate && visit?.checkoutTime && (
-                    <div className="mt-2">
-                      <span className="text-gray-500">Check-Out:</span>{' '}
-                      <span className="font-semibold">{formatDate(visit.checkoutDate)} {formatTime(visit.checkoutTime)}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -284,19 +293,18 @@ const VisitDetailPage = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="bg-gray-100 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-gray-500">Store</p>
-                      <button
-                        className="text-sm text-blue-500 hover:underline focus:outline-none"
-                        onClick={handleViewStore}
-                      >
-                        View Store
-                      </button>
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 mb-1">Store</p>
+                    <div className="flex justify-between items-center bg-gray-100 rounded-lg p-4">
+                      <p className="text-lg font-semibold">{visit?.storeName}</p>
+                      {visit && visit.storeId && (
+                        <Link href={`/CustomerDetailPage/${visit.storeId}`}>
+                          View Store
+                        </Link>
+                      )}
                     </div>
-                    <p className="text-lg font-semibold">{visit?.storeName}</p>
                   </div>
-                  <div className="mt-6">
+                  <div>
                     <p className="text-sm text-gray-500 mb-1">Location</p>
                     <div className="flex items-center space-x-2">
                       <PushpinOutlined className="w-4 h-4 text-gray-500" />
@@ -312,16 +320,40 @@ const VisitDetailPage = () => {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-8 border-t border-gray-200 pt-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {visit?.checkinDate && visit?.checkinTime && (
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Check-in</p>
+                      <p className="text-lg font-semibold">{formatDate(visit.checkinDate)} {formatTime(visit.checkinTime)}</p>
+                    </div>
+                  )}
+                  {visit?.checkoutDate && visit?.checkoutTime && (
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Check-out</p>
+                      <p className="text-lg font-semibold">{formatDate(visit.checkoutDate)} {formatTime(visit.checkoutTime)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
-
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Check-in Images</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ImageGallery images={checkinImages} />
+            </CardContent>
+          </Card>
           {/* Likes and Brands */}
           <Card className="mb-8">
             <CardContent>
               <Tabs defaultValue="likes">
                 <TabsList>
-                  <TabsTrigger value="likes">Likes</TabsTrigger>
-                  <TabsTrigger value="brands">Brands</TabsTrigger>
+                  <TabsTrigger value="likes">Brands</TabsTrigger>
+                  <TabsTrigger value="brands">Likes</TabsTrigger>
                 </TabsList>
                 <TabsContent value="likes">
                   <LikesSection storeId={visit?.storeId?.toString() ?? '0'} />

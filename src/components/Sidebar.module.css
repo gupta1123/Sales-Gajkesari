@@ -15,6 +15,14 @@
   color: white;
 }
 
+.sidebarHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+}
+
 .sidebarList {
   list-style: none;
   width: 100%;
@@ -55,6 +63,7 @@
   border-radius: 4px;
   cursor: pointer;
 }
+
 .sidebarIcon {
   margin-right: 0.5rem;
 }

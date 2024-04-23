@@ -110,8 +110,8 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
       // Determine the URL and method based on whether you're updating or creating a new entry
       const url = existingData
-        ? `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/update?id=${existingData.id}`
-        : 'http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/store/create';
+        ? `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/update?id=${existingData.id}`
+        : 'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/create';
       const method = existingData ? 'PUT' : 'POST';
 
       // Execute the fetch request with the prepared URL, method, and request body

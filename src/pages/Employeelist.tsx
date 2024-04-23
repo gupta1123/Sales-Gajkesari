@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
 import { Avatar } from "@/components/ui/avatar";
 import {
   Pagination,
@@ -70,43 +69,8 @@ const Employeelist = () => {
 
 
 
-  const handleNextClick = async () => {
-    try {
-      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/add', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          firstName: newEmployee.firstName,
-          lastName: newEmployee.lastName,
-          primaryContact: newEmployee.primaryContact,
-          departmentName: newEmployee.departmentName,
-          email: newEmployee.email,
-          role: newEmployee.role,
-          employeeId: "E101",
-          addressLine1: newEmployee.addressLine1,
-          addressLine2: newEmployee.addressLine2,
-          city: newEmployee.city,
-          state: newEmployee.state,
-          country: newEmployee.country,
-          pincode: newEmployee.pincode,
-          dateOfJoining: newEmployee.dateOfJoining
-        }),
-      });
-
-      const data = await response.json();
-      if (data && data.id) {
-        setNewEmployee({ ...newEmployee, employeeId: data.id });
-        setActiveTab('tab2');
-      } else {
-        // Handle error scenario
-        console.error('Error adding employee:', data);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
+  const handleNextClick = () => {
+    setActiveTab('tab2');
   };
 
 
@@ -130,8 +94,8 @@ const Employeelist = () => {
     country: "",
     pincode: "",
     dateOfJoining: "",
-    userName: "", // Add the 'userName' property
-    password: "", // Add the 'password' property
+    userName: "",
+    password: "",
   });
 
   useEffect(() => {
@@ -191,7 +155,7 @@ const Employeelist = () => {
 
   const handleDeleteUser = async (employeeId: number) => {
     try {
-      const response = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/delete?id=${employeeId}`, {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/delete?id=${employeeId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -205,7 +169,7 @@ const Employeelist = () => {
         // Delete user credentials
         const employee = users.find((user) => user.id === employeeId);
         if (employee) {
-          const deleteUserResponse = await fetch(`http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/delete?username=${employee.userName}`, {
+          const deleteUserResponse = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/manage/delete?username=${employee.userName}`, {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${token}`,
@@ -232,7 +196,7 @@ const Employeelist = () => {
   const handleSaveEdit = async () => {
     if (editingEmployee) {
       try {
-        const updateUrl = `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/edit?empId=${editingEmployee.id}`;
+        const updateUrl = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/edit?empId=${editingEmployee.id}`;
 
         const payload = {
           role: editingEmployee.role,
@@ -281,38 +245,59 @@ const Employeelist = () => {
   };
 
 
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/user/manage/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+ const handleSubmit = async () => {
+  try {
+    const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee-user/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        user: {
           username: newEmployee.userName,
           password: newEmployee.password,
+        },
+        employee: {
+          firstName: newEmployee.firstName,
+          lastName: newEmployee.lastName,
           employeeId: newEmployee.employeeId,
-        }),
-      });
+          primaryContact: newEmployee.primaryContact,
+          secondaryContact: newEmployee.secondaryContact,
+          departmentName: newEmployee.departmentName,
+          email: newEmployee.email,
+          role: newEmployee.role,
+          addressLine1: newEmployee.addressLine1,
+          addressLine2: newEmployee.addressLine2,
+          city: newEmployee.city,
+          state: newEmployee.state,
+          country: newEmployee.country,
+          pincode: newEmployee.pincode,
+          dateOfJoining: newEmployee.dateOfJoining
+        }
+      })
+    });
 
-      if (response.ok) {
-        console.log('User credentials created successfully!');
-        setIsModalOpen(false); // Close the modal after successful operations
-        // Update the UI to show the new employee, or fetch the employee list again if necessary
-      } else {
-        const errorData = await response.text();
-        console.error('Error:', errorData);
-      }
-    } catch (error) {
-      console.error('Error:', error);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('User Created!', data);
+
+      // Close the modal
+      setIsModalOpen(false);
+
+      // Refresh the page
+      window.location.reload();
+    } else {
+      const errorData = await response.text();
+      console.error('Error:', errorData);
     }
-  };
-
-
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
+      const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -504,7 +489,7 @@ const Employeelist = () => {
                 <DialogTitle>Add Employee</DialogTitle>
 
               </DialogHeader>
-              <Tabs defaultValue="tab1" className="mt-6">
+              <Tabs value={activeTab} className="mt-6">
                 <TabsList>
                   <TabsTrigger value="tab1">Personal & Work</TabsTrigger>
                   <TabsTrigger value="tab2">Credentials</TabsTrigger>
@@ -532,13 +517,22 @@ const Employeelist = () => {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
                         <Input
                           id="email"
                           name="email"
                           value={newEmployee.email}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="employeeId">Employee ID</Label>
+                        <Input
+                          id="employeeId"
+                          name="employeeId"
+                          value={newEmployee.employeeId}
                           onChange={handleInputChange}
                         />
                       </div>
@@ -553,7 +547,6 @@ const Employeelist = () => {
                       </div>
                     </div>
 
-                    {/* <div className="text-lg font-semibold mt-6 mb-2">Address</div> */}
                     <div className="grid gap-2">
                       <Label htmlFor="addressLine1">Address Line 1</Label>
                       <Input
@@ -644,7 +637,7 @@ const Employeelist = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Field Officer">Field Officer</SelectItem>
-                            <SelectItem value="Office Manager">Office Manager</SelectItem>
+                     
                           </SelectContent>
                         </Select>
                       </div>
@@ -662,7 +655,26 @@ const Employeelist = () => {
                   </div>
                   <div className="flex justify-end">
                     {activeTab === 'tab1' ? (
-                      <Button onClick={handleNextClick}>Next</Button>
+                      <Button
+                        onClick={handleNextClick}
+                        disabled={
+                          !newEmployee.firstName ||
+                          !newEmployee.lastName ||
+                          !newEmployee.email ||
+                          !newEmployee.employeeId ||
+                          !newEmployee.primaryContact ||
+                          !newEmployee.addressLine1 ||
+                          !newEmployee.city ||
+                          !newEmployee.state ||
+                          !newEmployee.country ||
+                          !newEmployee.pincode ||
+                          !newEmployee.departmentName ||
+                          !newEmployee.role ||
+                          !newEmployee.dateOfJoining
+                        }
+                      >
+                        Next
+                      </Button>
                     ) : (
                       <div>Loading...</div>
                     )}
