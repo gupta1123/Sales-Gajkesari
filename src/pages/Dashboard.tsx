@@ -1,66 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subWeeks, subDays } from 'date-fns';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import * as React from "react";
 import { useRouter } from 'next/router';
-import * as TabsPrimitive from "@radix-ui/react-tabs";
-import { cn } from "@/lib/utils";
+import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subWeeks, subDays } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-
-const Tabs = TabsPrimitive.Root;
-
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
-      className
-    )}
-    {...props}
-  />
-));
-
-TabsList.displayName = TabsPrimitive.List.displayName;
-
-const TabsTrigger = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
-      className
-    )}
-    {...props}
-  />
-));
-
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
-
-const TabsContent = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className
-    )}
-    {...props}
-  />
-));
-
-TabsContent.displayName = TabsPrimitive.Content.displayName;
 
 interface Visit {
   id: string;
@@ -70,10 +18,81 @@ interface Visit {
   purpose: string;
   visit_date: string;
   storeName: string;
-  [key: string]: string | number; // Add an index signature to allow accessing properties dynamically
+  city: string;
+  checkinDate: string | null;
+  checkinTime: string | null;
+  checkoutDate: string | null;
+  checkoutTime: string | null;
 }
 
-const DateRangeDropdown = ({ onDateRangeChange }: { onDateRangeChange: (dateRange: string) => void }) => {
+interface StateCardProps {
+  state: string;
+  totalVisits: number;
+  totalEmployees: number;
+  onClick: () => void;
+}
+
+const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardProps) => {
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
+      <h2 className="text-2xl font-bold mb-4">{state}</h2>
+      <div className="flex justify-between">
+        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
+        <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
+      </div>
+    </div>
+  );
+};
+
+interface KPICardProps {
+  title: string;
+  value: number;
+}
+
+const KPICard = ({ title, value }: KPICardProps) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-4xl font-bold">{value}</p>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface VisitsByPurposeChartProps {
+  data: { purpose: string; visits: number }[];
+}
+
+const VisitsByPurposeChart = ({ data }: VisitsByPurposeChartProps) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Visits by Purpose</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="purpose" />
+            <YAxis />
+            <Tooltip contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }} />
+            <Legend />
+            <Bar dataKey="visits" fill="#1a202c" />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface DateRangeDropdownProps {
+  onDateRangeChange: (dateRange: string) => void;
+}
+
+const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState('This Week');
 
@@ -125,8 +144,8 @@ const DateRangeDropdown = ({ onDateRangeChange }: { onDateRangeChange: (dateRang
                 key={option}
                 href="#"
                 className={`${option === selectedOption
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-700'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-700'
                   } block px-4 py-2 text-sm`}
                 role="menuitem"
                 onClick={() => handleOptionClick(option)}
@@ -141,14 +160,76 @@ const DateRangeDropdown = ({ onDateRangeChange }: { onDateRangeChange: (dateRang
   );
 };
 
+interface VisitsTableProps {
+  visits: Visit[];
+  onViewDetails: (visitId: string) => void;
+}
+
+const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
+  const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
+    if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
+      return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
+    } else if (visit.checkoutDate && visit.checkoutTime) {
+      return { emoji: '🚪', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
+    } else if (visit.checkinDate && visit.checkinTime) {
+      return { emoji: '⏳', status: 'On Going', color: 'bg-green-100 text-green-800' };
+    }
+    return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Visits</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="px-4 py-2">Store</th>
+              <th className="px-4 py-2">Employee</th>
+              <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Purpose</th>
+              <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visits.map((visit) => {
+              const { emoji, status, color } = getOutcomeStatus(visit);
+              return (
+                <tr key={visit.id}>
+                  <td className="px-4 py-2">{visit.storeName}</td>
+                  <td className="px-4 py-2">{visit.employeeName}</td>
+                  <td className="px-4 py-2">{format(parseISO(visit.visit_date), 'MMM d, yyyy')}</td>
+                  <td className="px-4 py-2">{visit.purpose}</td>
+                  <td className={`px-4 py-2 ${color}`}>{emoji} {status}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      className="text-blue-500 hover:text-blue-700"
+                      onClick={() => onViewDetails(visit.id)}
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  );
+};
+
 const Dashboard = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+
   const [dateRange, setDateRange] = useState('This Week');
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
-  const [sortColumn, setSortColumn] = useState('visit_date');
-  const [sortOrder, setSortOrder] = useState('desc');
-  console.log(token)
 
   useEffect(() => {
     if (token) {
@@ -156,24 +237,6 @@ const Dashboard = () => {
     }
   }, [dateRange, token]);
 
-  const handleViewDetails = (visitId: string) => {
-    router.push(`/VisitDetailPage/${visitId}`);
-  };
-  const handleSort = (column: string) => {
-    if (column === sortColumn) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortOrder('asc');
-    }
-  };
-  const getSortIcon = (column: string) => {
-    if (column === sortColumn) {
-      return sortOrder === 'asc' ? '▲' : '▼';
-    }
-    return '';
-  };
-  
   const fetchVisits = async () => {
     try {
       let startDate = '';
@@ -226,203 +289,138 @@ const Dashboard = () => {
     }
   };
 
+  const handleStateClick = (state: string) => {
+    setSelectedState(state);
+    setSelectedEmployee(null); // Set selectedEmployee to null
+  };
+
+
+  const handleEmployeeChange = (employeeName: string | null) => {
+    setSelectedEmployee(employeeName === 'all' ? null : employeeName);
+  };
+
   const handleDateRangeChange = (selectedDateRange: string) => {
     setDateRange(selectedDateRange);
   };
 
-  const formatDate = (dateString: string) => {
-    return format(parseISO(dateString), 'MMM d, yyyy');
+  const handleViewDetails = (visitId: string) => {
+    router.push(`/VisitDetailPage/${visitId}`);
   };
 
-  // Calculate total visits
-  const totalVisits = visits.length;
+  const states = Array.from(new Set(visits.map((visit) => visit.city)));
 
-  // Calculate unique stores visited
-  const uniqueStoresVisited = Array.from(new Set(visits.map((visit) => visit.storeId))).length;
+  const stateCards = states.map((state) => {
+    const stateVisits = visits.filter((visit) => visit.city === state);
+    const totalVisits = stateVisits.length;
+    const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
 
-  // Calculate average visits per store
-  const averageVisitsPerStore = totalVisits / uniqueStoresVisited;
-
-  // Calculate total employees
-  const totalEmployees = Array.from(new Set(visits.map((visit) => visit.employeeId))).length;
-
-  // Calculate visits by employee
-  const visitsByEmployee = visits.reduce((acc: Record<string, number>, visit) => {
-    if (!acc[visit.employeeName]) {
-      acc[visit.employeeName] = 0;
-    }
-    acc[visit.employeeName]++;
-    return acc;
-  }, {});
-
-  // Calculate visits by purpose
-  const visitsByPurpose = visits.reduce((acc: Record<string, number>, visit) => {
-    if (!acc[visit.purpose]) {
-      acc[visit.purpose] = 0;
-    }
-    acc[visit.purpose]++;
-    return acc;
-  }, {});
-
-  // Prepare data for the visits by employee chart
-  const visitsByEmployeeChartData = Object.entries(visitsByEmployee).map(([name, value]) => ({
-    name,
-    visits: value,
-  }));
-
-  // Prepare data for the visits by purpose chart
-  const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, value]) => ({
-    name: purpose,
-    visits: value,
-  }));
-
-  // Sort the visits data in descending order based on the visit date
-  const sortedVisits = [...visits].sort((a, b) => {
-    if (sortColumn === 'visit_date') {
-      return sortOrder === 'asc'
-        ? new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime()
-        : new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime();
-    } else {
-      return sortOrder === 'asc'
-        ? String(a[sortColumn]).localeCompare(String(b[sortColumn]))
-        : String(b[sortColumn]).localeCompare(String(a[sortColumn]));
-    }
+    return (
+      <StateCard
+        key={state}
+        state={state}
+        totalVisits={totalVisits}
+        totalEmployees={totalEmployees}
+        onClick={() => handleStateClick(state)}
+      />
+    );
   });
+
+  if (selectedState) {
+    const stateVisits = selectedEmployee
+      ? visits.filter(
+        (visit) =>
+          visit.city === selectedState && visit.employeeName === selectedEmployee
+      )
+      : visits.filter((visit) => visit.city === selectedState);
+
+    const totalVisits = stateVisits.length;
+    const completedVisits = stateVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
+    const ongoingVisits = stateVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
+    const assignedVisits = stateVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
+    const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
+    const activeEmployees = Array.from(new Set(stateVisits.filter((visit) => visit.checkinDate && visit.checkinTime).map((visit) => visit.employeeId))).length;
+    const visitsByPurpose = stateVisits.reduce((acc: { [key: string]: number }, visit) => {
+      if (!acc[visit.purpose]) {
+        acc[visit.purpose] = 0;
+      }
+      acc[visit.purpose]++;
+      return acc;
+    }, {});
+
+
+    const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
+      purpose,
+      visits: Number(visits), // Ensure visits is a number
+    }));
+
+
+    const employeeOptions = [
+      { value: 'all', label: 'All Employees' },
+      ...Array.from(new Set(stateVisits.map((visit) => visit.employeeName))).map(
+        (employeeName) => ({
+          value: employeeName,
+          label: employeeName,
+        })
+      ),
+    ];
+
+
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">{selectedState}</h1>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => setSelectedState(null)}
+          >
+
+            Back to States
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <KPICard title="Total Visits" value={totalVisits} />
+          <KPICard title="Completed Visits" value={completedVisits} />
+          <KPICard title="Ongoing Visits" value={ongoingVisits} />
+          <KPICard title="Assigned Visits" value={assignedVisits} />
+          <KPICard title="Total Employees" value={totalEmployees} />
+          <KPICard title="Active Employees" value={activeEmployees} />
+        </div>
+        <div className="mb-8">
+          <VisitsByPurposeChart data={visitsByPurposeChartData} />
+        </div>
+        <div className="mb-8">
+          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+        </div>
+        <div className="mb-8">
+          <Select
+            value={selectedEmployee === null ? 'all' : selectedEmployee}
+            onValueChange={handleEmployeeChange}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Employee" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {employeeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <VisitsTable visits={stateVisits} onViewDetails={handleViewDetails} />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Sales Dashboard</h1>
-        <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Visits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{totalVisits}</p>
-            <p className="text-gray-500">Total visits in the selected date range</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Unique Stores Visited</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{uniqueStoresVisited}</p>
-            <p className="text-gray-500">Number of unique stores visited</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Visits per Store</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{averageVisitsPerStore.toFixed(2)}</p>
-            <p className="text-gray-500">Average number of visits per store</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Employees</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{totalEmployees}</p>
-            <p className="text-gray-500">Number of employees involved in visits</p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Visits by Employee</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={visitsByEmployeeChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }} />
-                <Legend />
-                <Bar dataKey="visits" fill="#1a202c" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Visits by Purpose</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={visitsByPurposeChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }} />
-                <Legend />
-                <Bar dataKey="visits" fill="#2d3748" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Visits</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="table">
-            <TabsList>
-              <TabsTrigger value="table">Table</TabsTrigger>
-            </TabsList>
-            <TabsContent value="table">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('storeName')}>
-                      Store <span className="text-xs">{getSortIcon('storeName')}</span>
-                    </th>
-                    <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('employeeName')}>
-                      Employee <span className="text-xs">{getSortIcon('employeeName')}</span>
-                    </th>
-                    <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('visit_date')}>
-                      Date <span className="text-xs">{getSortIcon('visit_date')}</span>
-                    </th>
-                    <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('purpose')}>
-                      Purpose <span className="text-xs">{getSortIcon('purpose')}</span>
-                    </th>
-                    <th className="px-4 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.isArray(sortedVisits) &&
-                    sortedVisits.slice(0, 10).map((visit, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2">{visit.storeName}</td>
-                        <td className="px-4 py-2">{visit.employeeName}</td>
-                        <td className="px-4 py-2">{formatDate(visit.visit_date)}</td>
-                        <td className="px-4 py-2">{visit.purpose}</td>
-                        <td className="px-4 py-2">
-                          <button
-                            className="text-blue-500 hover:text-blue-700"
-                            onClick={() => handleViewDetails(visit.id.toString())}
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <h1 className="text-3xl font-bold mb-8">Sales Dashboard</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{stateCards}</div>
     </div>
   );
 };
 
-export default Dashboard;
+export default Dashboard;   
