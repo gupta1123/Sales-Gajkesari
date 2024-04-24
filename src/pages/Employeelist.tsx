@@ -44,16 +44,25 @@ interface User {
   name: string;
   department: string;
   actions: string;
-  city: string; // Add the 'city' property
-  state: string; // Add the 'state' property
+  city: string;
+  state: string;
+  userDto: {
+    username: string;
+    password: string | null;
+    roles: string | null;
+    employeeId: number | null;
+    firstName: string | null;
+    lastName: string | null;
+  };
   // Add other properties as needed
 }
+
 const Employeelist = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<number | string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
-  const [selectedColumns, setSelectedColumns] = useState(['name', 'email', 'city', 'state', 'role', 'department', 'dateOfJoining', 'primaryContact', 'userName', 'password', 'actions']);
+  const [selectedColumns, setSelectedColumns] = useState(['name', 'email', 'city', 'state', 'role', 'department', 'userName', 'dateOfJoining', 'primaryContact', 'actions']);
   const router = useRouter();
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -67,12 +76,9 @@ const Employeelist = () => {
   const [selectedTab, setSelectedTab] = useState("tab1");
   const [activeTab, setActiveTab] = useState('tab1');
 
-
-
   const handleNextClick = () => {
     setActiveTab('tab2');
   };
-
 
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
@@ -114,25 +120,25 @@ const Employeelist = () => {
         email: employee.email,
         role: employee.role,
         departmentName: employee.departmentName,
-        userName: employee.userName,
+        userName: employee.userDto?.username || '',
         password: employee.password,
         primaryContact: employee.primaryContact,
-        dateOfJoining: employee.dateOfJoining, // Add the 'dateOfJoining' property
-        name: `${employee.firstName} ${employee.lastName}`, // Add the 'name' property
-        department: employee.departmentName, // Add the 'department' property
-        actions: '', // Add the 'actions' property (you can set it to an empty string or any other appropriate value)
+        dateOfJoining: employee.dateOfJoining,
+        name: `${employee.firstName} ${employee.lastName}`,
+        department: employee.departmentName,
+        actions: '',
         city: employee.city,
         state: employee.state,
+        userDto: employee.userDto,
         // Add other properties as needed
       });
     }
   };
+
   const handleResetPassword = (userId: number | string) => {
     setResetPasswordUserId(userId);
     setIsResetPasswordOpen(true);
   };
-
-
 
   const handleResetPasswordSubmit = () => {
     if (newPassword !== confirmPassword) {
@@ -145,6 +151,7 @@ const Employeelist = () => {
     setNewPassword('');
     setConfirmPassword('');
   };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setNewEmployee((prevEmployee) => ({
@@ -192,7 +199,6 @@ const Employeelist = () => {
       console.error('Error:', error);
     }
   };
-  
 
   const handleSaveEdit = async () => {
     if (editingEmployee) {
@@ -201,6 +207,9 @@ const Employeelist = () => {
 
         const payload = {
           role: editingEmployee.role,
+          userDto: {
+            username: editingEmployee.userName,
+          },
         };
 
         const response = await fetch(updateUrl, {
@@ -213,9 +222,8 @@ const Employeelist = () => {
         });
 
         if (response.ok) {
-          console.log('Employee updated!'); // Or use another way to notify the user about the success
+          console.log('Employee updated!');
 
-          // Update the users state with the edited employee data
           setUsers((prevUsers) =>
             prevUsers.map((user) =>
               user.id === editingEmployee.id ? editingEmployee : user
@@ -225,77 +233,74 @@ const Employeelist = () => {
           setEditingEmployee(null);
         } else {
           const errorData = await response.text();
-          console.error('Error:', errorData); // Handle error scenario
+          console.error('Error:', errorData);
         }
       } catch (error) {
         console.error('Error:', error);
-        // Handle any network or other errors
       }
     }
   };
+
   const handleViewUser = (userId: number) => {
     // This navigates to the dynamic route by passing the userId as a query parameter
     router.push(`/SalesExecutive/${userId}`);
   };
 
-
-
-
   const handleAddEmployee = () => {
     setIsModalOpen(true);
   };
 
-
- const handleSubmit = async () => {
-  try {
-    const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee-user/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        user: {
-          username: newEmployee.userName,
-          password: newEmployee.password,
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee-user/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        employee: {
-          firstName: newEmployee.firstName,
-          lastName: newEmployee.lastName,
-          employeeId: newEmployee.employeeId,
-          primaryContact: newEmployee.primaryContact,
-          secondaryContact: newEmployee.secondaryContact,
-          departmentName: newEmployee.departmentName,
-          email: newEmployee.email,
-          role: newEmployee.role,
-          addressLine1: newEmployee.addressLine1,
-          addressLine2: newEmployee.addressLine2,
-          city: newEmployee.city,
-          state: newEmployee.state,
-          country: newEmployee.country,
-          pincode: newEmployee.pincode,
-          dateOfJoining: newEmployee.dateOfJoining
-        }
-      })
-    });
+        body: JSON.stringify({
+          user: {
+            username: newEmployee.userName,
+            password: newEmployee.password,
+          },
+          employee: {
+            firstName: newEmployee.firstName,
+            lastName: newEmployee.lastName,
+            employeeId: newEmployee.employeeId,
+            primaryContact: newEmployee.primaryContact,
+            secondaryContact: newEmployee.secondaryContact,
+            departmentName: newEmployee.departmentName,
+            email: newEmployee.email,
+            role: newEmployee.role,
+            addressLine1: newEmployee.addressLine1,
+            addressLine2: newEmployee.addressLine2,
+            city: newEmployee.city,
+            state: newEmployee.state,
+            country: newEmployee.country,
+            pincode: newEmployee.pincode,
+            dateOfJoining: newEmployee.dateOfJoining
+          }
+        })
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      console.log('User Created!', data);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('User Created!', data);
 
-      // Close the modal
-      setIsModalOpen(false);
+        // Close the modal
+        setIsModalOpen(false);
 
-      // Refresh the page
-      window.location.reload();
-    } else {
-      const errorData = await response.text();
-      console.error('Error:', errorData);
+        // Refresh the page
+        window.location.reload();
+      } else {
+        const errorData = await response.text();
+        console.error('Error:', errorData);
+      }
+    } catch (error) {
+      console.error('Error:', error);
     }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
+  };
+
   const fetchEmployees = async () => {
     try {
       const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
@@ -304,13 +309,12 @@ const Employeelist = () => {
         },
       });
       const data: User[] = await response.json();
-      console.log('Fetched employees:', data); // Add this line to log the fetched data
+      console.log('Fetched employees:', data);
       setUsers(data);
     } catch (error) {
       console.error('Error fetching employees:', error);
     }
   };
-
 
   const filteredUsers = users.filter(
     (user) =>
@@ -339,7 +343,6 @@ const Employeelist = () => {
     return 0;
   });
 
-
   const handleSort = (column: keyof User) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -348,6 +351,7 @@ const Employeelist = () => {
       setSortDirection('asc');
     }
   };
+
   const handleSelectAllRows = () => {
     if (selectedRows.length === paginatedUsers.length) {
       setSelectedRows([]);
@@ -728,6 +732,16 @@ const Employeelist = () => {
                 )}
               </TableHead>
             )}
+            {selectedColumns.includes('userName') && (
+              <TableHead className="cursor-pointer" onClick={() => handleSort('userName')}>
+                User Name
+                {sortColumn === 'userName' && (
+                  <span className="ml-2">
+                    {sortDirection === 'asc' ? '▲' : '▼'}
+                  </span>
+                )}
+              </TableHead>
+            )}
             {selectedColumns.includes('primaryContact') && (
               <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
                 Phone
@@ -823,23 +837,39 @@ const Employeelist = () => {
                   {user.departmentName}
                 </TableCell>
               )}
-
+              {selectedColumns.includes('userName') && (
+                <TableCell className="text-left px-4" style={{ width: '150px' }}>
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="userName"
+                      value={editingEmployee.userName}
+                      onChange={(e) =>
+                        setEditingEmployee({ ...editingEmployee, userName: e.target.value })
+                      }
+                      className="w-full py-2 px-4"
+                      style={{ minWidth: '150px' }}
+                    />
+                  ) : (
+                    user.userDto?.username || ''
+                  )}
+                </TableCell>
+              )}
               {/* {selectedColumns.includes('password') && (
-                <TableCell className="text-left px-4">
-                  {editingEmployee?.id === user.id ? (
-                    <Input
-                      name="password"
-                      type="password"
-                      value={editingEmployee.password}
-                      onChange={handleInputChange}
-                      className="w-full py-2 px-4"
-                      style={{ minWidth: '250px' }} // Increase the width here
-                    />
-                  ) : (
-                    '********'
-                  )}
-                </TableCell>
-              )} */}
+                <TableCell className="text-left px-4">
+                  {editingEmployee?.id === user.id ? (
+                    <Input
+                      name="password"
+                      type="password"
+                      value={editingEmployee.password}
+                      onChange={handleInputChange}
+                      className="w-full py-2 px-4"
+                      style={{ minWidth: '250px' }} // Increase the width here
+                    />
+                  ) : (
+                    '********'
+                  )}
+                </TableCell>
+              )} */}
               {selectedColumns.includes('primaryContact') && (
                 <TableCell className="text-left px-4">
                   {editingEmployee?.id === user.id ? (
@@ -969,4 +999,4 @@ const Employeelist = () => {
   );
 };
 
-export default Employeelist; 
+export default Employeelist;  

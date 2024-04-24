@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/avatar"
 import { UploadProps, UploadFile } from 'antd';
 import { UploadChangeParam } from 'antd/lib/upload/interface';
-
+import ImageGallery from '../ImageGallery';
 
 
 const { Dragger } = Upload;
@@ -344,9 +344,10 @@ const VisitDetailPage = () => {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Check-in Images</CardTitle>
+            
             </CardHeader>
             <CardContent>
-           
+              <ImageGallery images={checkinImages} />
             </CardContent>
           </Card>
           {/* Likes and Brands */}
