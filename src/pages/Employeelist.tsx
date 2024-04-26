@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Avatar } from "@/components/ui/avatar";
 import {
   Pagination,
@@ -75,7 +77,7 @@ const Employeelist = () => {
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
   const [selectedTab, setSelectedTab] = useState("tab1");
   const [activeTab, setActiveTab] = useState('tab1');
-
+  const [showPassword, setShowPassword] = useState(false);
   const handleNextClick = () => {
     setActiveTab('tab2');
   };
@@ -252,52 +254,60 @@ const Employeelist = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee-user/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          user: {
-            username: newEmployee.userName,
-            password: newEmployee.password,
+      const response = await fetch(
+        "http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee-user/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          employee: {
-            firstName: newEmployee.firstName,
-            lastName: newEmployee.lastName,
-            employeeId: newEmployee.employeeId,
-            primaryContact: newEmployee.primaryContact,
-            secondaryContact: newEmployee.secondaryContact,
-            departmentName: newEmployee.departmentName,
-            email: newEmployee.email,
-            role: newEmployee.role,
-            addressLine1: newEmployee.addressLine1,
-            addressLine2: newEmployee.addressLine2,
-            city: newEmployee.city,
-            state: newEmployee.state,
-            country: newEmployee.country,
-            pincode: newEmployee.pincode,
-            dateOfJoining: newEmployee.dateOfJoining
-          }
-        })
-      });
+          body: JSON.stringify({
+            user: {
+              username: newEmployee.userName,
+              password: newEmployee.password,
+            },
+            employee: {
+              firstName: newEmployee.firstName,
+              lastName: newEmployee.lastName,
+              employeeId: newEmployee.employeeId,
+              primaryContact: newEmployee.primaryContact,
+              secondaryContact: newEmployee.secondaryContact,
+              departmentName: newEmployee.departmentName,
+              email: newEmployee.email,
+              role: newEmployee.role,
+              addressLine1: newEmployee.addressLine1,
+              addressLine2: newEmployee.addressLine2,
+              city: newEmployee.city,
+              state: newEmployee.state,
+              country: newEmployee.country,
+              pincode: newEmployee.pincode,
+              dateOfJoining: newEmployee.dateOfJoining,
+            },
+          }),
+        }
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('User Created!', data);
-
-        // Close the modal
-        setIsModalOpen(false);
-
-        // Refresh the page
-        window.location.reload();
-      } else {
+      if (!response.ok) {
         const errorData = await response.text();
-        console.error('Error:', errorData);
+        console.error("Error:", errorData);
+        throw new Error("Error adding employee!");
       }
-    } catch (error) {
-      console.error('Error:', error);
+
+      console.log("API response:", response);
+
+      // Close the modal
+      setIsModalOpen(false);
+
+      // Refresh the page to get the updated employee list
+      window.location.reload();
+    } catch (error: unknown) {
+      console.error("Error:", error);
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert("An unknown error occurred.");
+      }
     }
   };
 
@@ -655,6 +665,15 @@ const Employeelist = () => {
                   </div>
                 </TabsContent>
                 <TabsContent value="tab2">
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setActiveTab('tab1')}
+                      className="p-2"
+                    >
+                      <ArrowLeftIcon className="h-5 w-5" />
+                    </Button>
+                  </div>
                   <div className="grid gap-4 py-4">
                     <div className="text-lg font-semibold mb-2">User Credentials</div>
                     <div className="grid grid-cols-2 gap-4">
@@ -669,16 +688,29 @@ const Employeelist = () => {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          name="password"
-                          type="password"
-                          value={newEmployee.password}
-                          onChange={handleInputChange}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={newEmployee.password}
+                            onChange={handleInputChange}
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-1/2 right-2 transform -translate-y-1/2 focus:outline-none"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <EyeIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                    </div>
                   <div className="mt-4">
                     <Button onClick={handleSubmit}>Add Employee</Button>
                   </div>

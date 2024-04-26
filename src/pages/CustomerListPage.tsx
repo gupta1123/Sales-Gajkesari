@@ -88,8 +88,13 @@ const CustomerTable = ({
 
     const sortedCustomers = sortColumn
         ? customers.slice().sort((a, b) => {
-            const sortValue = (value: any) =>
-                typeof value === 'string' ? value.toLowerCase() : value;
+            const sortValue = (value: any) => {
+                if (sortColumn === 'lastVisitDate') {
+                    // Parse the date and time for comparison
+                    return new Date(value).getTime();
+                }
+                return typeof value === 'string' ? value.toLowerCase() : value;
+            };
 
             const aValue = sortValue(a[sortColumn as keyof Customer]);
             const bValue = sortValue(b[sortColumn as keyof Customer]);
@@ -105,10 +110,7 @@ const CustomerTable = ({
             <TableHeader>
                 <TableRow>
                     {selectedColumns.includes('shopName') && (
-                        <TableHead
-                            className="min-w-[200px] cursor-pointer"
-                            onClick={() => handleSort('storeName')}
-                        >
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('storeName')}>
                             Shop Name
                             {sortColumn === 'storeName' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
@@ -116,109 +118,15 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('ownerName') && (
-                        <TableHead
-                            className="min-w-[200px] cursor-pointer"
-                            onClick={() => handleSort('clientFirstName')}
-                        >
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('clientFirstName')}>
                             Owner Name
                             {sortColumn === 'clientFirstName' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
                             )}
                         </TableHead>
                     )}
-                    {selectedColumns.includes('phone') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('primaryContact')}
-                        >
-                            Phone
-                            {sortColumn === 'primaryContact' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('monthlySales') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('monthlySale')}
-                        >
-                            Monthly Sales
-                            {sortColumn === 'monthlySale' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('intentLevel') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('intent')}
-                        >
-                            Intent Level
-                            {sortColumn === 'intent' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('fieldOfficer') && (
-                        <TableHead
-                            className="min-w-[200px] cursor-pointer"
-                            onClick={() => handleSort('employeeName')}
-                        >
-                            Field Officer
-                            {sortColumn === 'employeeName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('clientType') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('clientType')}
-                        >
-                            Client Type
-                            {sortColumn === 'clientType' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('totalVisits') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('totalVisits')}
-                        >
-                            Total Visits
-                            {sortColumn === 'totalVisits' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('lastVisitDate') && (
-                        <TableHead
-                            className="min-w-[200px] cursor-pointer"
-                            onClick={() => handleSort('lastVisitDate')}
-                        >
-                            Last Visit Date
-                            {sortColumn === 'lastVisitDate' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('email') && (
-                        <TableHead
-                            className="min-w-[350px] cursor-pointer"
-                            onClick={() => handleSort('email')}
-                        >
-                            Email
-                            {sortColumn === 'email' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
-                            )}
-                        </TableHead>
-                    )}
                     {selectedColumns.includes('city') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('city')}
-                        >
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('city')}>
                             City
                             {sortColumn === 'city' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
@@ -226,50 +134,107 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('state') && (
-                        <TableHead
-                            className="min-w-[150px] cursor-pointer"
-                            onClick={() => handleSort('state')}
-                        >
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('state')}>
                             State
                             {sortColumn === 'state' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
                             )}
                         </TableHead>
                     )}
-                    <TableHead className="min-w-[100px]">Actions</TableHead>
+                    {selectedColumns.includes('phone') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
+                            Phone
+                            {sortColumn === 'primaryContact' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('monthlySales') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('monthlySale')}>
+                            Monthly Sales
+                            {sortColumn === 'monthlySale' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('intentLevel') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('intent')}>
+                            Intent Level
+                            {sortColumn === 'intent' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('fieldOfficer') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('employeeName')}>
+                            Field Officer
+                            {sortColumn === 'employeeName' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('clientType') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('clientType')}>
+                            Client Type
+                            {sortColumn === 'clientType' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('totalVisits') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('totalVisits')}>
+                            Total Visits
+                            {sortColumn === 'totalVisits' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('lastVisitDate') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('lastVisitDate')}>
+                            Last Visit Date
+                            {sortColumn === 'lastVisitDate' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    {selectedColumns.includes('email') && (
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('email')}>
+                            Email
+                            {sortColumn === 'email' && (
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                            )}
+                        </TableHead>
+                    )}
+                    <TableHead className="w-20">Actions</TableHead>
                 </TableRow>
             </TableHeader>
-
 
             <TableBody>
                 {sortedCustomers.map((customer) => (
                     <TableRow key={customer.storeId}>
-                        {selectedColumns.includes('shopName') && <TableCell className="w-64">{customer.storeName}</TableCell>}
-                        {selectedColumns.includes('ownerName') && <TableCell className="w-64">{customer.clientFirstName}</TableCell>}
-                        {selectedColumns.includes('phone') && <TableCell className="w-48">{customer.primaryContact}</TableCell>}
-                        {selectedColumns.includes('monthlySales') && <TableCell className="w-48">{customer.monthlySale ? `₹${customer.monthlySale.toLocaleString()}` : ''}</TableCell>}
-                        {selectedColumns.includes('intentLevel') && (
-                            <TableCell className="w-48">
-                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className="h-full bg-black"
-                                        style={{ width: `${(customer.intent / 10) * 100}%` }}
-                                    ></div>
-                                </div>
+                        {selectedColumns.includes('shopName') && <TableCell>{customer.storeName}</TableCell>}
+                        {selectedColumns.includes('ownerName') && <TableCell>{customer.clientFirstName}</TableCell>}
+                        {selectedColumns.includes('city') && <TableCell>{customer.city}</TableCell>}
+                        {selectedColumns.includes('state') && <TableCell>{customer.state}</TableCell>}
+                        {selectedColumns.includes('phone') && <TableCell>{customer.primaryContact}</TableCell>}
+                        {selectedColumns.includes('monthlySales') && (
+                            <TableCell>
+                                {customer.monthlySale ? `${customer.monthlySale.toLocaleString()} tonnes` : ''}
                             </TableCell>
                         )}
-                        {selectedColumns.includes('fieldOfficer') && <TableCell className="w-64">{customer.employeeName}</TableCell>}
+                        {selectedColumns.includes('intentLevel') && (
+                            <TableCell>{customer.intent}</TableCell>
+                        )}
+                        {selectedColumns.includes('fieldOfficer') && <TableCell>{customer.employeeName}</TableCell>}
                         {selectedColumns.includes('clientType') && (
-                            <TableCell className="w-48">
+                            <TableCell>
                                 <Badge variant="outline">{customer.clientType}</Badge>
                             </TableCell>
                         )}
-                        {selectedColumns.includes('totalVisits') && <TableCell className="w-40">{customer.totalVisits}</TableCell>}
-                        {selectedColumns.includes('lastVisitDate') && <TableCell className="w-56">{customer.lastVisitDate}</TableCell>}
-                        {selectedColumns.includes('email') && <TableCell className="w-72">{customer.email}</TableCell>}
-                        {selectedColumns.includes('city') && <TableCell className="w-48">{customer.city}</TableCell>}
-                        {selectedColumns.includes('state') && <TableCell className="w-48">{customer.state}</TableCell>}
-                        <TableCell className="w-40">
+                        {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisits}</TableCell>}
+                        {selectedColumns.includes('lastVisitDate') && <TableCell>{customer.lastVisitDate}</TableCell>}
+                        {selectedColumns.includes('email') && <TableCell>{customer.email}</TableCell>}
+                        <TableCell className="w-20">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -298,8 +263,8 @@ const CustomerTable = ({
 export default function CustomerListPage() {
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
-        'shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer',
-        'clientType', 'totalVisits', 'lastVisitDate', 'email', 'city', 'state',
+        'shopName', 'ownerName', 'city', 'state', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer',
+        'clientType', 'totalVisits', 'lastVisitDate', 'email', 
     ]);
     const [filters, setFilters] = useState({
         city: '',
@@ -497,7 +462,7 @@ export default function CustomerListPage() {
                                     <Button variant="outline">Columns</Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                    {['shopName', 'ownerName', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer', 'clientType', 'totalVisits', 'lastVisitDate', 'email', 'city', 'state'].map(
+                                    {['shopName', 'ownerName', 'city', 'state', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer', 'clientType', 'totalVisits', 'lastVisitDate', 'email'].map(
                                         (column) => (
                                             <DropdownMenuCheckboxItem
                                                 key={column}
@@ -524,8 +489,8 @@ export default function CustomerListPage() {
                     )}
                     {/* <Button variant="outline" onClick={openModal}>Add Customer</Button> */}
                     {/* <Button onClick={toggleViewMode}>
-                        {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
-                    </Button> */}
+                    {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
+                </Button> */}
                 </div>
             </div>
             <AddCustomerModal
@@ -535,120 +500,7 @@ export default function CustomerListPage() {
                 employeeId={employeeId ? Number(employeeId) : null}
             />
 
-            {/* {viewMode === 'card' ? (
-                <>
-                    <div className="space-y-8">
-                        {paginatedData.map((customer) => (
-                            <Card key={customer.storeId} className="bg-gray-100 text-gray-800 shadow-md rounded-lg overflow-hidden">
-                                <CardHeader className="bg-gray-200 px-6 py-4">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="text-2xl font-bold">{customer.storeName}</CardTitle>
-                                        <div className="flex items-center space-x-2">
-                                            <Badge variant="outline" className="border-gray-500 text-gray-500">
-                                                {customer.clientType}
-                                            </Badge>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-20 p-0">
-                                                        <span className="flex items-center">
-                                                            Actions <AiFillCaretDown className="h-4 w-4 ml-2" />
-                                                        </span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem>
-                                                        <Link href={`/CustomerDetailPage/${customer.storeId}`}>
-                                                            View
-                                                        </Link>
-                                                    </DropdownMenuItem>
 
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onSelect={() => openDeleteModal(customer.storeId)}>
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="px-6 py-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center">
-                                                <Avatar className="mr-4 bg-gray-300 text-gray-600">
-                                                    <AvatarFallback><FiUser /></AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="text-lg font-semibold">{customer.clientFirstName}</p>
-                                                    <p className="text-gray-600 flex items-center">
-                                                        <FiPhone className="mr-2" /> {customer.primaryContact}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <span className="font-semibold">Monthly Sales:</span>
-                                                <span className="ml-2">₹{customer.monthlySale ? customer.monthlySale.toLocaleString() : ''}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <span className="font-semibold">Field Officer:</span>
-                                                <span className="ml-2">{customer.employeeName}</span>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <p className="text-lg font-semibold mb-2">Intent Level</p>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-black"
-                                                        style={{ width: `${(customer.intent / 10) * 100}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-gray-200 rounded-lg p-4">
-                                                    <p className="text-lg font-semibold">Total Visits</p>
-                                                    <p className="text-3xl font-bold">{customer.totalVisitCount}</p>
-                                                </div>
-                                                <div className="bg-gray-200 rounded-lg p-4">
-                                                    <p className="text-lg font-semibold">Last Visit</p>
-                                                    <p className="text-xl font-bold">{customer.lastVisitDate}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                    <div className="mt-8 flex justify-between items-center">
-                        <div>
-                            {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
-                                <button
-                                    key={index}
-                                    className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                                    onClick={() => handlePageChange(index + 1)}
-                                >
-                                    {index + 1}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <span>Items per page:</span>
-                            <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-                                <SelectTrigger className="w-20">
-                                    <SelectValue placeholder={itemsPerPage.toString()} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="20">20</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </>
-            ) : (*/}
             <> <div className="mb-4 flex space-x-4">
                 <div className="relative">
                     <input

@@ -65,9 +65,9 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
 
     const sortVisits = (a: Visit, b: Visit) => {
         if (sortColumn === 'updatedAt') {
-            const dateA = new Date(a.updatedAt!);
-            const dateB = new Date(b.updatedAt!);
-            return sortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+            const datetimeA = new Date(`${a.updatedAt} ${a.updatedTime}`);
+            const datetimeB = new Date(`${b.updatedAt} ${b.updatedTime}`);
+            return sortDirection === 'asc' ? datetimeA.getTime() - datetimeB.getTime() : datetimeB.getTime() - datetimeA.getTime();
         } else if (sortColumn === 'intent') {
             const intentA = String(a.intent || '');
             const intentB = String(b.intent || '');

@@ -9,7 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cart
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-
+import { Button } from "@/components/ui/button";
 interface Visit {
   id: string;
   storeId: string;
@@ -18,7 +18,8 @@ interface Visit {
   purpose: string;
   visit_date: string;
   storeName: string;
-  city: string;
+  state: string;
+  city: string; // Add the city property
   checkinDate: string | null;
   checkinTime: string | null;
   checkoutDate: string | null;
@@ -61,7 +62,22 @@ const KPICard = ({ title, value }: KPICardProps) => {
     </Card>
   );
 };
+interface EmployeeCardProps {
+  employeeName: string;
+  totalVisits: number;
+  onClick: () => void;
+}
 
+const EmployeeCard = ({ employeeName, totalVisits, onClick }: EmployeeCardProps) => {
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
+      <h2 className="text-2xl font-bold mb-4">{employeeName}</h2>
+      <div className="flex justify-between">
+        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
+      </div>
+    </div>
+  );
+};
 interface VisitsByPurposeChartProps {
   data: { purpose: string; visits: number }[];
 }
@@ -190,6 +206,7 @@ const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
               <th className="px-4 py-2">Employee</th>
               <th className="px-4 py-2">Date</th>
               <th className="px-4 py-2">Purpose</th>
+              <th className="px-4 py-2">City</th> {/* Add the City column */}
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
@@ -203,6 +220,7 @@ const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
                   <td className="px-4 py-2">{visit.employeeName}</td>
                   <td className="px-4 py-2">{format(parseISO(visit.visit_date), 'MMM d, yyyy')}</td>
                   <td className="px-4 py-2">{visit.purpose}</td>
+                  <td className="px-4 py-2">{visit.city}</td> {/* Display the city */}
                   <td className={`px-4 py-2 ${color}`}>{emoji} {status}</td>
                   <td className="px-4 py-2">
                     <button
@@ -221,12 +239,11 @@ const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
     </Card>
   );
 };
-
 const Dashboard = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [selectedState, setSelectedState] = useState<string | null>(null);
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
 
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState('This Week');
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
@@ -236,7 +253,9 @@ const Dashboard = () => {
       fetchVisits();
     }
   }, [dateRange, token]);
-
+  const handleEmployeeClick = (employeeName: string) => {
+    setSelectedEmployee(employeeName);
+  };
   const fetchVisits = async () => {
     try {
       let startDate = '';
@@ -307,10 +326,10 @@ const Dashboard = () => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
 
-  const states = Array.from(new Set(visits.map((visit) => visit.city)));
+  const states = Array.from(new Set(visits.map((visit) => visit.state))); // Change from 'city' to 'state'
 
   const stateCards = states.map((state) => {
-    const stateVisits = visits.filter((visit) => visit.city === state);
+    const stateVisits = visits.filter((visit) => visit.state === state); // Change from 'city' to 'state'
     const totalVisits = stateVisits.length;
     const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
 
@@ -326,91 +345,83 @@ const Dashboard = () => {
   });
 
   if (selectedState) {
-    const stateVisits = selectedEmployee
-      ? visits.filter(
-        (visit) =>
-          visit.city === selectedState && visit.employeeName === selectedEmployee
-      )
-      : visits.filter((visit) => visit.city === selectedState);
+    const stateVisits = visits.filter((visit) => visit.state === selectedState);
 
-    const totalVisits = stateVisits.length;
-    const completedVisits = stateVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
-    const ongoingVisits = stateVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
-    const assignedVisits = stateVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
-    const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
-    const activeEmployees = Array.from(new Set(stateVisits.filter((visit) => visit.checkinDate && visit.checkinTime).map((visit) => visit.employeeId))).length;
-    const visitsByPurpose = stateVisits.reduce((acc: { [key: string]: number }, visit) => {
-      if (!acc[visit.purpose]) {
-        acc[visit.purpose] = 0;
-      }
-      acc[visit.purpose]++;
-      return acc;
-    }, {});
+    const employeeCards = Array.from(new Set(stateVisits.map((visit) => visit.employeeName))).map((employeeName) => {
+      const employeeVisits = stateVisits.filter((visit) => visit.employeeName === employeeName);
+      const totalVisits = employeeVisits.length;
+
+      return (
+        <EmployeeCard
+          key={employeeName}
+          employeeName={employeeName}
+          totalVisits={totalVisits}
+          onClick={() => handleEmployeeClick(employeeName)}
+        />
+      );
+    });
+
+    if (selectedEmployee) {
+      const employeeVisits = stateVisits.filter((visit) => visit.employeeName === selectedEmployee);
 
 
-    const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
-      purpose,
-      visits: Number(visits), // Ensure visits is a number
-    }));
+      const totalVisits = employeeVisits.length;
+      const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
+      const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
+      const assignedVisits = employeeVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
+      const visitsByPurpose = employeeVisits.reduce((acc: { [key: string]: number }, visit) => {
+        if (!acc[visit.purpose]) {
+          acc[visit.purpose] = 0;
+        }
+        acc[visit.purpose]++;
+        return acc;
+      }, {});
 
+      const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
+        purpose,
+        visits: Number(visits), // Ensure visits is a number
+      }));
 
-    const employeeOptions = [
-      { value: 'all', label: 'All Employees' },
-      ...Array.from(new Set(stateVisits.map((visit) => visit.employeeName))).map(
-        (employeeName) => ({
-          value: employeeName,
-          label: employeeName,
-        })
-      ),
-    ];
-
+      return (
+        <div className="container mx-auto py-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">{selectedEmployee}</h1>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedEmployee(null)}
+            >
+              Back to Employees
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <KPICard title="Total Visits" value={totalVisits} />
+            <KPICard title="Completed Visits" value={completedVisits} />
+            <KPICard title="Ongoing Visits" value={ongoingVisits} />
+            <KPICard title="Assigned Visits" value={assignedVisits} />
+          </div>
+          <div className="mb-8">
+            <VisitsByPurposeChart data={visitsByPurposeChartData} />
+          </div>
+          <div className="mb-8">
+            <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+          </div>
+          <VisitsTable visits={employeeVisits} onViewDetails={handleViewDetails} />
+        </div>
+      );
+    }
 
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">{selectedState}</h1>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          <Button
+            variant="outline"
             onClick={() => setSelectedState(null)}
           >
-
             Back to States
-          </button>
+          </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <KPICard title="Total Visits" value={totalVisits} />
-          <KPICard title="Completed Visits" value={completedVisits} />
-          <KPICard title="Ongoing Visits" value={ongoingVisits} />
-          <KPICard title="Assigned Visits" value={assignedVisits} />
-          <KPICard title="Total Employees" value={totalEmployees} />
-          <KPICard title="Active Employees" value={activeEmployees} />
-        </div>
-        <div className="mb-8">
-          <VisitsByPurposeChart data={visitsByPurposeChartData} />
-        </div>
-        <div className="mb-8">
-          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-        </div>
-        <div className="mb-8">
-          <Select
-            value={selectedEmployee === null ? 'all' : selectedEmployee}
-            onValueChange={handleEmployeeChange}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Employee" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {employeeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-        <VisitsTable visits={stateVisits} onViewDetails={handleViewDetails} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{employeeCards}</div>
       </div>
     );
   }
@@ -423,4 +434,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;   
+export default Dashboard;

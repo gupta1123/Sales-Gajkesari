@@ -278,10 +278,23 @@ useEffect(() => {
                 </TabsContent>
                 <TabsContent value="additional" className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="monthlySale" className="text-sm font-medium text-gray-700">Monthly Sale</Label>
-                      <Input id="monthlySale" type="number" value={customerData.monthlySale || ''} onChange={(e) => handleInputChange('monthlySale', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
-                    </div>
+                    <div className="relative">
+                      <Label htmlFor="monthlySale" className="text-sm font-medium text-gray-700">
+                        Monthly Sale
+                      </Label>
+                      <div className="flex items-center mt-1">
+                        <Input
+                          id="monthlySale"
+                          type="number"
+                          value={customerData.monthlySale || ''}
+                          onChange={(e) => handleInputChange('monthlySale', e.target.value)}
+                          className="w-32 text-sm rounded-md pl-3 pr-0 py-2 text-gray-800"
+                          disabled={!isEditing}
+                        />
+                        <span className="text-gray-500 ml-[-95px]">tonnes</span>
+                      </div>
+                      </div>
+                  
                     <div>
                       <Label htmlFor="intent" className="text-sm font-medium text-gray-700">Intent Level</Label>
                       <Select value={customerData.intent ? String(customerData.intent) : ''} onValueChange={(value) => handleInputChange('intent', Number(value))} disabled={!isEditing}>
