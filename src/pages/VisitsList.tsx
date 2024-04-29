@@ -203,17 +203,11 @@ const VisitsList: React.FC = () => {
     });
   };
 
+  // Sort the visits array based on the "visit_date" column in descending order
   const sortedVisits = [...filteredVisits].sort((a, b) => {
-    if (sortColumn) {
-      const valueA = a[sortColumn as keyof Visit];
-      const valueB = b[sortColumn as keyof Visit];
-      if (typeof valueA === 'string' && typeof valueB === 'string') {
-        return sortDirection === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
-      } else if (typeof valueA === 'number' && typeof valueB === 'number') {
-        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
-      }
-    }
-    return 0;
+    const aDate = new Date(a.visit_date);
+    const bDate = new Date(b.visit_date);
+    return bDate.getTime() - aDate.getTime();
   });
 
   const handleColumnSelect = (column: string) => {
@@ -224,7 +218,7 @@ const VisitsList: React.FC = () => {
     }
   };
 
-  const totalPages = Math.ceil(filteredVisits.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedVisits.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentVisits = sortedVisits.slice(startIndex, endIndex);
@@ -251,9 +245,6 @@ const VisitsList: React.FC = () => {
         itemsPerPage={itemsPerPage}
         currentPage={currentPage}
         onSort={handleSort}
-        onSelectAllRows={handleSelectAllRows}
-        selectedRows={selectedRows}
-        onSelectRow={handleSelectRow}
         onBulkAction={handleBulkAction}
       />
 

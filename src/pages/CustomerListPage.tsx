@@ -232,7 +232,17 @@ const CustomerTable = ({
                             </TableCell>
                         )}
                         {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisits}</TableCell>}
-                        {selectedColumns.includes('lastVisitDate') && <TableCell>{customer.lastVisitDate}</TableCell>}
+                        {selectedColumns.includes('lastVisitDate') && (
+                            <TableCell>
+                                {customer.lastVisitDate
+                                    ? new Date(customer.lastVisitDate).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                    })
+                                    : ''}
+                            </TableCell>
+                        )}
                         {selectedColumns.includes('email') && <TableCell>{customer.email}</TableCell>}
                         <TableCell className="w-20">
                             <DropdownMenu>
@@ -260,11 +270,12 @@ const CustomerTable = ({
     );
 };
 
+
 export default function CustomerListPage() {
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
         'shopName', 'ownerName', 'city', 'state', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer',
-        'clientType', 'totalVisits', 'lastVisitDate', 'email', 
+        'clientType', 'totalVisits', 'lastVisitDate', 'email',
     ]);
     const [filters, setFilters] = useState({
         city: '',
@@ -500,77 +511,77 @@ export default function CustomerListPage() {
                 employeeId={employeeId ? Number(employeeId) : null}
             />
 
-
-            <> <div className="mb-4 flex space-x-4">
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Filter by city"
-                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                        value={filters.city}
-                        onChange={(e) => handleFilterChange('city', e.target.value)}
-                    />
-                    {filters.city && (
-                        <button
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                            onClick={() => handleFilterClear('city')}
-                        >
-                            &times;
-                        </button>
-                    )}
+            <>
+                <div className="mb-4 flex space-x-4">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by city"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.city}
+                            onChange={(e) => handleFilterChange('city', e.target.value)}
+                        />
+                        {filters.city && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('city')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by  Shop name"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.name}
+                            onChange={(e) => handleFilterChange('name', e.target.value)}
+                        />
+                        {filters.name && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('name')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by owner"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.owner}
+                            onChange={(e) => handleFilterChange('owner', e.target.value)}
+                        />
+                        {filters.owner && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('owner')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by phone number"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.phone}
+                            onChange={(e) => handleFilterChange('phone', e.target.value)}
+                        />
+                        {filters.phone && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('phone')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Filter by  Shop name"
-                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                        value={filters.name}
-                        onChange={(e) => handleFilterChange('name', e.target.value)}
-                    />
-                    {filters.name && (
-                        <button
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                            onClick={() => handleFilterClear('name')}
-                        >
-                            &times;
-                        </button>
-                    )}
-                </div>
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Filter by owner"
-                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                        value={filters.owner}
-                        onChange={(e) => handleFilterChange('owner', e.target.value)}
-                    />
-                    {filters.owner && (
-                        <button
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                            onClick={() => handleFilterClear('owner')}
-                        >
-                            &times;
-                        </button>
-                    )}
-                </div>
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Filter by phone number"
-                        className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                        value={filters.phone}
-                        onChange={(e) => handleFilterChange('phone', e.target.value)}
-                    />
-                    {filters.phone && (
-                        <button
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                            onClick={() => handleFilterClear('phone')}
-                        >
-                            &times;
-                        </button>
-                    )}
-                </div>
-            </div>
 
                 <CustomerTable
                     customers={paginatedData}
@@ -583,19 +594,29 @@ export default function CustomerListPage() {
                     onDeleteCustomer={openDeleteModal}
                 />
 
-                <div className="mt-8 flex justify-between items-center">
-                    <div>
-                        {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
-                            <button
-                                key={index}
-                                className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                                onClick={() => handlePageChange(index + 1)}
-                            >
-                                {index + 1}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex items-center space-x-2">
+                <div className="mt-8">
+                    <Pagination>
+                        <PaginationContent>
+                            {currentPage > 1 && (
+                                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                            )}
+                            {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
+                                <PaginationItem key={index}>
+                                    <PaginationLink
+                                        isActive={currentPage === index + 1}
+                                        onClick={() => handlePageChange(index + 1)}
+                                    >
+                                        {index + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                            {currentPage < Math.ceil(customers.length / itemsPerPage) && (
+                                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                            )}
+                        </PaginationContent>
+                    </Pagination>
+
+                    <div className="flex items-center space-x-2 mt-4">
                         <span>Items per page:</span>
                         <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger className="w-20">
@@ -610,7 +631,6 @@ export default function CustomerListPage() {
                     </div>
                 </div>
             </>
-
 
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}

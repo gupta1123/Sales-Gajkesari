@@ -1,7 +1,6 @@
 // VisitsTable.tsx
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useRouter } from 'next/router';
@@ -15,20 +14,20 @@ interface VisitsTableProps {
     itemsPerPage: number;
     currentPage: number;
     onSort: (column: string) => void;
-    onSelectAllRows: (checked: boolean) => void;
-    selectedRows: string[];
-    onSelectRow: (visitId: string) => void;
     onBulkAction: (action: string) => void;
 }
 
-const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
+const formatDate = (date: string | null | undefined) => {
+    if (date) {
+        return format(new Date(date), "d MMM ''yy");
+    }
+    return '';
+};
+
+const formatTime = (date: string | null | undefined, time: string | null | undefined) => {
     if (date && time) {
         const [hours, minutes] = time.split(':');
-        const formattedTime = format(
-            new Date(`${date}T${hours}:${minutes}`),
-            'dd MMM yyyy h:mm a'
-        );
-        return formattedTime;
+        return format(new Date(`${date}T${hours}:${minutes}`), "h:mm a");
     }
     return '';
 };
@@ -41,9 +40,6 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
     itemsPerPage,
     currentPage,
     onSort,
-    onSelectAllRows,
-    selectedRows,
-    onSelectRow,
     onBulkAction,
 }) => {
     const router = useRouter();
@@ -54,46 +50,20 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
 
     const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
         if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
-            return { emoji: ' ', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
+            return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
         } else if (visit.checkoutDate && visit.checkoutTime) {
-            return { emoji: ' ', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
+            return { emoji: '⏱️', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
         } else if (visit.checkinDate && visit.checkinTime) {
-            return { emoji: ' ', status: 'On Going', color: 'bg-green-100 text-green-800' };
+            return { emoji: '🕰️', status: 'On Going', color: 'bg-green-100 text-green-800' };
         }
-        return { emoji: ' ', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
+        return { emoji: '📅', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
     };
-
-    const sortVisits = (a: Visit, b: Visit) => {
-        if (sortColumn === 'updatedAt') {
-            const datetimeA = new Date(`${a.updatedAt} ${a.updatedTime}`);
-            const datetimeB = new Date(`${b.updatedAt} ${b.updatedTime}`);
-            return sortDirection === 'asc' ? datetimeA.getTime() - datetimeB.getTime() : datetimeB.getTime() - datetimeA.getTime();
-        } else if (sortColumn === 'intent') {
-            const intentA = String(a.intent || '');
-            const intentB = String(b.intent || '');
-            return sortDirection === 'asc'
-                ? intentA.localeCompare(intentB)
-                : intentB.localeCompare(intentA);
-        }
-        return 0;
-    };
-
-    const sortedVisits = [...visits].sort(sortVisits);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const displayedVisits = sortedVisits.slice(startIndex, endIndex);
 
     return (
-        <div className="overflow-x-auto">
+        <div>
             <table className="w-full text-left table-auto">
                 <thead>
                     <tr className="bg-gray-100">
-                        <th className="px-4 py-2 w-12">
-                            <Checkbox
-                                checked={selectedRows.length === visits.length}
-                                onCheckedChange={onSelectAllRows}
-                            />
-                        </th>
                         {selectedColumns.includes('storeName') && (
                             <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('storeName')}>
                                 Customer Name {sortColumn === 'storeName' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -106,7 +76,7 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                         )}
                         {selectedColumns.includes('visit_date') && (
                             <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visit_date')}>
-                                Date {sortColumn === 'visit_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+                                Date {sortColumn === 'visit_date' && (sortDirection === 'desc' ? '↓' : '↑')}
                             </th>
                         )}
                         {selectedColumns.includes('outcome') && (
@@ -131,31 +101,27 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             </th>
                         )}
                         <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('updatedAt')}>
-                            Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'desc' ? '↓' : '↑')}
                         </th>
                         <th className="px-4 py-2">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {displayedVisits.map((visit) => {
+                    {visits.map((visit) => {
                         const { emoji, status, color } = getOutcomeStatus(visit);
 
                         return (
                             <tr key={visit.id} className="border-b">
-                                <td className="px-4 py-2">
-                                    <Checkbox
-                                        checked={selectedRows.includes(visit.id)}
-                                        onCheckedChange={() => onSelectRow(visit.id)}
-                                    />
-                                </td>
                                 {selectedColumns.includes('storeName') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">{visit.storeName}</td>
+                                    <td className="px-4 py-2">{visit.storeName}</td>
                                 )}
                                 {selectedColumns.includes('employeeName') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">{visit.employeeName}</td>
+                                    <td className="px-4 py-2">{visit.employeeName}</td>
                                 )}
                                 {selectedColumns.includes('visit_date') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">{visit.visit_date}</td>
+                                    <td className="px-4 py-2 whitespace-nowrap">
+                                        {formatDate(visit.visit_date)}
+                                    </td>
                                 )}
                                 {selectedColumns.includes('outcome') && (
                                     <td className="px-4 py-2">
@@ -165,23 +131,35 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                     </td>
                                 )}
                                 {selectedColumns.includes('purpose') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">{visit.purpose}</td>
+                                    <td className="px-4 py-2 relative">
+                                        <div className="group cursor-pointer">
+                                            {visit.purpose.length > 20 ? `${visit.purpose.slice(0, 20)}...` : visit.purpose}
+                                            {visit.purpose.length > 20 && (
+                                                <div className="absolute left-0 mt-2 p-4 bg-white border border-gray-300 rounded-lg shadow-lg hidden group-hover:block z-10 w-80">
+                                                    <p className="text-sm text-gray-800">{visit.purpose}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
                                 )}
                                 {selectedColumns.includes('visitStart') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">
-                                        {formatDateTime(visit.checkinDate, visit.checkinTime)}
+                                    <td className="px-4 py-2 whitespace-nowrap">
+                                        <div>{formatDate(visit.checkinDate)}</div>
+                                        <div>{formatTime(visit.checkinDate, visit.checkinTime)}</div>
                                     </td>
                                 )}
                                 {selectedColumns.includes('visitEnd') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">
-                                        {formatDateTime(visit.checkoutDate, visit.checkoutTime)}
+                                    <td className="px-4 py-2 whitespace-nowrap">
+                                        <div>{formatDate(visit.checkoutDate)}</div>
+                                        <div>{formatTime(visit.checkoutDate, visit.checkoutTime)}</div>
                                     </td>
                                 )}
                                 {selectedColumns.includes('intent') && (
-                                    <td className="px-4 py-2 max-w-xs truncate">{visit.intent}</td>
+                                    <td className="px-4 py-2">{visit.intent}</td>
                                 )}
-                                <td className="px-4 py-2 max-w-xs truncate">
-                                    {formatDateTime(visit.updatedAt, visit.updatedTime)}
+                                <td className="px-4 py-2 whitespace-nowrap">
+                                    <div>{formatDate(visit.updatedAt)}</div>
+                                    <div>{formatTime(visit.updatedAt, visit.updatedTime)}</div>
                                 </td>
                                 <td className="px-4 py-2">
                                     <Button

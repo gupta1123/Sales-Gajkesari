@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+
 interface Visit {
   id: string;
   storeId: string;
@@ -19,7 +21,7 @@ interface Visit {
   visit_date: string;
   storeName: string;
   state: string;
-  city: string; // Add the city property
+  city: string;
   checkinDate: string | null;
   checkinTime: string | null;
   checkoutDate: string | null;
@@ -62,6 +64,7 @@ const KPICard = ({ title, value }: KPICardProps) => {
     </Card>
   );
 };
+
 interface EmployeeCardProps {
   employeeName: string;
   totalVisits: number;
@@ -78,6 +81,7 @@ const EmployeeCard = ({ employeeName, totalVisits, onClick }: EmployeeCardProps)
     </div>
   );
 };
+
 interface VisitsByPurposeChartProps {
   data: { purpose: string; visits: number }[];
 }
@@ -160,8 +164,8 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
                 key={option}
                 href="#"
                 className={`${option === selectedOption
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-700'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-700'
                   } block px-4 py-2 text-sm`}
                 role="menuitem"
                 onClick={() => handleOptionClick(option)}
@@ -176,12 +180,90 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   );
 };
 
+interface CityDropdownProps {
+  cities: string[];
+  onCityChange: (city: string | null) => void;
+}
+
+const CityDropdown = ({ cities, onCityChange }: CityDropdownProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleCityClick = (city: string | null) => {
+    setSelectedCity(city);
+    setIsOpen(false);
+    onCityChange(city);
+  };
+
+  return (
+    <div className="relative inline-block text-left">
+      <div>
+        <button
+          type="button"
+          className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          id="options-menu"
+          aria-haspopup="true"
+          aria-expanded={isOpen}
+          onClick={toggleDropdown}
+        >
+          {selectedCity ? selectedCity : 'Filter by City'}
+          <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+          <div
+            className="py-1"
+            role="menu"
+            aria-orientation="vertical"
+            aria-labelledby="options-menu"
+          >
+            <a
+              href="#"
+              className={`${selectedCity === null
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-700'
+                } block px-4 py-2 text-sm`}
+              role="menuitem"
+              onClick={() => handleCityClick(null)}
+            >
+              All Cities
+            </a>
+            {cities.map((city) => (
+              <a
+                key={city}
+                href="#"
+                className={`${city === selectedCity
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-700'
+                  } block px-4 py-2 text-sm`}
+                role="menuitem"
+                onClick={() => handleCityClick(city)}
+              >
+                {city}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface VisitsTableProps {
   visits: Visit[];
   onViewDetails: (visitId: string) => void;
+  selectedCity: string | null;
 }
 
-const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
+const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) => {
+  const filteredVisits = selectedCity ? visits.filter((visit) => visit.city === selectedCity) : visits;
+
   const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
     if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
       return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
@@ -206,13 +288,13 @@ const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
               <th className="px-4 py-2">Employee</th>
               <th className="px-4 py-2">Date</th>
               <th className="px-4 py-2">Purpose</th>
-              <th className="px-4 py-2">City</th> {/* Add the City column */}
+              <th className="px-4 py-2">City</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {visits.map((visit) => {
+            {filteredVisits.map((visit) => {
               const { emoji, status, color } = getOutcomeStatus(visit);
               return (
                 <tr key={visit.id}>
@@ -220,7 +302,7 @@ const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
                   <td className="px-4 py-2">{visit.employeeName}</td>
                   <td className="px-4 py-2">{format(parseISO(visit.visit_date), 'MMM d, yyyy')}</td>
                   <td className="px-4 py-2">{visit.purpose}</td>
-                  <td className="px-4 py-2">{visit.city}</td> {/* Display the city */}
+                  <td className="px-4 py-2">{visit.city}</td>
                   <td className={`px-4 py-2 ${color}`}>{emoji} {status}</td>
                   <td className="px-4 py-2">
                     <button
@@ -239,12 +321,14 @@ const VisitsTable = ({ visits, onViewDetails }: VisitsTableProps) => {
     </Card>
   );
 };
+
 const Dashboard = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [selectedState, setSelectedState] = useState<string | null>(null);
-
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState('This Week');
+  const [isInitialRender, setIsInitialRender] = useState(true); 
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
 
@@ -252,10 +336,36 @@ const Dashboard = () => {
     if (token) {
       fetchVisits();
     }
-  }, [dateRange, token]);
+  }, [dateRange, selectedCity, token]);
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setSelectedState(null);
+      setSelectedCity(null);
+      setSelectedEmployee(null);
+      setIsInitialRender(true);
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router.events]);
+
+  useEffect(() => {
+    if (isInitialRender) {
+      setIsInitialRender(false);
+    }
+  }, [isInitialRender]);
+
   const handleEmployeeClick = (employeeName: string) => {
     setSelectedEmployee(employeeName);
   };
+
+  const handleCityChange = (city: string | null) => {
+    setSelectedCity(city);
+  };
+
   const fetchVisits = async () => {
     try {
       let startDate = '';
@@ -310,9 +420,8 @@ const Dashboard = () => {
 
   const handleStateClick = (state: string) => {
     setSelectedState(state);
-    setSelectedEmployee(null); // Set selectedEmployee to null
+    setSelectedEmployee(null);
   };
-
 
   const handleEmployeeChange = (employeeName: string | null) => {
     setSelectedEmployee(employeeName === 'all' ? null : employeeName);
@@ -326,10 +435,11 @@ const Dashboard = () => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
 
-  const states = Array.from(new Set(visits.map((visit) => visit.state))); // Change from 'city' to 'state'
+  const states = Array.from(new Set(visits.map((visit) => visit.state)));
+  const cities = Array.from(new Set(visits.map((visit) => visit.city)));
 
-  const stateCards = states.map((state) => {
-    const stateVisits = visits.filter((visit) => visit.state === state); // Change from 'city' to 'state'
+  const stateCards = Array.from(new Set(visits.map((visit) => visit.state))).map((state) => {
+    const stateVisits = visits.filter((visit) => visit.state === state);
     const totalVisits = stateVisits.length;
     const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
 
@@ -343,7 +453,14 @@ const Dashboard = () => {
       />
     );
   });
-
+  if (isInitialRender) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">Sales Dashboard</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{stateCards}</div>
+      </div>
+    );
+  }
   if (selectedState) {
     const stateVisits = visits.filter((visit) => visit.state === selectedState);
 
@@ -364,7 +481,6 @@ const Dashboard = () => {
     if (selectedEmployee) {
       const employeeVisits = stateVisits.filter((visit) => visit.employeeName === selectedEmployee);
 
-
       const totalVisits = employeeVisits.length;
       const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
       const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
@@ -379,7 +495,7 @@ const Dashboard = () => {
 
       const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
         purpose,
-        visits: Number(visits), // Ensure visits is a number
+        visits: Number(visits),
       }));
 
       return (
@@ -390,7 +506,8 @@ const Dashboard = () => {
               variant="outline"
               onClick={() => setSelectedEmployee(null)}
             >
-              Back to Employees
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              Back
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -399,13 +516,16 @@ const Dashboard = () => {
             <KPICard title="Ongoing Visits" value={ongoingVisits} />
             <KPICard title="Assigned Visits" value={assignedVisits} />
           </div>
+          <div className="mb-8 flex gap-4">
+            <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+            <CityDropdown cities={cities} onCityChange={handleCityChange} />
+          </div>
           <div className="mb-8">
+            <VisitsTable visits={employeeVisits} onViewDetails={handleViewDetails} selectedCity={selectedCity} />
+          </div>
+          <div className="mb-8 mt-12">
             <VisitsByPurposeChart data={visitsByPurposeChartData} />
           </div>
-          <div className="mb-8">
-            <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-          </div>
-          <VisitsTable visits={employeeVisits} onViewDetails={handleViewDetails} />
         </div>
       );
     }
@@ -418,7 +538,8 @@ const Dashboard = () => {
             variant="outline"
             onClick={() => setSelectedState(null)}
           >
-            Back to States
+            <ArrowLeftIcon className="h-5 w-5 mr-2" />
+            Back
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{employeeCards}</div>
