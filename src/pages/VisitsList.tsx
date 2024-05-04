@@ -39,8 +39,8 @@ const VisitsList: React.FC = () => {
   useEffect(() => {
     const fetchVisits = async () => {
       try {
-        const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-        const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+        const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+        const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
         const url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${formattedStartDate}&end=${formattedEndDate}`;
 
         const response = await axios.get(url, {
