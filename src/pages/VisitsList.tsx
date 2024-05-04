@@ -6,11 +6,12 @@ import { RootState } from '../store';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar"; // Import the Calendar component
 //import VisitCard from '../components/VisitList/VisitCard';
 import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { stringify } from 'csv-stringify';
 import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from "@/components/ui/pagination";
 
@@ -20,6 +21,8 @@ const VisitsList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
   const token = useSelector((state: RootState) => state.auth.token);
   const [purposes, setPurposes] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 2)); // Default start date is 2 days ago
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date()); // Default end date is today
 
   const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
     if (date && time) {
@@ -36,7 +39,11 @@ const VisitsList: React.FC = () => {
   useEffect(() => {
     const fetchVisits = async () => {
       try {
-        const response = await axios.get('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getAll', {
+        const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+        const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+        const url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${formattedStartDate}&end=${formattedEndDate}`;
+
+        const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -55,7 +62,7 @@ const VisitsList: React.FC = () => {
     if (token) {
       fetchVisits();
     }
-  }, [token]);
+  }, [token, startDate, endDate]);
 
   const toggleViewMode = () => {
     setViewMode((prevMode) => (prevMode === 'card' ? 'table' : 'card'));
@@ -234,6 +241,10 @@ const VisitsList: React.FC = () => {
         selectedColumns={selectedColumns}
         viewMode={viewMode}
         purposes={purposes}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
       />
 
       <br />

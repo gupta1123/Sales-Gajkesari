@@ -231,7 +231,7 @@ const CustomerTable = ({
                                 <Badge variant="outline">{customer.clientType}</Badge>
                             </TableCell>
                         )}
-                        {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisits}</TableCell>}
+                        {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisitCount}</TableCell>}
                         {selectedColumns.includes('lastVisitDate') && (
                             <TableCell>
                                 {customer.lastVisitDate

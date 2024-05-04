@@ -133,8 +133,12 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 {selectedColumns.includes('purpose') && (
                                     <td className="px-4 py-2 relative">
                                         <div className="group cursor-pointer">
-                                            {visit.purpose.length > 20 ? `${visit.purpose.slice(0, 20)}...` : visit.purpose}
-                                            {visit.purpose.length > 20 && (
+                                            {visit.purpose ? (
+                                                visit.purpose.length > 20 ? `${visit.purpose.slice(0, 20)}...` : visit.purpose
+                                            ) : (
+                                                '-'
+                                            )}
+                                            {visit.purpose && visit.purpose.length > 20 && (
                                                 <div className="absolute left-0 mt-2 p-4 bg-white border border-gray-300 rounded-lg shadow-lg hidden group-hover:block z-10 w-80">
                                                     <p className="text-sm text-gray-800">{visit.purpose}</p>
                                                 </div>
