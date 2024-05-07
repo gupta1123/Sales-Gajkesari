@@ -37,7 +37,6 @@ import { AiFillCaretDown } from "react-icons/ai";
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
-
 type Customer = {
     storeId: string;
     storeName: string;
@@ -90,7 +89,6 @@ const CustomerTable = ({
         ? customers.slice().sort((a, b) => {
             const sortValue = (value: any) => {
                 if (sortColumn === 'lastVisitDate') {
-                    // Parse the date and time for comparison
                     return new Date(value).getTime();
                 }
                 return typeof value === 'string' ? value.toLowerCase() : value;
@@ -270,7 +268,6 @@ const CustomerTable = ({
     );
 };
 
-
 export default function CustomerListPage() {
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
@@ -290,10 +287,9 @@ export default function CustomerListPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [totalCustomers, setTotalCustomers] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const token = useSelector((state: RootState) => state.auth.token);
@@ -324,7 +320,6 @@ export default function CustomerListPage() {
     };
 
     const applyFilters = (customers: Customer[]) => {
-
         return customers.filter((customer) => {
             const { city, name, owner, phone } = filters;
             return (
@@ -337,7 +332,7 @@ export default function CustomerListPage() {
     };
 
     const filteredCustomers = applyFilters(customers);
-    const paginatedData = filteredCustomers.slice(startIndex, endIndex);
+    const paginatedData = filteredCustomers;
 
     const handleDeleteConfirm = async () => {
         if (selectedCustomerId) {
@@ -366,15 +361,18 @@ export default function CustomerListPage() {
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
-                const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getAll', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+                const response = await fetch(
+                    `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getByPage?pageNumber=${currentPage}&pageSize=${itemsPerPage}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                const data: Customer[] = await response.json();
+                const data = await response.json();
                 setCustomers(data);
                 setLoading(false);
             } catch (error) {
@@ -391,9 +389,18 @@ export default function CustomerListPage() {
         if (token) {
             fetchCustomers();
         }
-    }, [token]);
-
-
+    }, [token, currentPage, itemsPerPage]);
+   
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+    const handleItemsPerPageChange = (value: string) => {
+        const newValue = parseInt(value, 10);
+        if (!isNaN(newValue)) {
+            setItemsPerPage(newValue);
+            setCurrentPage(1);
+        }
+    };
     const toggleViewMode = () => {
         setViewMode((prevMode) => (prevMode === 'card' ? 'table' : 'card'));
     };
@@ -439,19 +446,6 @@ export default function CustomerListPage() {
         setIsChangeFieldOfficerDialogOpen(false);
     };
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-    };
-
-    const handleItemsPerPageChange = (value: string) => {
-        const newValue = parseInt(value, 10);
-        if (!isNaN(newValue)) {
-            setItemsPerPage(newValue);
-            setCurrentPage(1);
-        }
-    };
-
-
     const openModal = () => {
         setIsModalOpen(true);
     };
@@ -459,7 +453,6 @@ export default function CustomerListPage() {
     const closeModal = () => {
         setIsModalOpen(false);
     };
-
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -488,7 +481,7 @@ export default function CustomerListPage() {
                             </DropdownMenu>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    {/*  <Button variant="outline">Bulk Actions</Button> */}
+                                    <Button variant="outline">Bulk Actions</Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
                                     <DropdownMenuItem onSelect={() => handleBulkAction('changeFieldOfficer')}>
@@ -498,10 +491,12 @@ export default function CustomerListPage() {
                             </DropdownMenu>
                         </>
                     )}
-                    {/* <Button variant="outline" onClick={openModal}>Add Customer</Button> */}
-                    {/* <Button onClick={toggleViewMode}>
-                    {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
-                </Button> */}
+                    <Button variant="outline" onClick={openModal}>
+                        Add Customer
+                    </Button>
+                    <Button onClick={toggleViewMode}>
+                        {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
+                    </Button>
                 </div>
             </div>
             <AddCustomerModal
@@ -584,7 +579,7 @@ export default function CustomerListPage() {
                 </div>
 
                 <CustomerTable
-                    customers={paginatedData}
+                    customers={filteredCustomers}
                     selectedColumns={selectedColumns}
                     onSelectColumn={handleSelectColumn}
                     onSelectAllRows={handleSelectAllRows}
@@ -596,26 +591,25 @@ export default function CustomerListPage() {
 
                 <div className="mt-8">
                     <Pagination>
-                        <PaginationContent>
-                            {currentPage > 1 && (
-                                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                            )}
-                            {Array.from({ length: Math.ceil(customers.length / itemsPerPage) }, (_, index) => (
-                                <PaginationItem key={index}>
-                                    <PaginationLink
-                                        isActive={currentPage === index + 1}
-                                        onClick={() => handlePageChange(index + 1)}
-                                    >
-                                        {index + 1}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            ))}
-                            {currentPage < Math.ceil(customers.length / itemsPerPage) && (
-                                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                            )}
-                        </PaginationContent>
+                        <PaginationPrevious
+                            onClick={() => {
+                                if (currentPage !== 1) {
+                                    handlePageChange(currentPage - 1);
+                                }
+                            }}
+                        >
+                            Previous
+                        </PaginationPrevious>
+                        <PaginationNext
+                            onClick={() => {
+                                if (currentPage !== Math.ceil(totalCustomers / itemsPerPage)) {
+                                    handlePageChange(currentPage + 1);
+                                }
+                            }}
+                        >
+                            Next
+                        </PaginationNext>
                     </Pagination>
-
                     <div className="flex items-center space-x-2 mt-4">
                         <span>Items per page:</span>
                         <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
