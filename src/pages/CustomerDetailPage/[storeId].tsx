@@ -88,57 +88,57 @@ export default function CustomerDetailPage() {
     }
   };
 
-const handleSave = async () => {
-  try {
-    const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        managers: customerData.managers || [],
-        latitude: customerData.latitude || 0,
-        longitude: customerData.longitude || 0,
-        brandsInUse: customerData.brandsInUse || [],
-        monthlySale: customerData.monthlySale || "",
-        brandProCons: customerData.brandProCons || [],
-        notes: customerData.notes || null,
-        clientType: customerData.clientType === 'custom' ? 'custom' : customerData.clientType,
-        customClientType: customerData.clientType === 'custom' ? (customClientType || null) : null,
-        createdAt: customerData.createdAt || "",
-        updatedAt: customerData.updatedAt || "",
-        storeId: storeId,
-        storeName: customerData.storeName || "",
-        clientFirstName: customerData.clientFirstName || "",
-        clientLastName: customerData.clientLastName || "",
-        primaryContact: customerData.primaryContact || "",
-        secondaryContact: customerData.secondaryContact || "",
-        email: customerData.email || "",
-        industry: customerData.industry || "",
-        companySize: customerData.companySize || 0,
-        gstNumber: customerData.gstNumber || "",
-        addressLine1: customerData.addressLine1 || "",
-        addressLine2: customerData.addressLine2 || "",
-        city: customerData.city || "",
-        district: customerData.district || "",
-        subDistrict: customerData.subDistrict || "",
-        state: customerData.state || "",
-        country: customerData.country || "",
-        pincode: customerData.pincode || "",
-        intent: customerData.intent,
-      }),
-    });
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          managers: customerData.managers || [],
+          latitude: customerData.latitude || 0,
+          longitude: customerData.longitude || 0,
+          brandsInUse: customerData.brandsInUse || [],
+          monthlySale: customerData.monthlySale || "",
+          brandProCons: customerData.brandProCons || [],
+          notes: customerData.notes || null,
+          clientType: customerData.clientType === 'custom' ? 'custom' : customerData.clientType,
+          customClientType: customerData.clientType === 'custom' ? (customClientType || null) : null,
+          createdAt: customerData.createdAt || "",
+          updatedAt: customerData.updatedAt || "",
+          storeId: storeId,
+          storeName: customerData.storeName || "",
+          clientFirstName: customerData.clientFirstName || "",
+          clientLastName: customerData.clientLastName || "",
+          primaryContact: customerData.primaryContact || "",
+          secondaryContact: customerData.secondaryContact || "",
+          email: customerData.email || "",
+          industry: customerData.industry || "",
+          companySize: customerData.companySize || 0,
+          gstNumber: customerData.gstNumber || "",
+          addressLine1: customerData.addressLine1 || "",
+          addressLine2: customerData.addressLine2 || "",
+          city: customerData.city || "",
+          district: customerData.district || "",
+          subDistrict: customerData.subDistrict || "",
+          state: customerData.state || "",
+          country: customerData.country || "",
+          pincode: customerData.pincode || "",
+          intent: customerData.intent,
+        }),
+      });
 
-    if (response.ok) {
-      setIsEditing(false);
-    } else {
-      console.error("Error updating customer:", await response.text());
+      if (response.ok) {
+        setIsEditing(false);
+      } else {
+        console.error("Error updating customer:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error updating customer:", error);
     }
-  } catch (error) {
-    console.error("Error updating customer:", error);
-  }
-};
+  };
 
   const handleInputChange = (field: keyof CustomerData, value: string | number) => {
     setCustomerData((prevData) => ({
@@ -147,31 +147,30 @@ const handleSave = async () => {
     }));
   };
 
-useEffect(() => {
-  const fetchCustomerData = async () => {
-    try {
-      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      setCustomerData(data);
-      if (data.clientType === 'custom') {
-        setCustomClientType(data.customClientType);
+  useEffect(() => {
+    const fetchCustomerData = async () => {
+      try {
+        const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getById?id=${storeId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        setCustomerData(data);
+        if (data.clientType === 'custom') {
+          setCustomClientType(data.customClientType);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        setError('Customer not found!');
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    } catch (error) {
-      setError('Customer not found!');
-      setIsLoading(false);
+    };
+
+    if (storeId && token) {
+      fetchCustomerData();
     }
-  };
-
-  if (storeId && token) {
-    fetchCustomerData();
-  }
-}, [storeId, token]);
-
+  }, [storeId, token]);
 
   useEffect(() => {
     setCustomClientType(customerData.clientType || null);
@@ -184,6 +183,7 @@ useEffect(() => {
     const lastInitial = names[1]?.charAt(0).toUpperCase() || '';
     return `${firstInitial}${lastInitial}`;
   };
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-4xl font-bold mb-8">Customer Detail</h1>
@@ -191,7 +191,7 @@ useEffect(() => {
       <div className="flex">
         {/* Left Panel */}
         <div className="w-1/3 pr-8">
-          <Card className="bg-gray-50 rounded-lg shadow-lg mb-8">
+          <Card className="bg-#000000-50 rounded-lg shadow-lg mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6 p-4 rounded-lg">
                 <div className="flex items-center">
@@ -199,8 +199,8 @@ useEffect(() => {
                     {getInitials(customerData.storeName)}
                   </div>
                   <div className="ml-4">
-                    <h2 className="text-xl font-bold text-gray-900">{customerData.storeName}</h2>
-                    <div className="text-sm text-gray-900">
+                    <h2 className="text-xl font-bold text-#000000-900">{customerData.storeName}</h2>
+                    <div className="text-sm text-#000000-900">
                       <p><b>Type:</b> {customerData.clientType}</p>
                       <p><b>Intent Level:</b> {customerData.intent}</p>
                       <p><b>Employee:</b> {customerData.employeeName}</p>
@@ -210,7 +210,7 @@ useEffect(() => {
                 </div>
                 {!isEditing && (
                   <Button variant="outline" onClick={() => setIsEditing(true)} className="p-1">
-                    <Edit className="w-4 h-4 text-gray-900" />
+                    <Edit className="w-4 h-4 text-#000000-900" />
                   </Button>
                 )}
               </div>
@@ -223,63 +223,140 @@ useEffect(() => {
                 <TabsContent value="basic" className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="shopName" className="text-sm font-medium text-gray-700">Shop Name</Label>
-                      <Input id="shopName" value={customerData.storeName || ''} onChange={(e) => handleInputChange('storeName', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="shopName" className="text-sm font-medium text-#000000-700">Shop Name</Label>
+                      <Input
+                        id="shopName"
+                        value={customerData.storeName || ''}
+                        onChange={(e) => handleInputChange('storeName', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="clientFirstName" className="text-sm font-medium text-gray-700">First Name</Label>
-                      <Input id="clientFirstName" value={customerData.clientFirstName || ''} onChange={(e) => handleInputChange('clientFirstName', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="clientFirstName" className="text-sm font-medium text-#000000-700">First Name</Label>
+                      <Input
+                        id="clientFirstName"
+                        value={customerData.clientFirstName || ''}
+                        onChange={(e) => handleInputChange('clientFirstName', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="clientLastName" className="text-sm font-medium text-gray-700">Last Name</Label>
-                      <Input id="clientLastName" value={customerData.clientLastName || ''} onChange={(e) => handleInputChange('clientLastName', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="clientLastName" className="text-sm font-medium text-#000000-700">Last Name</Label>
+                      <Input
+                        id="clientLastName"
+                        value={customerData.clientLastName || ''}
+                        onChange={(e) => handleInputChange('clientLastName', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="primaryContact" className="text-sm font-medium text-gray-700">Primary Phone Number</Label>
-                      <Input id="primaryContact" type="tel" value={customerData.primaryContact || ''} onChange={(e) => handleInputChange('primaryContact', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="primaryContact" className="text-sm font-medium text-#000000-700">Primary Phone Number</Label>
+                      <Input
+                        id="primaryContact"
+                        type="tel"
+                        value={customerData.primaryContact || ''}
+                        onChange={(e) => handleInputChange('primaryContact', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
-                      <Input id="email" type="email" value={customerData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="email" className="text-sm font-medium text-#000000-700">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={customerData.email || ''}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                   </div>
                 </TabsContent>
+
                 <TabsContent value="address" className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="addressLine1" className="text-sm font-medium text-gray-700">Address Line 1</Label>
-                      <Input id="addressLine1" value={customerData.addressLine1 || ''} onChange={(e) => handleInputChange('addressLine1', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="addressLine1" className="text-sm font-medium text-#000000-700">Address Line 1</Label>
+                      <Input
+                        id="addressLine1"
+                        value={customerData.addressLine1 || ''}
+                        onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="addressLine2" className="text-sm font-medium text-gray-700">Address Line 2</Label>
-                      <Input id="addressLine2" value={customerData.addressLine2 || ''} onChange={(e) => handleInputChange('addressLine2', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="addressLine2" className="text-sm font-medium text-#000000-700">Address Line 2</Label>
+                      <Input
+                        id="addressLine2"
+                        value={customerData.addressLine2 || ''}
+                        onChange={(e) => handleInputChange('addressLine2', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
-                      <Input id="city" value={customerData.city || ''} onChange={(e) => handleInputChange('city', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="city" className="text-sm font-medium text-#000000-700">City</Label>
+                      <Input
+                        id="city"
+                        value={customerData.city || ''}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
-                      <Input id="state" value={customerData.state || ''} onChange={(e) => handleInputChange('state', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="state" className="text-sm font-medium text-#000000-700">State</Label>
+                      <Input
+                        id="state"
+                        value={customerData.state || ''}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="district" className="text-sm font-medium text-gray-700">Taluka</Label>
-                      <Input id="district" value={customerData.district || ''} onChange={(e) => handleInputChange('district', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="district" className="text-sm font-medium text-#000000-700">Taluka</Label>
+                      <Input
+                        id="district"
+                        value={customerData.district || ''}
+                        onChange={(e) => handleInputChange('district', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="subDistrict" className="text-sm font-medium text-gray-700">Village</Label>
-                      <Input id="subDistrict" value={customerData.subDistrict || ''} onChange={(e) => handleInputChange('subDistrict', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="subDistrict" className="text-sm font-medium text-#000000-700">Village</Label>
+                      <Input
+                        id="subDistrict"
+                        value={customerData.subDistrict || ''}
+                        onChange={(e) => handleInputChange('subDistrict', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                     <div>
-                      <Label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</Label>
-                      <Input id="pincode" type="number" value={customerData.pincode || ''} onChange={(e) => handleInputChange('pincode', e.target.value)} className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800" disabled={!isEditing} />
+                      <Label htmlFor="pincode" className="text-sm font-medium text-#000000-700">Pincode</Label>
+                      <Input
+                        id="pincode"
+                        type="number"
+                        value={customerData.pincode || ''}
+                        onChange={(e) => handleInputChange('pincode', e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing}
+                      />
                     </div>
                   </div>
                 </TabsContent>
+
                 <TabsContent value="additional" className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
-                      <Label htmlFor="monthlySale" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="monthlySale" className="text-sm font-medium text-#000000-700">
                         Monthly Sale
                       </Label>
                       <div className="flex items-center mt-1">
@@ -288,59 +365,83 @@ useEffect(() => {
                           type="number"
                           value={customerData.monthlySale || ''}
                           onChange={(e) => handleInputChange('monthlySale', e.target.value)}
-                          className="w-32 text-sm rounded-md pl-3 pr-0 py-2 text-gray-800"
+                          className={`w-32 text-sm rounded-md pl-3 pr-0 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
                           disabled={!isEditing}
                         />
-                        <span className="text-gray-500 ml-[-95px]">tonnes</span>
+                        <span className="text-#000000-700 ml-[-78px]">tonnes</span>
                       </div>
-                      </div>
-                  
+                    </div>
                     <div>
-                      <Label htmlFor="intent" className="text-sm font-medium text-gray-700">Intent Level</Label>
-                      <Select value={customerData.intent ? String(customerData.intent) : ''} onValueChange={(value) => handleInputChange('intent', Number(value))} disabled={!isEditing}>
-                        <SelectTrigger className="w-full mt-1 text-sm px-3 py-2">
+                      <Label htmlFor="intent" className="text-sm font-medium text-#000000-700">Intent Level</Label>
+                      <Select
+                        value={customerData.intent ? String(customerData.intent) : ''}
+                        onValueChange={(value) => handleInputChange('intent', Number(value))}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger className={`w-full mt-1 text-sm px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {[...Array(10)].map((_, index) => (
-                            <SelectItem key={index} value={String(index + 1)} className="text-sm">{index + 1}</SelectItem>
+                            <SelectItem key={index} value={String(index + 1)} className="text-sm">
+                              {index + 1}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="clientType" className="text-sm font-medium text-gray-700">Client Type</Label>
-                      <Select value={customClientType || customerData.clientType || ''} onValueChange={(value) => {
-                        if (value === 'custom') {
-                          setCustomClientType(customerData.customClientType || '');
-                        } else {
-                          setCustomClientType(null);
-                          handleInputChange('clientType', value);
-                        }
-                      }} disabled={!isEditing}>
-                        <SelectTrigger className="w-full mt-1 text-sm px-3 py-2">
+                      <Label htmlFor="clientType" className="text-sm font-medium text-#000000-700">
+                        Client Type
+                      </Label>
+                      <Select
+                        value={customClientType || customerData.clientType || ''}
+                        onValueChange={(value) => {
+                          if (value === 'custom') {
+                            setCustomClientType(customerData.customClientType || '');
+                          } else {
+                            setCustomClientType(null);
+                            handleInputChange('clientType', value);
+                          }
+                        }}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger className={`w-full mt-1 text-sm px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}>
                           <SelectValue placeholder="Select a type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Contractor" className="text-sm">Contractor</SelectItem>
-                          <SelectItem value="Builder" className="text-sm">Builder</SelectItem>
-                          <SelectItem value="Shop" className="text-sm">Shop</SelectItem>
-                          <SelectItem value="Project" className="text-sm">Project</SelectItem>
-                          <SelectItem value="Architect" className="text-sm">Architect</SelectItem>
-                          <SelectItem value="custom" className="text-sm">Others</SelectItem>
+                          <SelectItem value="Contractor" className="text-sm">
+                            Contractor
+                          </SelectItem>
+                          <SelectItem value="Builder" className="text-sm">
+                            Builder
+                          </SelectItem>
+                          <SelectItem value="Shop" className="text-sm">
+                            Shop
+                          </SelectItem>
+                          <SelectItem value="Project" className="text-sm">
+                            Project
+                          </SelectItem>
+                          <SelectItem value="Architect" className="text-sm">
+                            Architect
+                          </SelectItem>
+                          <SelectItem value="custom" className="text-sm">
+                            Others
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-
-                      {customerData.clientType === 'custom' && (
-                        <Input
-                          id="customClientType"
-                          value={customClientType || ''}
-                          onChange={(e) => setCustomClientType(e.target.value)}
-                          className="w-full mt-1 text-sm rounded-md px-3 py-2 text-gray-800"
-                          disabled={!isEditing}
-                        />
-                      )}
-
+                    </div>
+                    <div>
+                      <Label htmlFor="customClientType" className="text-sm font-medium text-#000000-700">
+                        Custom Client Type
+                      </Label>
+                      <Input
+                        id="customClientType"
+                        value={customClientType || ''}
+                        onChange={(e) => setCustomClientType(e.target.value)}
+                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                        disabled={!isEditing || customerData.clientType !== 'custom'}
+                      />
                     </div>
                   </div>
                 </TabsContent>
@@ -394,4 +495,4 @@ useEffect(() => {
       </div>
     </div>
   );
-}
+} 

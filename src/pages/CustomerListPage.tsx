@@ -268,6 +268,34 @@ const CustomerTable = ({
     );
 };
 
+interface PaginationNumbersProps {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+}
+
+const PaginationNumbers: React.FC<PaginationNumbersProps> = ({ currentPage, totalPages, onPageChange }) => {
+    const pageNumbers = [];
+
+    for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+    }
+
+    return (
+        <div className="flex items-center space-x-1">
+            {pageNumbers.map((pageNumber) => (
+                <PaginationItem
+                    key={pageNumber}
+                    onClick={() => onPageChange(pageNumber)}
+                    className={pageNumber === currentPage ? 'bg-blue-500 text-white' : ''}
+                >
+                    {pageNumber}
+                </PaginationItem>
+            ))}
+        </div>
+    );
+};
+
 export default function CustomerListPage() {
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
@@ -494,9 +522,8 @@ export default function CustomerListPage() {
                     <Button variant="outline" onClick={openModal}>
                         Add Customer
                     </Button>
-                    <Button onClick={toggleViewMode}>
-                        {viewMode === 'card' ? 'Switch to Table View' : 'Switch to Card View'}
-                    </Button>
+                  
+                 
                 </div>
             </div>
             <AddCustomerModal
@@ -600,6 +627,9 @@ export default function CustomerListPage() {
                         >
                             Previous
                         </PaginationPrevious>
+                        <PaginationContent>
+                            <PaginationItem>{currentPage}</PaginationItem>
+                        </PaginationContent>
                         <PaginationNext
                             onClick={() => {
                                 if (currentPage !== Math.ceil(totalCustomers / itemsPerPage)) {

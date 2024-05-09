@@ -252,13 +252,20 @@ const VisitDetailPage = () => {
     }
   };
 
-
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Visit Detail</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
+          <div className="flex justify-end mb-6">
+            {visit && visit.storeId && (
+              <Link href={`/CustomerDetailPage/${visit.storeId}`}>
+                <Button variant="outline">View Store</Button>
+              </Link>
+            )}
+          </div>
+
           {/* Visit Summary */}
           <Card className="mb-8 border-none shadow-lg">
             <CardContent className="p-6">
@@ -297,27 +304,24 @@ const VisitDetailPage = () => {
                     <p className="text-sm text-gray-500 mb-1">Store</p>
                     <div className="flex justify-between items-center bg-gray-100 rounded-lg p-4">
                       <p className="text-lg font-semibold">{visit?.storeName}</p>
-                      {visit && visit.storeId && (
-                        <Link href={`/CustomerDetailPage/${visit.storeId}`}>
-                          View Store
-                        </Link>
-                      )}
                     </div>
-
-
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Location</p>
                     <div className="flex items-center space-x-2">
                       <PushpinOutlined className="w-4 h-4 text-gray-500" />
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${visit?.storeLatitude},${visit?.storeLongitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-lg font-semibold text-blue-500 hover:underline"
-                      >
-                        {visit?.storeLatitude}, {visit?.storeLongitude}
-                      </a>
+                      {visit?.storeLatitude && visit?.storeLongitude ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${visit?.storeLatitude},${visit?.storeLongitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-lg font-semibold text-blue-500 hover:underline"
+                        >
+                          {visit?.storeLatitude}, {visit?.storeLongitude}
+                        </a>
+                      ) : (
+                        <p className="text-lg font-semibold text-gray-500">Location not available</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -341,15 +345,26 @@ const VisitDetailPage = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Performance Metrics */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PerformanceMetrics visitDuration={calculateVisitDuration()} intentLevel={visit?.intent ?? ''} />
+            </CardContent>
+          </Card>
+
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Check-in Images</CardTitle>
-            
             </CardHeader>
             <CardContent>
               <ImageGallery images={checkinImages} />
             </CardContent>
           </Card>
+
           {/* Likes and Brands */}
           <Card className="mb-8">
             <CardContent>
@@ -365,16 +380,6 @@ const VisitDetailPage = () => {
                   <BrandsSection storeId={visit?.storeId?.toString() ?? '0'} />
                 </TabsContent>
               </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Performance Metrics */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PerformanceMetrics visitDuration={calculateVisitDuration()} intentLevel={visit?.intent ?? ''} />
             </CardContent>
           </Card>
         </div>

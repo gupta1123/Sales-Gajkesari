@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Calendar } from "@/components/ui/calendar"; // Import the Calendar component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover components
+import { format } from "date-fns"; // Import the format function from date-fns
 
 interface VisitsFilterProps {
     onFilter: (filters: { storeName: string; employeeName: string; purpose: string }) => void;
@@ -14,7 +15,6 @@ interface VisitsFilterProps {
     onExport: () => void;
     selectedColumns: string[];
     viewMode: 'card' | 'table';
-    purposes: string[];
     startDate: Date | undefined;
     setStartDate: (date: Date | undefined) => void;
     endDate: Date | undefined;
@@ -27,7 +27,6 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
     onExport,
     selectedColumns,
     viewMode,
-    purposes,
     startDate,
     setStartDate,
     endDate,
@@ -35,25 +34,14 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
 }) => {
     const [storeName, setStoreName] = useState('');
     const [employeeName, setEmployeeName] = useState('');
-    const [purpose, setPurpose] = useState('all');
 
     const handleFilter = () => {
-        onFilter({ storeName, employeeName, purpose });
+        onFilter({ storeName, employeeName, purpose: '' });
     };
 
     const handleAllowClearStoreName = () => {
         setStoreName('');
-        onFilter({ storeName: '', employeeName, purpose });
-    };
-
-    const handleAllowClearEmployeeName = () => {
-        setEmployeeName('');
-        onFilter({ storeName, employeeName: '', purpose });
-    };
-
-    const handleAllowClearPurpose = () => {
-        setPurpose('all');
-        onFilter({ storeName, employeeName, purpose: 'all' });
+        onFilter({ storeName: '', employeeName, purpose: '' });
     };
 
     const columnMapping: Record<string, string> = {
@@ -71,6 +59,10 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
         onColumnSelect(columnMapping[column]);
     };
 
+    const formatDate = (date: Date | undefined) => {
+        return date ? format(date, 'MMM d, yyyy') : '';
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -78,7 +70,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
             <CardContent>
                 <div className="flex justify-between flex-wrap gap-4">
                     <div className="flex flex-grow items-center space-x-4">
-                        <div className="relative">
+                        <div className="relative w-58">
                             <Input
                                 type="text"
                                 placeholder="Customer Name"
@@ -87,6 +79,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                                     setStoreName(e.target.value);
                                     handleFilter();
                                 }}
+                                className="w-full"
                             />
                             {storeName && (
                                 <button
@@ -97,59 +90,22 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                                 </button>
                             )}
                         </div>
-                        <div className="relative">
-                            <Input
-                                type="text"
-                                placeholder="Sales Executive Name"
-                                value={employeeName}
-                                onChange={(e) => {
-                                    setEmployeeName(e.target.value);
-                                    handleFilter();
-                                }}
-                            />
-                            {employeeName && (
-                                <button
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                    onClick={handleAllowClearEmployeeName}
-                                >
-                                    &times;
-                                </button>
-                            )}
-                        </div>
-                        <div className="relative">
-                            <Select
-                                value={purpose}
-                                onValueChange={(value) => {
-                                    setPurpose(value);
-                                    handleFilter();
-                                }}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Purpose" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    {purposes.map((purpose) => (
-                                        <SelectItem key={purpose} value={purpose}>
-                                            {purpose}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {purpose !== 'all' && (
-                                <button
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                    onClick={handleAllowClearPurpose}
-                                >
-                                    &times;
-                                </button>
-                            )}
-                        </div>
+                        <Input
+                            type="text"
+                            placeholder="Sales Executive Name"
+                            value={employeeName}
+                            onChange={(e) => {
+                                setEmployeeName(e.target.value);
+                                handleFilter();
+                            }}
+                            className="w-50"
+                        />
                         <div className="flex space-x-2">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline">Start Date</Button>
+                                    <Button variant="outline">
+                                        Start Date: {formatDate(startDate)}
+                                    </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
                                     <Calendar
@@ -162,7 +118,9 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                             </Popover>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline">End Date</Button>
+                                    <Button variant="outline">
+                                        End Date: {formatDate(endDate)}
+                                    </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
                                     <Calendar

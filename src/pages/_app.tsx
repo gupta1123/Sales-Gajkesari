@@ -9,6 +9,7 @@ import React, { useState, ReactNode, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import Image from 'next/image';
+import axios from 'axios';
 
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
@@ -145,6 +146,35 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
     if (storedToken && !token) {
       // If a token exists in localStorage but not in the Redux store, set the token in the store
       dispatch(setToken(storedToken));
+    }
+  }, [dispatch, token]);
+
+  useEffect(() => {
+    // Function to check token validity
+    const checkTokenValidity = async () => {
+      try {
+        await axios.get('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/info', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (error: any) {
+        if (error.response && error.response.status === 401) {
+          // Token has expired or is invalid, logout the user
+          dispatch(logoutUser() as any);
+        }
+      }
+    };
+
+    if (token) {
+      // Check token validity on component mount and periodically
+      checkTokenValidity();
+      const interval = setInterval(checkTokenValidity, 60000); // Check every 60 seconds
+
+      // Cleanup the interval on component unmount
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [dispatch, token]);
 

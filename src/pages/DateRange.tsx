@@ -12,7 +12,7 @@ interface Visit {
     employeeId: number;
     employeeName: string;
     visit_date: string;
-    intent: number | null; // Add this line
+    intent: number | null;
     scheduledStartTime: string | null;
     scheduledEndTime: string | null;
     visitLatitude: number | null;
@@ -39,12 +39,13 @@ interface DateRangeProps {
 }
 
 const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
-    const [selectedRange, setSelectedRange] = useState('');
+    const [selectedRange, setSelectedRange] = useState('last2Days');
     const token = useSelector((state: RootState) => state.auth.token);
 
     const dateRanges = [
         { label: 'Today', value: 'today' },
         { label: 'Yesterday', value: 'yesterday' },
+        { label: 'Last 2 Days', value: 'last2Days' },
         { label: 'This Month', value: 'thisMonth' },
         { label: 'Last Month', value: 'lastMonth' },
     ];
@@ -68,6 +69,14 @@ const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
                         yesterday.setDate(yesterday.getDate() - 1);
                         startDate = yesterday.toISOString().split('T')[0];
                         endDate = startDate;
+                        break;
+                    case 'last2Days':
+                        // Set start and end dates for the last 2 days
+                        const today = new Date();
+                        endDate = today.toISOString().split('T')[0];
+                        const twoDaysAgo = new Date();
+                        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                        startDate = twoDaysAgo.toISOString().split('T')[0];
                         break;
                     case 'thisMonth':
                         // Set start and end dates for this month

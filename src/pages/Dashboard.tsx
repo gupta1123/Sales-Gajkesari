@@ -7,10 +7,18 @@ import { useRouter } from 'next/router';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subWeeks, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 interface Visit {
   id: string;
@@ -262,7 +270,28 @@ interface VisitsTableProps {
 }
 
 const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const visitsPerPage = 10;
+
   const filteredVisits = selectedCity ? visits.filter((visit) => visit.city === selectedCity) : visits;
+
+  const indexOfLastVisit = currentPage * visitsPerPage;
+  const indexOfFirstVisit = indexOfLastVisit - visitsPerPage;
+  const currentVisits = filteredVisits.slice(indexOfFirstVisit, indexOfLastVisit);
+
+  const totalPages = Math.ceil(filteredVisits.length / visitsPerPage);
+
+  const goToPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage((prevPage) => prevPage - 1);
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage((prevPage) => prevPage + 1);
+  };
 
   const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
     if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
@@ -294,7 +323,7 @@ const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) 
             </tr>
           </thead>
           <tbody>
-            {filteredVisits.map((visit) => {
+            {currentVisits.map((visit) => {
               const { emoji, status, color } = getOutcomeStatus(visit);
               return (
                 <tr key={visit.id}>
@@ -317,6 +346,30 @@ const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) 
             })}
           </tbody>
         </table>
+        <Pagination className="mt-4">
+          <PaginationContent>
+            <PaginationPrevious
+              className={currentPage === 1 ? 'disabled' : ''}
+              onClick={goToPreviousPage}
+            />
+
+            {Array.from({ length: totalPages }, (_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  isActive={index + 1 === currentPage}
+                  onClick={() => goToPage(index + 1)}
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            <PaginationNext
+              className={currentPage === totalPages ? 'disabled' : ''}
+              onClick={goToNextPage}
+            />
+          </PaginationContent>
+        </Pagination>
       </CardContent>
     </Card>
   );

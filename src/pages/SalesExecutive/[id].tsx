@@ -136,7 +136,7 @@ const SalesExecutivePage: React.FC = () => {
             <Card className="bg-white shadow-md rounded-lg p-6 mb-8">
               <CardContent>
                 <div className="flex items-center">
-                  <Avatar>
+                  <Avatar className="mr-4">
                     <AvatarImage src={userInfo.avatar} alt="User Avatar" />
                   </Avatar>
                   <div>
@@ -149,15 +149,15 @@ const SalesExecutivePage: React.FC = () => {
             </Card>
           </div>
           <div className="md:col-span-2">
-            <Card className="bg-white shadow-md rounded-lg p-6">
-              <CardHeader>
+            <Card className="bg-white shadow-md rounded-lg">
+              <CardHeader className="px-6 py-4 border-b">
                 <CardTitle className="text-2xl font-semibold">Visits</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
+              <CardContent className="p-6">
+                <div className="mb-6">
                   <DateRange setVisits={setVisits} />
                 </div>
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {visits.map((visit) => {
                     let status = 'Assigned';
                     let statusColor = 'bg-blue-100 text-blue-800';
@@ -178,46 +178,44 @@ const SalesExecutivePage: React.FC = () => {
                     }
 
                     return (
-                      <Card key={visit.id} className="bg-white shadow-md rounded-lg p-4 cursor-pointer" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
+                      <Card key={visit.id} className="bg-white shadow-md rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
                         <CardContent>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-lg font-semibold">{visit.storeName}</div>
-                            <div className="flex flex-col items-end">
-                              <Badge className={`${statusColor} px-3 py-1 rounded-full font-semibold mb-2`}>
-                                {statusEmoji} {status}
-                              </Badge>
-                              {status === 'On Going' && visit.checkinDate && visit.checkinTime && (
-                                <div className="text-gray-500 text-sm">
-                                  Check-in: {format(new Date(`${visit.checkinDate} ${visit.checkinTime}`), "d MMM h:mm a")}
-                                </div>
-                              )}
-                              {status === 'Completed' && (
-                                <>
-                                  {visit.checkinDate && visit.checkinTime && (
-                                    <div className="text-gray-500 text-sm">
-                                      Check-in: {format(new Date(`${visit.checkinDate} ${visit.checkinTime}`), "d MMM h:mm a")}
-                                    </div>
-                                  )}
-                                  {visit.checkoutDate && visit.checkoutTime && (
-                                    <div className="text-gray-500 text-sm">
-                                      Check-out: {format(new Date(`${visit.checkoutDate} ${visit.checkoutTime}`), "d MMM h:mm a")}
-                                    </div>
-                                  )}
-                                </>
-                              )}
+                          <div className="flex justify-between items-center mb-4">
+                            <div className="text-xl font-semibold">{visit.storeName}</div>
+                            <Badge className={`${statusColor} px-3 py-1 rounded-full font-semibold text-sm`}>
+                              {statusEmoji} {status}
+                            </Badge>
+                          </div>
+                          <div className="mb-4">
+                            <div className="flex items-center text-gray-500 mb-1">
+                              <FaCalendarAlt className="mr-2" />
+                              <span>{format(new Date(visit.visit_date), 'MMMM d, yyyy')}</span>
+                            </div>
+                            <div className="flex items-center text-gray-500">
+                              <FaStore className="mr-2" />
+                              <span>{visit.storeName}</span>
                             </div>
                           </div>
-                          <div className="text-gray-500">Employee: {visit.employeeName}</div>
-                          <div className="text-gray-500 underline">Visit ID: {visit.id}</div>
-                          {visit.scheduledStartTime && visit.scheduledEndTime && (
-                            <div className="text-gray-500">
-                              Duration: {formatDuration(intervalToDuration({ start: new Date(visit.scheduledStartTime), end: new Date(visit.scheduledEndTime) }))}
+                          <div className="mb-4">
+                            <div className="text-gray-500 mb-1">
+                              <span className="font-semibold">Employee:</span> {visit.employeeName}
                             </div>
-                          )}
-                          <div className="text-gray-500">Purpose: {visit.purpose}</div>
-                          {visit.intent !== null && (
-                            <div className="text-gray-500">Intent Level: {visit.intent}</div>
-                          )}
+                            {visit.scheduledStartTime && visit.scheduledEndTime && (
+                              <div className="text-gray-500">
+                                <span className="font-semibold">Duration:</span> {formatDuration(intervalToDuration({ start: new Date(visit.scheduledStartTime), end: new Date(visit.scheduledEndTime) }))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="mb-4">
+                            <div className="text-gray-500 mb-1">
+                              <span className="font-semibold">Purpose:</span> {visit.purpose}
+                            </div>
+                            {visit.intent !== null && (
+                              <div className="text-gray-500">
+                                <span className="font-semibold">Intent Level:</span> {visit.intent}
+                              </div>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     );
@@ -230,6 +228,7 @@ const SalesExecutivePage: React.FC = () => {
       </main>
     </div>
   );
+
 };
 
 export default SalesExecutivePage;

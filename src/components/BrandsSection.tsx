@@ -42,8 +42,10 @@ export default function BrandsSection({ storeId }: BrandsSectionProps) {
   const [editingBrandId, setEditingBrandId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchBrands();
-  }, []);
+    if (storeId) {
+      fetchBrands();
+    }
+  }, [storeId]);
 
   const fetchBrands = async () => {
     try {

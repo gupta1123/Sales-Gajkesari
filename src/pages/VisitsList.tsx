@@ -210,7 +210,7 @@ const VisitsList: React.FC = () => {
     });
   };
 
-  // Sort the visits array based on the "visit_date" column in descending order
+  // Sort the filtered visits array based on the "visit_date" column in descending order
   const sortedVisits = [...filteredVisits].sort((a, b) => {
     const aDate = new Date(a.visit_date);
     const bDate = new Date(b.visit_date);
@@ -240,7 +240,7 @@ const VisitsList: React.FC = () => {
         onExport={handleExport}
         selectedColumns={selectedColumns}
         viewMode={viewMode}
-        purposes={purposes}
+       
         startDate={startDate}
         setStartDate={setStartDate}
         endDate={endDate}
