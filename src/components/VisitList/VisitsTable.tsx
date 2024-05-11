@@ -183,4 +183,4 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
     );
 };
 
-export default VisitsTable;
+export default VisitsTable; 

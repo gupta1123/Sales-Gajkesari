@@ -1,4 +1,3 @@
-// VisitsList.tsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -240,7 +239,7 @@ const VisitsList: React.FC = () => {
         onExport={handleExport}
         selectedColumns={selectedColumns}
         viewMode={viewMode}
-       
+
         startDate={startDate}
         setStartDate={setStartDate}
         endDate={endDate}

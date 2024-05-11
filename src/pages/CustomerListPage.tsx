@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import { useQuery } from 'react-query';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryKey, isError as isQueryError } from 'react-query';
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import ChangeFieldOfficerDialog from './ChangeFieldOfficerDialog';
 
@@ -37,22 +39,36 @@ import { AiFillCaretDown } from "react-icons/ai";
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
+
+// Create a QueryClient instance
+const queryClient = new QueryClient();
+
+export default function App() {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <CustomerListPage />
+        </QueryClientProvider>
+    );
+}
+
+
 type Customer = {
-    storeId: string;
+    storeId: number;
     storeName: string;
     clientFirstName: string;
-    primaryContact: string;
-    monthlySale: number;
-    intentLevel: number;
-    intent: number;
+    clientLastName: string;
+    primaryContact: number;
+    monthlySale: number | null;
+    intent: number | null;
     employeeName: string;
-    clientType: string;
+    clientType: string | null;
     totalVisitCount: number;
-    lastVisitDate: string;
+    lastVisitDate: string | null;
     totalVisits: number;
-    email: string;
+    email: string | null;
     city: string;
     state: string;
+    country: string | null;
 };
 
 type CustomerTableProps = {
@@ -73,8 +89,8 @@ const CustomerTable = ({
     onBulkAction,
     onDeleteCustomer,
 }: CustomerTableProps) => {
-    const [sortColumn, setSortColumn] = useState<string | null>(null);
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [sortColumn, setSortColumn] = useState<string | null>('storeName'); // Set the default sort column
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // Set the default sort direction
 
     const handleSort = (column: string) => {
         if (sortColumn === column) {
@@ -111,7 +127,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('storeName')}>
                             Shop Name
                             {sortColumn === 'storeName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -119,7 +135,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('clientFirstName')}>
                             Owner Name
                             {sortColumn === 'clientFirstName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -127,7 +143,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('city')}>
                             City
                             {sortColumn === 'city' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -135,7 +151,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('state')}>
                             State
                             {sortColumn === 'state' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -143,7 +159,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
                             Phone
                             {sortColumn === 'primaryContact' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -151,7 +167,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('monthlySale')}>
                             Monthly Sales
                             {sortColumn === 'monthlySale' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -159,7 +175,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('intent')}>
                             Intent Level
                             {sortColumn === 'intent' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -167,7 +183,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('employeeName')}>
                             Field Officer
                             {sortColumn === 'employeeName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -175,7 +191,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('clientType')}>
                             Client Type
                             {sortColumn === 'clientType' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -183,7 +199,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('totalVisits')}>
                             Total Visits
                             {sortColumn === 'totalVisits' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -191,7 +207,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('lastVisitDate')}>
                             Last Visit Date
                             {sortColumn === 'lastVisitDate' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -199,7 +215,7 @@ const CustomerTable = ({
                         <TableHead className="cursor-pointer" onClick={() => handleSort('email')}>
                             Email
                             {sortColumn === 'email' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ⬆️' : ' ⬇️'}</span>
+                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
                             )}
                         </TableHead>
                     )}
@@ -211,7 +227,7 @@ const CustomerTable = ({
                 {sortedCustomers.map((customer) => (
                     <TableRow key={customer.storeId}>
                         {selectedColumns.includes('shopName') && <TableCell>{customer.storeName}</TableCell>}
-                        {selectedColumns.includes('ownerName') && <TableCell>{customer.clientFirstName}</TableCell>}
+                        {selectedColumns.includes('ownerName') && <TableCell>{`${customer.clientFirstName} ${customer.clientLastName}`}</TableCell>}
                         {selectedColumns.includes('city') && <TableCell>{customer.city}</TableCell>}
                         {selectedColumns.includes('state') && <TableCell>{customer.state}</TableCell>}
                         {selectedColumns.includes('phone') && <TableCell>{customer.primaryContact}</TableCell>}
@@ -255,7 +271,7 @@ const CustomerTable = ({
                                         View
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={() => onDeleteCustomer(customer.storeId)}>
+                                    <DropdownMenuItem onSelect={() => onDeleteCustomer(customer.storeId.toString())}>
                                         Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -272,6 +288,16 @@ interface PaginationNumbersProps {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+}
+interface QueryFilters {
+    page: number;
+    size: number;
+    filters: {
+        name: string;
+        phone: string;
+        owner: string;
+        city: string;
+    };
 }
 
 const PaginationNumbers: React.FC<PaginationNumbersProps> = ({ currentPage, totalPages, onPageChange }) => {
@@ -296,12 +322,13 @@ const PaginationNumbers: React.FC<PaginationNumbersProps> = ({ currentPage, tota
     );
 };
 
-export default function CustomerListPage() {
+function CustomerListPage() {
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
         'shopName', 'ownerName', 'city', 'state', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer',
         'clientType', 'totalVisits', 'lastVisitDate', 'email',
     ]);
+
     const [filters, setFilters] = useState({
         city: '',
         name: '',
@@ -314,14 +341,67 @@ export default function CustomerListPage() {
     const [isChangeFieldOfficerDialogOpen, setIsChangeFieldOfficerDialogOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    const [totalCustomers, setTotalCustomers] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    // const [error, setError] = useState<string | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const token = useSelector((state: RootState) => state.auth.token);
     const employeeId = useSelector((state: RootState) => state.auth.employeeId);
+    const invalidateCustomersCache = () => {
+        queryClient.invalidateQueries('customers');
+    };
+    const fetchFilteredCustomers = async ({ queryKey }: { queryKey: QueryKey }) => {
+        if (isQueryError(queryKey)) {
+            // Handle error case
+            return;
+        }
+
+        if (!Array.isArray(queryKey) || queryKey.length !== 2) {
+            // Handle invalid queryKey structure
+            return;
+        }
+
+        const [_, { page, size, filters }] = queryKey as [unknown, QueryFilters];
+        const queryParams = new URLSearchParams();
+        queryParams.append('page', (page - 1).toString());
+        queryParams.append('size', size.toString());
+
+        if (filters.name) {
+            queryParams.append('storeName', filters.name);
+        }
+        if (filters.phone) {
+            queryParams.append('primaryContact', filters.phone);
+        }
+        if (filters.owner) {
+            queryParams.append('ownerName', filters.owner);
+        }
+        if (filters.city) {
+            queryParams.append('city', filters.city);
+        }
+
+        const response = await fetch(
+            `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/filteredValues?${queryParams.toString()}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        return response.json();
+    };
+
+    const { data, isLoading, isError, error } = useQuery(
+        ['customers', { page: currentPage, size: itemsPerPage, filters }],
+        fetchFilteredCustomers
+    );
+
+    const customers = data?.content || [];
+    const totalCustomers = data?.totalElements || 0;
 
     const openDeleteModal = (customerId: string) => {
         setSelectedCustomerId(customerId);
@@ -347,21 +427,6 @@ export default function CustomerListPage() {
         }));
     };
 
-    const applyFilters = (customers: Customer[]) => {
-        return customers.filter((customer) => {
-            const { city, name, owner, phone } = filters;
-            return (
-                (customer.city?.toLowerCase() || '').includes(city.toLowerCase()) &&
-                (customer.storeName?.toLowerCase() || '').includes(name.toLowerCase()) &&
-                (customer.clientFirstName?.toLowerCase() || '').includes(owner.toLowerCase()) &&
-                (customer.primaryContact?.toString() || '').includes(phone)
-            );
-        });
-    };
-
-    const filteredCustomers = applyFilters(customers);
-    const paginatedData = filteredCustomers;
-
     const handleDeleteConfirm = async () => {
         if (selectedCustomerId) {
             try {
@@ -372,8 +437,8 @@ export default function CustomerListPage() {
                     },
                 });
                 if (response.ok) {
-                    // Remove the deleted customer from the state
-                    setCustomers(customers.filter((customer) => customer.storeId !== selectedCustomerId));
+                    // Invalidate the customers cache to refetch the updated data
+                    invalidateCustomersCache();
                     closeDeleteModal();
                 } else {
                     // Handle error case
@@ -385,40 +450,6 @@ export default function CustomerListPage() {
         }
     };
 
-
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                const response = await fetch(
-                    `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getByPage?pageNumber=${currentPage}&pageSize=${itemsPerPage}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                setCustomers(data);
-                setLoading(false);
-            } catch (error) {
-                console.error('Error fetching customers:', error);
-                if (error instanceof Error) {
-                    setError(error.message);
-                } else {
-                    setError('An unknown error occurred');
-                }
-                setLoading(false);
-            }
-        };
-
-        if (token) {
-            fetchCustomers();
-        }
-    }, [token, currentPage, itemsPerPage]);
-   
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
@@ -440,12 +471,11 @@ export default function CustomerListPage() {
             setSelectedColumns([...selectedColumns, column]);
         }
     };
-
     const handleSelectAllRows = () => {
         if (selectedRows.length === customers.length) {
             setSelectedRows([]);
         } else {
-            setSelectedRows(customers.map((customer) => customer.storeId));
+            setSelectedRows(customers.map((customer: Customer) => customer.storeId.toString()));
         }
     };
 
@@ -522,8 +552,6 @@ export default function CustomerListPage() {
                     <Button variant="outline" onClick={openModal}>
                         Add Customer
                     </Button>
-                  
-                 
                 </div>
             </div>
             <AddCustomerModal
@@ -555,7 +583,7 @@ export default function CustomerListPage() {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Filter by  Shop name"
+                            placeholder="Filter by  Shop name"
                             className="border border-gray-300 rounded-md px-4 py-2 pr-10"
                             value={filters.name}
                             onChange={(e) => handleFilterChange('name', e.target.value)}
@@ -606,7 +634,7 @@ export default function CustomerListPage() {
                 </div>
 
                 <CustomerTable
-                    customers={filteredCustomers}
+                    customers={customers}
                     selectedColumns={selectedColumns}
                     onSelectColumn={handleSelectColumn}
                     onSelectAllRows={handleSelectAllRows}
@@ -668,4 +696,4 @@ export default function CustomerListPage() {
             />
         </div>
     );
-} 
+}

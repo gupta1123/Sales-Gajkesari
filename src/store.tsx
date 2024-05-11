@@ -5,7 +5,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 interface AuthState {
   user: null | { [key: string]: any };
   token: null | string;
-  employeeId: null | string; // Added employeeId property
+  employeeId: null | string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: null | string | { [key: string]: any };
 }
@@ -13,7 +13,6 @@ interface AuthState {
 interface UserData {
   username: string;
   password: string;
-  // Add other properties as needed
 }
 
 export const registerUser = createAsyncThunk<string, UserData, { rejectValue: string }>(
@@ -44,7 +43,6 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
         }
       );
       const token = response.data.split(' ')[1];
-      // Store the token in localStorage
       localStorage.setItem('token', token);
       const employeeResponse = await axios.get(
         'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/info',
@@ -63,13 +61,11 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
   }
 );
 
-
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
       await axios.post('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/logout');
-      // Remove the token from localStorage
       localStorage.removeItem('token');
     } catch (error: any) {
       console.error('Logout User Error:', error);
@@ -81,7 +77,7 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
 const initialState: AuthState = {
   user: null,
   token: null,
-  employeeId: null, // Added employeeId to initial state
+  employeeId: null,
   status: 'idle',
   error: null,
 };
@@ -113,7 +109,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action: PayloadAction<{ token: string; employeeId: string }>) => {
         state.status = 'succeeded';
         state.token = action.payload.token;
-        state.employeeId = action.payload.employeeId; // Set employeeId in state
+        state.employeeId = action.payload.employeeId;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
@@ -125,7 +121,7 @@ const authSlice = createSlice({
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
-        state.employeeId = null; // Reset employeeId on logout
+        state.employeeId = null;
         state.status = 'succeeded';
       })
       .addCase(logoutUser.rejected, (state, action) => {

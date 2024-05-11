@@ -10,6 +10,15 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import DateRange from '../DateRange';
 import { useRouter } from 'next/router';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from '@/components/ui/pagination';
 
 interface Visit {
   id: number;
@@ -53,22 +62,11 @@ const SalesExecutivePage: React.FC = () => {
     role: string;
   } | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const visitsPerPage = 15;
 
   const router = useRouter();
   const { id } = router.query;
-
-  const userInfo = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "/path/to/avatar.jpg",
-    role: "Sales Executive",
-  };
-
-  const stats = {
-    stores: 50,
-    visitsThisMonth: 120,
-    visitsToday: 5,
-  };
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -122,109 +120,133 @@ const SalesExecutivePage: React.FC = () => {
     fetchVisits();
   }, [token, id, dateRange]);
 
+  // Get current visits
+  const indexOfLastVisit = currentPage * visitsPerPage;
+  const indexOfFirstVisit = indexOfLastVisit - visitsPerPage;
+  const currentVisits = visits.slice(indexOfFirstVisit, indexOfLastVisit);
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div className="bg-gray-100 min-h-screen">
       <header className="bg-white shadow">
-        <div className="container mx-auto py-6 px-4">
-          <h1 className="text-3xl font-bold text-gray-900">Employee Details</h1>
+        <div className="container mx-auto py-6 px-4 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-900">Visits</h1>
+          <div className="flex items-center">
+            <Avatar className="mr-2">
+              <AvatarImage src="/path/to/field-officer-avatar.png" alt="Field Officer Avatar" />
+            </Avatar>
+            <div>
+              <h3 className="text-lg font-semibold">{employeeData?.firstName} {employeeData?.lastName}</h3>
+              <p className="text-gray-500 text-sm">{employeeData?.email}</p>
+              <p className="text-gray-500 text-sm">{employeeData?.role}</p>
+            </div>
+          </div>
         </div>
       </header>
       <main className="container mx-auto py-8 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-1">
-            <Card className="bg-white shadow-md rounded-lg p-6 mb-8">
-              <CardContent>
-                <div className="flex items-center">
-                  <Avatar className="mr-4">
-                    <AvatarImage src={userInfo.avatar} alt="User Avatar" />
-                  </Avatar>
-                  <div>
-                    <h3 className="text-xl font-semibold">{employeeData?.firstName} {employeeData?.lastName}</h3>
-                    <p className="text-gray-500">{employeeData?.email}</p>
-                    <p className="text-gray-500">{employeeData?.role}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="md:col-span-2">
-            <Card className="bg-white shadow-md rounded-lg">
-              <CardHeader className="px-6 py-4 border-b">
-                <CardTitle className="text-2xl font-semibold">Visits</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="mb-6">
-                  <DateRange setVisits={setVisits} />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {visits.map((visit) => {
-                    let status = 'Assigned';
-                    let statusColor = 'bg-blue-100 text-blue-800';
-                    let statusEmoji = ' ';
+        <Card className="bg-white shadow-md rounded-lg">
+          <CardContent className="p-6">
+            <div className="mb-6">
+              <DateRange setVisits={setVisits} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+              {currentVisits.map((visit) => {
+                let status = 'Assigned';
+                let statusColor = 'bg-blue-100 text-blue-800';
+                let statusEmoji = ' ';
 
-                    if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
-                      status = 'Completed';
-                      statusColor = 'bg-purple-100 text-purple-800';
-                      statusEmoji = ' ';
-                    } else if (visit.checkoutDate && visit.checkoutTime) {
-                      status = 'Checked Out';
-                      statusColor = 'bg-orange-100 text-orange-800';
-                      statusEmoji = ' ';
-                    } else if (visit.checkinDate && visit.checkinTime) {
-                      status = 'On Going';
-                      statusColor = 'bg-green-100 text-green-800';
-                      statusEmoji = ' ';
+                if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
+                  status = 'Completed';
+                  statusColor = 'bg-purple-100 text-purple-800';
+                  statusEmoji = ' ';
+                } else if (visit.checkoutDate && visit.checkoutTime) {
+                  status = 'Checked Out';
+                  statusColor = 'bg-orange-100 text-orange-800';
+                  statusEmoji = ' ';
+                } else if (visit.checkinDate && visit.checkinTime) {
+                  status = 'On Going';
+                  statusColor = 'bg-green-100 text-green-800';
+                  statusEmoji = ' ';
+                }
+
+                return (
+                  <Card key={visit.id} className="bg-white shadow-md rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
+                    <CardContent>
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="text-xl font-semibold">{visit.storeName}</div>
+                        <Badge className={`${statusColor} px-3 py-1 rounded-full font-semibold text-sm`}>
+                          {statusEmoji} {status}
+                        </Badge>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex items-center text-gray-500 text-sm mb-1">
+                          <FaCalendarAlt className="mr-2" />
+                          <span>{format(new Date(visit.visit_date), 'MMMM d, yyyy')}</span>
+                        </div>
+                        <div className="flex items-center text-gray-500 text-sm">
+                          <FaStore className="mr-2" />
+                          <span>{visit.storeName}</span>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        {visit.scheduledStartTime && visit.scheduledEndTime && (
+                          <div className="text-gray-500 text-sm">
+                            <span className="font-semibold">Duration:</span> {formatDuration(intervalToDuration({ start: new Date(visit.scheduledStartTime), end: new Date(visit.scheduledEndTime) }))}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-gray-500 text-sm mb-1">
+                          <span className="font-semibold">Purpose:</span> {visit.purpose}
+                        </div>
+                        {visit.intent !== null && (
+                          <div className="text-gray-500 text-sm">
+                            <span className="font-semibold">Intent Level:</span> {visit.intent}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationPrevious
+                    onClick={() => {
+                      if (currentPage > 1) {
+                        paginate(currentPage - 1);
+                      }
+                    }}
+                    className={currentPage === 1 ? 'cursor-not-allowed opacity-50' : ''}
+                  />
+                  {Array.from({ length: Math.ceil(visits.length / visitsPerPage) }, (_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink isActive={currentPage === i + 1} onClick={() => paginate(i + 1)}>
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationNext
+                    onClick={() => {
+                      if (currentPage < Math.ceil(visits.length / visitsPerPage)) {
+                        paginate(currentPage + 1);
+                      }
+                    }}
+                    className={
+                      currentPage === Math.ceil(visits.length / visitsPerPage)
+                        ? 'cursor-not-allowed opacity-50'
+                        : ''
                     }
-
-                    return (
-                      <Card key={visit.id} className="bg-white shadow-md rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
-                        <CardContent>
-                          <div className="flex justify-between items-center mb-4">
-                            <div className="text-xl font-semibold">{visit.storeName}</div>
-                            <Badge className={`${statusColor} px-3 py-1 rounded-full font-semibold text-sm`}>
-                              {statusEmoji} {status}
-                            </Badge>
-                          </div>
-                          <div className="mb-4">
-                            <div className="flex items-center text-gray-500 mb-1">
-                              <FaCalendarAlt className="mr-2" />
-                              <span>{format(new Date(visit.visit_date), 'MMMM d, yyyy')}</span>
-                            </div>
-                            <div className="flex items-center text-gray-500">
-                              <FaStore className="mr-2" />
-                              <span>{visit.storeName}</span>
-                            </div>
-                          </div>
-                          <div className="mb-4">
-                            <div className="text-gray-500 mb-1">
-                              <span className="font-semibold">Employee:</span> {visit.employeeName}
-                            </div>
-                            {visit.scheduledStartTime && visit.scheduledEndTime && (
-                              <div className="text-gray-500">
-                                <span className="font-semibold">Duration:</span> {formatDuration(intervalToDuration({ start: new Date(visit.scheduledStartTime), end: new Date(visit.scheduledEndTime) }))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="mb-4">
-                            <div className="text-gray-500 mb-1">
-                              <span className="font-semibold">Purpose:</span> {visit.purpose}
-                            </div>
-                            {visit.intent !== null && (
-                              <div className="text-gray-500">
-                                <span className="font-semibold">Intent Level:</span> {visit.intent}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                  />
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
