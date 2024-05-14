@@ -1,3 +1,4 @@
+// VisitsList.tsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -5,12 +6,11 @@ import { RootState } from '../store';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar"; // Import the Calendar component
-//import VisitCard from '../components/VisitList/VisitCard';
+import { Calendar } from "@/components/ui/calendar";
 import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
-import { format, subDays } from "date-fns";
+import { format, subDays, parse } from "date-fns";
 import { stringify } from 'csv-stringify';
 import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from "@/components/ui/pagination";
 
@@ -48,11 +48,7 @@ const VisitsList: React.FC = () => {
           },
         });
         setVisits(response.data);
-        setFilteredVisits(response.data);
-
-        // Extract unique purposes from the visits, excluding empty values
-        const uniquePurposes = Array.from(new Set(response.data.map((visit: Visit) => visit.purpose))).filter(Boolean) as string[];
-        setPurposes(uniquePurposes);
+        setFilteredVisits(response.data); // Set filteredVisits to the full list of visits initially
       } catch (error) {
         console.error('Error fetching visits:', error);
       }
@@ -67,25 +63,28 @@ const VisitsList: React.FC = () => {
     setViewMode((prevMode) => (prevMode === 'card' ? 'table' : 'card'));
   };
 
-  const handleFilter = (filters: { storeName: string; employeeName: string; purpose: string }) => {
+  const handleFilter = (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => {
     const { storeName, employeeName, purpose } = filters;
 
-    let filtered = visits;
+    let filtered = visits; // Start with the full list of visits
 
-    if (storeName) {
-      filtered = filtered.filter((visit) =>
-        visit.storeName.toLowerCase().includes(storeName.toLowerCase())
-      );
-    }
+    if (!clearFilters) {
+      // Apply filters only if clearFilters is false
+      if (storeName) {
+        filtered = filtered.filter((visit) =>
+          visit.storeName.toLowerCase().includes(storeName.toLowerCase())
+        );
+      }
 
-    if (employeeName) {
-      filtered = filtered.filter((visit) =>
-        visit.employeeName.toLowerCase().includes(employeeName.toLowerCase())
-      );
-    }
+      if (employeeName) {
+        filtered = filtered.filter((visit) =>
+          visit.employeeName.toLowerCase().includes(employeeName.toLowerCase())
+        );
+      }
 
-    if (purpose !== 'all') {
-      filtered = filtered.filter((visit) => visit.purpose === purpose);
+      if (purpose !== '') {
+        filtered = filtered.filter((visit) => visit.purpose === purpose);
+      }
     }
 
     setFilteredVisits(filtered);
@@ -209,11 +208,24 @@ const VisitsList: React.FC = () => {
     });
   };
 
-  // Sort the filtered visits array based on the "visit_date" column in descending order
+  const getLastUpdatedDateTime = (visit: Visit) => {
+    const date = visit.updatedAt;
+    const time = visit.updatedTime;
+    if (date && time) {
+      const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+      const formattedDateTime = `${formattedDate}T${time}`;
+      return new Date(formattedDateTime);
+    }
+    return null;
+  };
+
   const sortedVisits = [...filteredVisits].sort((a, b) => {
-    const aDate = new Date(a.visit_date);
-    const bDate = new Date(b.visit_date);
-    return bDate.getTime() - aDate.getTime();
+    const aDateTime = getLastUpdatedDateTime(a);
+    const bDateTime = getLastUpdatedDateTime(b);
+    if (aDateTime && bDateTime) {
+      return bDateTime.getTime() - aDateTime.getTime();
+    }
+    return 0;
   });
 
   const handleColumnSelect = (column: string) => {

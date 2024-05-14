@@ -187,4 +187,4 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-export default MyApp;
+export default MyApp; 

@@ -1,5 +1,4 @@
-// VisitsFilter.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"; // Import the format function from date-fns
 
 interface VisitsFilterProps {
-    onFilter: (filters: { storeName: string; employeeName: string; purpose: string }) => void;
+    onFilter: (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => void;
     onColumnSelect: (column: string) => void;
     onExport: () => void;
     selectedColumns: string[];
@@ -34,14 +33,43 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
 }) => {
     const [storeName, setStoreName] = useState('');
     const [employeeName, setEmployeeName] = useState('');
+    const [purpose, setPurpose] = useState('');
+    const [debouncedStoreName, setDebouncedStoreName] = useState('');
+    const [debouncedEmployeeName, setDebouncedEmployeeName] = useState('');
+
+    useEffect(() => {
+        const storeNameDebounceTimer = setTimeout(() => {
+            setDebouncedStoreName(storeName);
+        }, 300);
+
+        const employeeNameDebounceTimer = setTimeout(() => {
+            setDebouncedEmployeeName(employeeName);
+        }, 300);
+
+        return () => {
+            clearTimeout(storeNameDebounceTimer);
+            clearTimeout(employeeNameDebounceTimer);
+        };
+    }, [storeName, employeeName]);
+
+    useEffect(() => {
+        handleFilter();
+    }, [debouncedStoreName, debouncedEmployeeName]);
 
     const handleFilter = () => {
-        onFilter({ storeName, employeeName, purpose: '' });
+        onFilter({ storeName: debouncedStoreName, employeeName: debouncedEmployeeName, purpose }, false);
     };
 
     const handleAllowClearStoreName = () => {
         setStoreName('');
-        onFilter({ storeName: '', employeeName, purpose: '' });
+        setDebouncedStoreName('');
+        onFilter({ storeName: '', employeeName, purpose }, true);
+    };
+
+    const handleAllowClearEmployeeName = () => {
+        setEmployeeName('');
+        setDebouncedEmployeeName('');
+        onFilter({ storeName, employeeName: '', purpose }, true);
     };
 
     const columnMapping: Record<string, string> = {
@@ -77,7 +105,6 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                                 value={storeName}
                                 onChange={(e) => {
                                     setStoreName(e.target.value);
-                                    handleFilter();
                                 }}
                                 className="w-full"
                             />
@@ -90,16 +117,25 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                                 </button>
                             )}
                         </div>
-                        <Input
-                            type="text"
-                            placeholder="Sales Executive Name"
-                            value={employeeName}
-                            onChange={(e) => {
-                                setEmployeeName(e.target.value);
-                                handleFilter();
-                            }}
-                            className="w-50"
-                        />
+                        <div className="relative w-50">
+                            <Input
+                                type="text"
+                                placeholder="Sales Executive Name"
+                                value={employeeName}
+                                onChange={(e) => {
+                                    setEmployeeName(e.target.value);
+                                }}
+                                className="w-full"
+                            />
+                            {employeeName && (
+                                <button
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={handleAllowClearEmployeeName}
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
                         <div className="flex space-x-2">
                             <Popover>
                                 <PopoverTrigger asChild>

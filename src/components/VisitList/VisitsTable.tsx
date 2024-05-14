@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { useRouter } from 'next/router';
 import { Visit } from './types';
 
@@ -59,6 +59,26 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
         return { emoji: '📅', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
     };
 
+    const getLastUpdatedDateTime = (visit: Visit) => {
+        const date = visit.updatedAt;
+        const time = visit.updatedTime;
+        if (date && time) {
+            const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+            const formattedDateTime = `${formattedDate}T${time}`;
+            return new Date(formattedDateTime);
+        }
+        return null;
+    };
+
+    const sortedVisits = [...visits].sort((a, b) => {
+        const aDateTime = getLastUpdatedDateTime(a);
+        const bDateTime = getLastUpdatedDateTime(b);
+        if (aDateTime && bDateTime) {
+            return bDateTime.getTime() - aDateTime.getTime();
+        }
+        return 0;
+    });
+
     return (
         <div>
             <table className="w-full text-left table-auto">
@@ -107,7 +127,7 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                     </tr>
                 </thead>
                 <tbody>
-                    {visits.map((visit) => {
+                    {sortedVisits.map((visit) => {
                         const { emoji, status, color } = getOutcomeStatus(visit);
 
                         return (
@@ -148,8 +168,8 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 )}
                                 {selectedColumns.includes('visitStart') && (
                                     <td className="px-4 py-2 whitespace-nowrap">
-                                        <div>{formatDate(visit.checkinDate)}</div>
-                                        <div>{formatTime(visit.checkinDate, visit.checkinTime)}</div>
+                                        <div>{formatDate(visit.updatedAt)}</div>
+                                        <div>{formatTime(visit.updatedAt, visit.updatedTime)}</div>
                                     </td>
                                 )}
                                 {selectedColumns.includes('visitEnd') && (
@@ -183,4 +203,4 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
     );
 };
 
-export default VisitsTable; 
+export default VisitsTable;
