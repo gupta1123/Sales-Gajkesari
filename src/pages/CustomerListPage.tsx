@@ -80,6 +80,9 @@ type CustomerTableProps = {
     onSelectRow: (customerId: string) => void;
     onBulkAction: (action: string) => void;
     onDeleteCustomer: (customerId: string) => void;
+    sortColumn: string | null;
+    sortDirection: 'asc' | 'desc';
+    onSort: (column: string) => void;
 };
 
 const CustomerTable = ({
@@ -88,43 +91,16 @@ const CustomerTable = ({
     onSelectColumn,
     onBulkAction,
     onDeleteCustomer,
+    sortColumn,
+    sortDirection,
+    onSort,
 }: CustomerTableProps) => {
-    const [sortColumn, setSortColumn] = useState<string | null>('storeName'); // Set the default sort column
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // Set the default sort direction
-
-    const handleSort = (column: string) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('asc');
-        }
-    };
-
-    const sortedCustomers = sortColumn
-        ? customers.slice().sort((a, b) => {
-            const sortValue = (value: any) => {
-                if (sortColumn === 'lastVisitDate') {
-                    return new Date(value).getTime();
-                }
-                return typeof value === 'string' ? value.toLowerCase() : value;
-            };
-
-            const aValue = sortValue(a[sortColumn as keyof Customer]);
-            const bValue = sortValue(b[sortColumn as keyof Customer]);
-
-            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-            return 0;
-        })
-        : customers;
-
     return (
         <Table>
             <TableHeader>
                 <TableRow>
                     {selectedColumns.includes('shopName') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('storeName')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('storeName')}>
                             Shop Name
                             {sortColumn === 'storeName' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -132,7 +108,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('ownerName') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('clientFirstName')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('clientFirstName')}>
                             Owner Name
                             {sortColumn === 'clientFirstName' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -140,7 +116,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('city') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('city')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('city')}>
                             City
                             {sortColumn === 'city' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -148,7 +124,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('state') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('state')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('state')}>
                             State
                             {sortColumn === 'state' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -156,7 +132,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('phone') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('primaryContact')}>
                             Phone
                             {sortColumn === 'primaryContact' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -164,7 +140,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('monthlySales') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('monthlySale')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('monthlySale')}>
                             Monthly Sales
                             {sortColumn === 'monthlySale' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -172,7 +148,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('intentLevel') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('intent')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('intent')}>
                             Intent Level
                             {sortColumn === 'intent' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -180,7 +156,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('fieldOfficer') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('employeeName')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('employeeName')}>
                             Field Officer
                             {sortColumn === 'employeeName' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -188,7 +164,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('clientType') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('clientType')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('clientType')}>
                             Client Type
                             {sortColumn === 'clientType' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -196,7 +172,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('totalVisits') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('totalVisits')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('totalVisits')}>
                             Total Visits
                             {sortColumn === 'totalVisits' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -204,7 +180,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('lastVisitDate') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('lastVisitDate')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('lastVisitDate')}>
                             Last Visit Date
                             {sortColumn === 'lastVisitDate' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -212,7 +188,7 @@ const CustomerTable = ({
                         </TableHead>
                     )}
                     {selectedColumns.includes('email') && (
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('email')}>
+                        <TableHead className="cursor-pointer" onClick={() => onSort('email')}>
                             Email
                             {sortColumn === 'email' && (
                                 <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
@@ -224,7 +200,7 @@ const CustomerTable = ({
             </TableHeader>
 
             <TableBody>
-                {sortedCustomers.map((customer) => (
+                {customers.map((customer) => (
                     <TableRow key={customer.storeId}>
                         {selectedColumns.includes('shopName') && <TableCell>{customer.storeName}</TableCell>}
                         {selectedColumns.includes('ownerName') && <TableCell>{`${customer.clientFirstName} ${customer.clientLastName}`}</TableCell>}
@@ -298,6 +274,8 @@ interface QueryFilters {
         owner: string;
         city: string;
     };
+    sortColumn: string | null;
+    sortDirection: 'asc' | 'desc';
 }
 
 const PaginationNumbers: React.FC<PaginationNumbersProps> = ({ currentPage, totalPages, onPageChange }) => {
@@ -342,7 +320,6 @@ function CustomerListPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
-    // const [error, setError] = useState<string | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const token = useSelector((state: RootState) => state.auth.token);
@@ -361,7 +338,7 @@ function CustomerListPage() {
             return;
         }
 
-        const [_, { page, size, filters }] = queryKey as [unknown, QueryFilters];
+        const [_, { page, size, filters, sortColumn, sortDirection }] = queryKey as [unknown, QueryFilters];
         const queryParams = new URLSearchParams();
         queryParams.append('page', (page - 1).toString());
         queryParams.append('size', size.toString());
@@ -377,6 +354,11 @@ function CustomerListPage() {
         }
         if (filters.city) {
             queryParams.append('city', filters.city);
+        }
+
+        if (sortColumn) {
+            queryParams.append('sortColumn', sortColumn);
+            queryParams.append('sortDirection', sortDirection);
         }
 
         const response = await fetch(
@@ -395,8 +377,20 @@ function CustomerListPage() {
         return response.json();
     };
 
+    const [sortColumn, setSortColumn] = useState<string | null>('storeName');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+    const handleSort = (column: string) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
     const { data, isLoading, isError, error } = useQuery(
-        ['customers', { page: currentPage, size: itemsPerPage, filters }],
+        ['customers', { page: currentPage, size: itemsPerPage, filters, sortColumn, sortDirection }],
         fetchFilteredCustomers
     );
 
@@ -583,7 +577,7 @@ function CustomerListPage() {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Filter by  Shop name"
+                            placeholder="Filter by  Shop name"
                             className="border border-gray-300 rounded-md px-4 py-2 pr-10"
                             value={filters.name}
                             onChange={(e) => handleFilterChange('name', e.target.value)}
@@ -642,6 +636,9 @@ function CustomerListPage() {
                     onSelectRow={handleSelectRow}
                     onBulkAction={handleBulkAction}
                     onDeleteCustomer={openDeleteModal}
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
                 />
 
                 <div className="mt-8">

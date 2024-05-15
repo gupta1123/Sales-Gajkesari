@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { useRouter } from 'next/router';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subWeeks, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,8 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface Visit {
   id: string;
@@ -122,15 +125,16 @@ interface DateRangeDropdownProps {
 
 const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('This Week');
+  const [selectedOption, setSelectedOption] = useState('Today');
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const options = [
     'Today',
-    'Yesterday',
-    'This Week',
-    'Last Week',
-    'This Month',
-    'Last Month',
+    'Last 7 Days',
+    'Last 15 Days',
+    'Last 30 Days',
+    'Custom Date Range',
   ];
 
   const toggleDropdown = () => {
@@ -140,8 +144,30 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   const handleOptionClick = (option: string) => {
     setSelectedOption(option);
     setIsOpen(false);
-    onDateRangeChange(option);
+    if (option === 'Custom Date Range') {
+      setIsCustomModalOpen(true);
+    } else {
+      onDateRangeChange(option);
+    }
   };
+
+  const handleCustomDateRangeApply = (startDate: string, endDate: string) => {
+    onDateRangeChange(`${startDate} - ${endDate}`);
+    setIsCustomModalOpen(false);
+  };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="relative inline-block text-left">
@@ -172,8 +198,8 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
                 key={option}
                 href="#"
                 className={`${option === selectedOption
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-700'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-700'
                   } block px-4 py-2 text-sm`}
                 role="menuitem"
                 onClick={() => handleOptionClick(option)}
@@ -184,18 +210,104 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
           </div>
         </div>
       )}
+
+      <CustomDateRangeModal
+        isOpen={isCustomModalOpen}
+        onClose={() => setIsCustomModalOpen(false)}
+        onApply={handleCustomDateRangeApply}
+      />
+    </div>
+  );
+};
+
+interface CustomDateRangeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApply: (startDate: string, endDate: string) => void;
+}
+
+const CustomDateRangeModal = ({ isOpen, onClose, onApply }: CustomDateRangeModalProps) => {
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
+  const handleApply = () => {
+    if (startDate && endDate) {
+      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+      onApply(formattedStartDate, formattedEndDate);
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+    >
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      ></div>
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md mx-auto z-10">
+        <h2 className="text-3xl font-bold mb-6 text-center text-indigo-600">
+          Custom Date Range
+        </h2>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block mb-2 font-bold text-gray-700">Start Date</label>
+            <DatePicker
+              selected={startDate}
+              onChange={(date: Date | null) => setStartDate(date)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              placeholderText="Select start date"
+              className="w-full px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-700"
+            />
+          </div>
+          <div>
+            <label className="block mb-2 font-bold text-gray-700">End Date</label>
+            <DatePicker
+              selected={endDate}
+              onChange={(date: Date | null) => setEndDate(date)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+              placeholderText="Select end date"
+              className="w-full px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-700"
+            />
+          </div>
+        </div>
+        <div className="flex justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg mr-4 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleApply}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 interface CityDropdownProps {
-  cities: string[];
+  visits: Visit[];
   onCityChange: (city: string | null) => void;
 }
 
-const CityDropdown = ({ cities, onCityChange }: CityDropdownProps) => {
+const CityDropdown = ({ visits, onCityChange }: CityDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+
+  const cities = Array.from(new Set(visits.map((visit) => visit.city)));
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -234,8 +346,8 @@ const CityDropdown = ({ cities, onCityChange }: CityDropdownProps) => {
             <a
               href="#"
               className={`${selectedCity === null
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-700'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-700'
                 } block px-4 py-2 text-sm`}
               role="menuitem"
               onClick={() => handleCityClick(null)}
@@ -247,8 +359,8 @@ const CityDropdown = ({ cities, onCityChange }: CityDropdownProps) => {
                 key={city}
                 href="#"
                 className={`${city === selectedCity
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-700'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-700'
                   } block px-4 py-2 text-sm`}
                 role="menuitem"
                 onClick={() => handleCityClick(city)}
@@ -272,17 +384,40 @@ interface VisitsTableProps {
 const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const visitsPerPage = 10;
+  const [dateSort, setDateSort] = useState<'asc' | 'desc' | null>(null);
 
-  const filteredVisits = selectedCity ? visits.filter((visit) => visit.city === selectedCity) : visits;
+  const filteredVisits = selectedCity
+    ? visits.filter((visit) => visit.city === selectedCity)
+    : visits;
 
   const indexOfLastVisit = currentPage * visitsPerPage;
   const indexOfFirstVisit = indexOfLastVisit - visitsPerPage;
-  const currentVisits = filteredVisits.slice(indexOfFirstVisit, indexOfLastVisit);
+  const currentVisits = filteredVisits
+    .sort((a, b) => {
+      if (dateSort === 'asc') {
+        return new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime();
+      } else if (dateSort === 'desc') {
+        return new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime();
+      }
+      return 0;
+    })
+    .slice(indexOfFirstVisit, indexOfLastVisit);
 
   const totalPages = Math.ceil(filteredVisits.length / visitsPerPage);
 
   const goToPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
+  };
+  const handleDateSort = () => {
+    setDateSort((prevSort) => {
+      if (prevSort === 'asc') {
+        return 'desc';
+      } else if (prevSort === 'desc') {
+        return null;
+      } else {
+        return 'asc';
+      }
+    });
   };
 
   const goToPreviousPage = () => {
@@ -315,7 +450,14 @@ const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) 
             <tr>
               <th className="px-4 py-2">Store</th>
               <th className="px-4 py-2">Employee</th>
-              <th className="px-4 py-2">Date</th>
+              <th
+                className="px-4 py-2 cursor-pointer"
+                onClick={handleDateSort}
+              >
+                Date
+                {dateSort === 'asc' && ' ▲'}
+                {dateSort === 'desc' && ' ▼'}
+              </th>
               <th className="px-4 py-2">Purpose</th>
               <th className="px-4 py-2">City</th>
               <th className="px-4 py-2">Status</th>
@@ -380,11 +522,10 @@ const Dashboard = () => {
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState('This Week');
-  const [isInitialRender, setIsInitialRender] = useState(true); 
+  const [dateRange, setDateRange] = useState('Today');
+  const [isInitialRender, setIsInitialRender] = useState(true);
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
-
   useEffect(() => {
     if (token) {
       fetchVisits();
@@ -424,37 +565,35 @@ const Dashboard = () => {
       let startDate = '';
       let endDate = '';
 
-      switch (dateRange) {
-        case 'Today':
-          startDate = format(new Date(), 'yyyy-MM-dd');
-          endDate = format(new Date(), 'yyyy-MM-dd');
-          break;
-        case 'Yesterday':
-          startDate = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-          endDate = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-          break;
-        case 'This Week':
-          startDate = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-          endDate = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-          break;
-        case 'Last Week':
-          startDate = format(startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-          endDate = format(endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-          break;
-        case 'This Month':
-          startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-          endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-          break;
-        case 'Last Month':
-          startDate = format(startOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd');
-          endDate = format(endOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd');
-          break;
-        default:
-          break;
+      if (dateRange.includes(' - ')) {
+        const [start, end] = dateRange.split(' - ');
+        startDate = start;
+        endDate = end;
+      } else {
+        switch (dateRange) {
+          case 'Today':
+            startDate = format(new Date(), 'yyyy-MM-dd');
+            endDate = format(new Date(), 'yyyy-MM-dd');
+            break;
+          case 'Last 7 Days':
+            startDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+            endDate = format(new Date(), 'yyyy-MM-dd');
+            break;
+          case 'Last 15 Days':
+            startDate = format(subDays(new Date(), 15), 'yyyy-MM-dd');
+            endDate = format(new Date(), 'yyyy-MM-dd');
+            break;
+          case 'Last 30 Days':
+            startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+            endDate = format(new Date(), 'yyyy-MM-dd');
+            break;
+          default:
+            break;
+        }
       }
 
       const response = await fetch(
-        `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${startDate}&end=${endDate}`,
+        `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateSorted?start=${startDate}&end=${endDate}&page=0&size=1000&sortField=visitDate&sortDir=desc`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -470,27 +609,21 @@ const Dashboard = () => {
       console.error('Error fetching visits:', error);
     }
   };
-
   const handleStateClick = (state: string) => {
     setSelectedState(state);
     setSelectedEmployee(null);
   };
-
   const handleEmployeeChange = (employeeName: string | null) => {
     setSelectedEmployee(employeeName === 'all' ? null : employeeName);
   };
-
   const handleDateRangeChange = (selectedDateRange: string) => {
     setDateRange(selectedDateRange);
   };
-
   const handleViewDetails = (visitId: string) => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
-
   const states = Array.from(new Set(visits.map((visit) => visit.state)));
   const cities = Array.from(new Set(visits.map((visit) => visit.city)));
-
   const stateCards = Array.from(new Set(visits.map((visit) => visit.state))).map((state) => {
     const stateVisits = visits.filter((visit) => visit.state === state);
     const totalVisits = stateVisits.length;
@@ -510,6 +643,10 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-8">Sales Dashboard</h1>
+        <div className="mb-8 flex gap-4">
+          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+          <CityDropdown visits={visits} onCityChange={handleCityChange} />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{stateCards}</div>
       </div>
     );
@@ -571,7 +708,7 @@ const Dashboard = () => {
           </div>
           <div className="mb-8 flex gap-4">
             <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-            <CityDropdown cities={cities} onCityChange={handleCityChange} />
+            <CityDropdown visits={employeeVisits} onCityChange={handleCityChange} />
           </div>
           <div className="mb-8">
             <VisitsTable visits={employeeVisits} onViewDetails={handleViewDetails} selectedCity={selectedCity} />
@@ -598,14 +735,18 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{employeeCards}</div>
       </div>
     );
-  }
+    }
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Sales Dashboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{stateCards}</div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Sales Dashboard</h1>
+        <div className="relative z-10">
+          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3 gap-8">{stateCards}</div>
     </div>
   );
-};
-
+}
 export default Dashboard;

@@ -151,7 +151,7 @@ const SalesExecutivePage: React.FC = () => {
             <div className="mb-6">
               <DateRange setVisits={setVisits} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {currentVisits.map((visit) => {
                 let status = 'Assigned';
                 let statusColor = 'bg-blue-100 text-blue-800';
@@ -172,37 +172,39 @@ const SalesExecutivePage: React.FC = () => {
                 }
 
                 return (
-                  <Card key={visit.id} className="bg-white shadow-md rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
-                    <CardContent>
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="text-xl font-semibold">{visit.storeName}</div>
-                        <Badge className={`${statusColor} px-3 py-1 rounded-full font-semibold text-sm`}>
+                  <Card key={visit.id} className="bg-white shadow-md rounded-lg cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">{visit.storeName}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="text-sm text-gray-500">
+                          <FaCalendarAlt className="inline-block mr-1" />
+                          <span>{format(new Date(visit.visit_date), 'MMM d, yyyy')}</span>
+                        </div>
+                        <Badge className={`${statusColor} px-2 py-1 rounded-full font-semibold text-xs`}>
                           {statusEmoji} {status}
                         </Badge>
                       </div>
-                      <div className="mb-4">
-                        <div className="flex items-center text-gray-500 text-sm mb-1">
-                          <FaCalendarAlt className="mr-2" />
-                          <span>{format(new Date(visit.visit_date), 'MMMM d, yyyy')}</span>
-                        </div>
-                        <div className="flex items-center text-gray-500 text-sm">
-                          <FaStore className="mr-2" />
+                      <div className="mb-2">
+                        <div className="flex items-center text-gray-500 text-xs">
+                          <FaStore className="mr-1" />
                           <span>{visit.storeName}</span>
                         </div>
                       </div>
-                      <div className="mb-4">
+                      <div className="mb-2">
                         {visit.scheduledStartTime && visit.scheduledEndTime && (
-                          <div className="text-gray-500 text-sm">
+                          <div className="text-gray-500 text-xs">
                             <span className="font-semibold">Duration:</span> {formatDuration(intervalToDuration({ start: new Date(visit.scheduledStartTime), end: new Date(visit.scheduledEndTime) }))}
                           </div>
                         )}
                       </div>
                       <div>
-                        <div className="text-gray-500 text-sm mb-1">
+                        <div className="text-gray-500 text-xs mb-1">
                           <span className="font-semibold">Purpose:</span> {visit.purpose}
                         </div>
                         {visit.intent !== null && (
-                          <div className="text-gray-500 text-sm">
+                          <div className="text-gray-500 text-xs">
                             <span className="font-semibold">Intent Level:</span> {visit.intent}
                           </div>
                         )}

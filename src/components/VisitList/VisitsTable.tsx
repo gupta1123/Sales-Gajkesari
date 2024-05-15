@@ -59,26 +59,6 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
         return { emoji: '📅', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
     };
 
-    const getLastUpdatedDateTime = (visit: Visit) => {
-        const date = visit.updatedAt;
-        const time = visit.updatedTime;
-        if (date && time) {
-            const formattedDate = format(new Date(date), 'yyyy-MM-dd');
-            const formattedDateTime = `${formattedDate}T${time}`;
-            return new Date(formattedDateTime);
-        }
-        return null;
-    };
-
-    const sortedVisits = [...visits].sort((a, b) => {
-        const aDateTime = getLastUpdatedDateTime(a);
-        const bDateTime = getLastUpdatedDateTime(b);
-        if (aDateTime && bDateTime) {
-            return bDateTime.getTime() - aDateTime.getTime();
-        }
-        return 0;
-    });
-
     return (
         <div>
             <table className="w-full text-left table-auto">
@@ -96,7 +76,7 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                         )}
                         {selectedColumns.includes('visit_date') && (
                             <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visit_date')}>
-                                Date {sortColumn === 'visit_date' && (sortDirection === 'desc' ? '↓' : '↑')}
+                                Date {sortColumn === 'visit_date' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
                         {selectedColumns.includes('outcome') && (
@@ -110,10 +90,14 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             </th>
                         )}
                         {selectedColumns.includes('visitStart') && (
-                            <th className="px-4 py-2">Visit Start</th>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visitStart')}>
+                                Visit Start {sortColumn === 'visitStart' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </th>
                         )}
                         {selectedColumns.includes('visitEnd') && (
-                            <th className="px-4 py-2">Visit End</th>
+                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visitEnd')}>
+                                Visit End {sortColumn === 'visitEnd' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </th>
                         )}
                         {selectedColumns.includes('intent') && (
                             <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('intent')}>
@@ -121,13 +105,13 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             </th>
                         )}
                         <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('updatedAt')}>
-                            Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'desc' ? '↓' : '↑')}
+                            Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'asc' ? '↑' : '↓')}
                         </th>
                         <th className="px-4 py-2">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {sortedVisits.map((visit) => {
+                    {visits.map((visit) => {
                         const { emoji, status, color } = getOutcomeStatus(visit);
 
                         return (
@@ -168,8 +152,8 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 )}
                                 {selectedColumns.includes('visitStart') && (
                                     <td className="px-4 py-2 whitespace-nowrap">
-                                        <div>{formatDate(visit.updatedAt)}</div>
-                                        <div>{formatTime(visit.updatedAt, visit.updatedTime)}</div>
+                                        <div>{formatDate(visit.checkinDate)}</div>
+                                        <div>{formatTime(visit.checkinDate, visit.checkinTime)}</div>
                                     </td>
                                 )}
                                 {selectedColumns.includes('visitEnd') && (
