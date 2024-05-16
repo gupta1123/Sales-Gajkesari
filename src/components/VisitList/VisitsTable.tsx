@@ -1,8 +1,7 @@
-// VisitsTable.tsx
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { useRouter } from 'next/router';
 import { Visit } from './types';
 
@@ -30,6 +29,19 @@ const formatTime = (date: string | null | undefined, time: string | null | undef
         return format(new Date(`${date}T${hours}:${minutes}`), "h:mm a");
     }
     return '';
+};
+
+// Mapping between display names and backend field names
+const columnMapping = {
+    'Customer Name': 'storeName',
+    'Executive': 'employeeName',
+    'Date': 'visit_date',
+    'Status': 'outcome',
+    'Purpose': 'purpose',
+    'Visit Start': 'checkinDate',
+    'Visit End': 'checkoutDate',
+    'Intent': 'intent',
+    'Last Updated': 'updatedAt',
 };
 
 const VisitsTable: React.FC<VisitsTableProps> = ({

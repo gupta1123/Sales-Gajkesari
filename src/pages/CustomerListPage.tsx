@@ -273,6 +273,7 @@ interface QueryFilters {
         phone: string;
         owner: string;
         city: string;
+        clientType: string; // Added client type filter
     };
     sortColumn: string | null;
     sortDirection: 'asc' | 'desc';
@@ -312,6 +313,7 @@ function CustomerListPage() {
         name: '',
         owner: '',
         phone: '',
+        clientType: '', // Added client type filter state
     });
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState<number>(10);
@@ -355,7 +357,9 @@ function CustomerListPage() {
         if (filters.city) {
             queryParams.append('city', filters.city);
         }
-
+        if (filters.clientType) {
+            queryParams.append('clientType', filters.clientType);
+        }
         if (sortColumn) {
             queryParams.append('sortColumn', sortColumn);
             queryParams.append('sortDirection', sortDirection);
@@ -561,7 +565,7 @@ function CustomerListPage() {
                         <input
                             type="text"
                             placeholder="Filter by city"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-40"
                             value={filters.city}
                             onChange={(e) => handleFilterChange('city', e.target.value)}
                         />
@@ -603,6 +607,23 @@ function CustomerListPage() {
                             <button
                                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                                 onClick={() => handleFilterClear('owner')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by client type"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.clientType}
+                            onChange={(e) => handleFilterChange('clientType', e.target.value)}
+                        />
+                        {filters.clientType && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('clientType')}
                             >
                                 &times;
                             </button>

@@ -1,4 +1,3 @@
-// components/Sidebar.js
 import Link from 'next/link';
 import styles from './Sidebar.module.css';
 import { useDispatch } from 'react-redux';
@@ -16,7 +15,7 @@ export default function Sidebar() {
     <div className={styles.sidebar}>
       <ul className={styles.sidebarList}>
         <li className={styles.sidebarItem}>
-          <Link href="/Dashboard" className={styles.sidebarLink}>
+          <Link href="/Dashboard" shallow={true} className={styles.sidebarLink}>
             Dashboard
           </Link>
         </li>

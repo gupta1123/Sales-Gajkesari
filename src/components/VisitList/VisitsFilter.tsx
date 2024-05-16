@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar } from "@/components/ui/calendar"; // Import the Calendar component
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover components
-import { format } from "date-fns"; // Import the format function from date-fns
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 
 interface VisitsFilterProps {
     onFilter: (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => void;
@@ -18,6 +17,12 @@ interface VisitsFilterProps {
     setStartDate: (date: Date | undefined) => void;
     endDate: Date | undefined;
     setEndDate: (date: Date | undefined) => void;
+    purpose: string;
+    setPurpose: (purpose: string) => void;
+    storeName: string;
+    setStoreName: (storeName: string) => void;
+    employeeName: string;
+    setEmployeeName: (employeeName: string) => void;
 }
 
 const VisitsFilter: React.FC<VisitsFilterProps> = ({
@@ -30,10 +35,13 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
     setStartDate,
     endDate,
     setEndDate,
+    purpose,
+    setPurpose,
+    storeName,
+    setStoreName,
+    employeeName,
+    setEmployeeName,
 }) => {
-    const [storeName, setStoreName] = useState('');
-    const [employeeName, setEmployeeName] = useState('');
-    const [purpose, setPurpose] = useState('');
     const [debouncedStoreName, setDebouncedStoreName] = useState('');
     const [debouncedEmployeeName, setDebouncedEmployeeName] = useState('');
 
@@ -54,7 +62,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
 
     useEffect(() => {
         handleFilter();
-    }, [debouncedStoreName, debouncedEmployeeName]);
+    }, [debouncedStoreName, debouncedEmployeeName, purpose]);
 
     const handleFilter = () => {
         onFilter({ storeName: debouncedStoreName, employeeName: debouncedEmployeeName, purpose }, false);
@@ -70,6 +78,11 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
         setEmployeeName('');
         setDebouncedEmployeeName('');
         onFilter({ storeName, employeeName: '', purpose }, true);
+    };
+
+    const handleAllowClearPurpose = () => {
+        setPurpose('');
+        onFilter({ storeName, employeeName, purpose: '' }, true);
     };
 
     const columnMapping: Record<string, string> = {
@@ -131,6 +144,25 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                                 <button
                                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                                     onClick={handleAllowClearEmployeeName}
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
+                        <div className="relative w-50">
+                            <Input
+                                type="text"
+                                placeholder="Purpose"
+                                value={purpose}
+                                onChange={(e) => {
+                                    setPurpose(e.target.value);
+                                }}
+                                className="w-full"
+                            />
+                            {purpose && (
+                                <button
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={handleAllowClearPurpose}
                                 >
                                     &times;
                                 </button>

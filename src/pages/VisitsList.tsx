@@ -1,143 +1,138 @@
-// VisitsList.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import { useQuery, QueryClient, QueryClientProvider } from 'react-query';
 import { RootState } from '../store';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
-import { format, subDays, parse } from "date-fns";
+import { format, subDays } from "date-fns";
 import { stringify } from 'csv-stringify';
-import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 
+// Create a QueryClient instance
+const queryClient = new QueryClient();
+
+const fetchVisits = async (
+  token: string | null,
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  purpose: string,
+  storeName: string,
+  employeeName: string,
+  sortColumn: string | null,
+  sortDirection: 'asc' | 'desc',
+  currentPage: number,
+  itemsPerPage: number
+) => {
+  if (!token) {
+    throw new Error('Authentication token is missing');
+  }
+
+  const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+  const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+  let url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateSorted?startDate=${formattedStartDate}&endDate=${formattedEndDate}&page=${currentPage - 1}&size=${itemsPerPage}`;
+
+  if (sortColumn) {
+    url += `&sort=${sortColumn},${sortDirection}`;
+  }
+
+  if (purpose) {
+    url += `&purpose=${encodeURIComponent(purpose)}`;
+  }
+  if (storeName) {
+    url += `&storeName=${encodeURIComponent(storeName)}`;
+  }
+  if (employeeName) {
+    url += `&employeeName=${encodeURIComponent(employeeName)}`;
+  }
+
+  const response = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
 const VisitsList: React.FC = () => {
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [filteredVisits, setFilteredVisits] = useState<Visit[]>([]);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
   const token = useSelector((state: RootState) => state.auth.token);
-  const [purposes, setPurposes] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 2)); // Default start date is 2 days ago
   const [endDate, setEndDate] = useState<Date | undefined>(new Date()); // Default end date is today
-
-  const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
-    if (date && time) {
-      const [hours, minutes] = time.split(':');
-      const formattedTime = format(
-        new Date(`${date}T${hours}:${minutes}`),
-        'dd MMM h:mm a'
-      );
-      return formattedTime;
-    }
-    return '';
-  };
-
-  useEffect(() => {
-    const fetchVisits = async () => {
-      try {
-        const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
-        const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
-        const url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${formattedStartDate}&end=${formattedEndDate}`;
-
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setVisits(response.data);
-        setFilteredVisits(response.data); // Set filteredVisits to the full list of visits initially
-      } catch (error) {
-        console.error('Error fetching visits:', error);
-      }
-    };
-
-    if (token) {
-      fetchVisits();
-    }
-  }, [token, startDate, endDate]);
-
-  const toggleViewMode = () => {
-    setViewMode((prevMode) => (prevMode === 'card' ? 'table' : 'card'));
-  };
-
-  const handleFilter = (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => {
-    const { storeName, employeeName, purpose } = filters;
-
-    let filtered = visits; // Start with the full list of visits
-
-    if (!clearFilters) {
-      // Apply filters only if clearFilters is false
-      if (storeName) {
-        filtered = filtered.filter((visit) =>
-          visit.storeName.toLowerCase().includes(storeName.toLowerCase())
-        );
-      }
-
-      if (employeeName) {
-        filtered = filtered.filter((visit) =>
-          visit.employeeName.toLowerCase().includes(employeeName.toLowerCase())
-        );
-      }
-
-      if (purpose !== '') {
-        filtered = filtered.filter((visit) => visit.purpose === purpose);
-      }
-    }
-
-    setFilteredVisits(filtered);
-    setCurrentPage(1); // Reset to the first page when filters change
-  };
-
-  const [selectedColumns, setSelectedColumns] = useState([
-    'storeName',
-    'employeeName',
-    'visit_date',
-    'location',
-    'purpose',
-    'outcome',
-    'visitStart',
-    'visitEnd',
-    'intent',
-    'city',
-    'state',
-  ]);
-
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [purpose, setPurpose] = useState<string>('');
+  const [storeName, setStoreName] = useState<string>('');
+  const [employeeName, setEmployeeName] = useState<string>('');
+  const [sortColumn, setSortColumn] = useState<string | null>('id');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  const { data, error, isLoading } = useQuery(
+    [
+      'visits',
+      token,
+      startDate,
+      endDate,
+      purpose,
+      storeName,
+      employeeName,
+      sortColumn,
+      sortDirection,
+      currentPage,
+      itemsPerPage
+    ],
+    () => fetchVisits(
+      token,
+      startDate,
+      endDate,
+      purpose,
+      storeName,
+      employeeName,
+      sortColumn,
+      sortDirection,
+      currentPage,
+      itemsPerPage
+    ),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  const visits = data?.content || [];
+  const totalPages = data ? data.totalPages : 1;
+
+  // Mapping between display names and backend field names
+  const columnMapping: { [key: string]: string } = {
+    'Customer Name': 'storeName',
+    'Executive': 'employeeName',
+    'Date': 'visit_date',
+    'Status': 'outcome',
+    'Purpose': 'purpose',
+    'Visit Start': 'checkinDate',
+    'Visit End': 'checkoutDate',
+    'Intent': 'intent',
+    'Last Updated': 'updatedAt',
+  };
 
   const handleSort = (column: string) => {
-    if (column === sortColumn) {
+    const backendColumn = columnMapping[column] || column; // Use backend field name if available
+    if (backendColumn === sortColumn) {
       setSortDirection((prevDirection) => (prevDirection === 'asc' ? 'desc' : 'asc'));
     } else {
-      setSortColumn(column);
+      setSortColumn(backendColumn);
       setSortDirection('asc');
     }
   };
 
-  const handleSelectAllRows = (checked: boolean) => {
-    if (checked) {
-      setSelectedRows(filteredVisits.map((visit) => visit.id));
-    } else {
-      setSelectedRows([]);
-    }
-  };
+  const handleFilter = (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => {
+    const { storeName, employeeName, purpose } = filters;
+    setStoreName(storeName);
+    setEmployeeName(employeeName);
+    setPurpose(purpose);
 
-  const handleSelectRow = (visitId: string) => {
-    if (selectedRows.includes(visitId)) {
-      setSelectedRows(selectedRows.filter((id) => id !== visitId));
-    } else {
-      setSelectedRows([...selectedRows, visitId]);
-    }
-  };
-
-  const handleBulkAction = (action: string) => {
-    // Implement the logic for bulk actions
+    // No need to setFilteredVisits, as we're fetching filtered data from the server.
+    setCurrentPage(1); // Reset to the first page when filters change
   };
 
   const handlePageChange = (page: number) => {
@@ -178,7 +173,7 @@ const VisitsList: React.FC = () => {
       }
     });
 
-    const data = sortedVisits.map((visit) => {
+    const data = visits.map((visit: Visit) => {
       const row: any = {};
       selectedColumns.forEach((column) => {
         switch (column) {
@@ -208,25 +203,6 @@ const VisitsList: React.FC = () => {
     });
   };
 
-  const getLastUpdatedDateTime = (visit: Visit) => {
-    const date = visit.updatedAt;
-    const time = visit.updatedTime;
-    if (date && time) {
-      const formattedDate = format(new Date(date), 'yyyy-MM-dd');
-      const formattedDateTime = `${formattedDate}T${time}`;
-      return new Date(formattedDateTime);
-    }
-    return null;
-  };
-
-  const sortedVisits = [...filteredVisits].sort((a, b) => {
-    const aDateTime = getLastUpdatedDateTime(a);
-    const bDateTime = getLastUpdatedDateTime(b);
-    if (aDateTime && bDateTime) {
-      return bDateTime.getTime() - aDateTime.getTime();
-    }
-    return 0;
-  });
 
   const handleColumnSelect = (column: string) => {
     if (selectedColumns.includes(column)) {
@@ -236,10 +212,39 @@ const VisitsList: React.FC = () => {
     }
   };
 
-  const totalPages = Math.ceil(sortedVisits.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentVisits = sortedVisits.slice(startIndex, endIndex);
+  const [selectedColumns, setSelectedColumns] = useState([
+    'storeName',
+    'employeeName',
+    'visit_date',
+    'location',
+    'purpose',
+    'outcome',
+    'visitStart',
+    'visitEnd',
+    'intent',
+    'city',
+    'state',
+  ]);
+
+  const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
+    if (date && time) {
+      const [hours, minutes] = time.split(':');
+      const formattedTime = format(
+        new Date(`${date}T${hours}:${minutes}`),
+        'dd MMM h:mm a'
+      );
+      return formattedTime;
+    }
+    return '';
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error fetching visits: {(error as Error).message}</div>;
+  }
 
   return (
     <div>
@@ -251,23 +256,28 @@ const VisitsList: React.FC = () => {
         onExport={handleExport}
         selectedColumns={selectedColumns}
         viewMode={viewMode}
-
         startDate={startDate}
         setStartDate={setStartDate}
         endDate={endDate}
         setEndDate={setEndDate}
+        purpose={purpose}
+        setPurpose={setPurpose}
+        storeName={storeName}
+        setStoreName={setStoreName}
+        employeeName={employeeName}
+        setEmployeeName={setEmployeeName}
       />
 
       <br />
       <VisitsTable
-        visits={currentVisits}
+        visits={visits}
         selectedColumns={selectedColumns}
         sortColumn={sortColumn}
         sortDirection={sortDirection}
         itemsPerPage={itemsPerPage}
         currentPage={currentPage}
         onSort={handleSort}
-        onBulkAction={handleBulkAction}
+        onBulkAction={() => { }}
       />
 
       <div className="mt-8 flex justify-between items-center">
@@ -314,4 +324,10 @@ const VisitsList: React.FC = () => {
   );
 };
 
-export default VisitsList;
+const App: React.FC = () => (
+  <QueryClientProvider client={queryClient}>
+    <VisitsList />
+  </QueryClientProvider>
+);
+
+export default App;

@@ -1,27 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { useRouter } from 'next/router';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subWeeks, subDays } from 'date-fns';
+import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { format, parseISO, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import SortIcon from './SortIcon';
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import {
   Pagination,
   PaginationContent,
-  PaginationLink,
   PaginationItem,
-  PaginationPrevious,
+  PaginationLink,
   PaginationNext,
+  PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 
 interface Visit {
   id: string;
@@ -58,6 +56,23 @@ const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardPro
   );
 };
 
+interface EmployeeCardProps {
+  employeeName: string;
+  totalVisits: number;
+  onClick: () => void;
+}
+
+const EmployeeCard = ({ employeeName, totalVisits, onClick }: EmployeeCardProps) => {
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
+      <h2 className="text-2xl font-bold mb-4">{employeeName}</h2>
+      <div className="flex justify-between">
+        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
+      </div>
+    </div>
+  );
+};
+
 interface KPICardProps {
   title: string;
   value: number;
@@ -73,23 +88,6 @@ const KPICard = ({ title, value }: KPICardProps) => {
         <p className="text-4xl font-bold">{value}</p>
       </CardContent>
     </Card>
-  );
-};
-
-interface EmployeeCardProps {
-  employeeName: string;
-  totalVisits: number;
-  onClick: () => void;
-}
-
-const EmployeeCard = ({ employeeName, totalVisits, onClick }: EmployeeCardProps) => {
-  return (
-    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4">{employeeName}</h2>
-      <div className="flex justify-between">
-        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
-      </div>
-    </div>
   );
 };
 
@@ -120,14 +118,15 @@ const VisitsByPurposeChart = ({ data }: VisitsByPurposeChartProps) => {
 };
 
 interface DateRangeDropdownProps {
-  onDateRangeChange: (dateRange: string) => void;
+  onDateRangeChange: (startDate: string, endDate: string) => void;
 }
 
 const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState('Today');
-  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isCustomDateRangeOpen, setIsCustomDateRangeOpen] = useState(false);
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const options = [
     'Today',
@@ -144,30 +143,42 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   const handleOptionClick = (option: string) => {
     setSelectedOption(option);
     setIsOpen(false);
+
     if (option === 'Custom Date Range') {
-      setIsCustomModalOpen(true);
+      setIsCustomDateRangeOpen(true);
     } else {
-      onDateRangeChange(option);
+      let startDate = '';
+      let endDate = '';
+
+      switch (option) {
+        case 'Today':
+          startDate = format(new Date(), 'yyyy-MM-dd');
+          endDate = format(new Date(), 'yyyy-MM-dd');
+          break;
+        case 'Last 7 Days':
+          startDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+          endDate = format(new Date(), 'yyyy-MM-dd');
+          break;
+        case 'Last 15 Days':
+          startDate = format(subDays(new Date(), 15), 'yyyy-MM-dd');
+          endDate = format(new Date(), 'yyyy-MM-dd');
+          break;
+        case 'Last 30 Days':
+          startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+          endDate = format(new Date(), 'yyyy-MM-dd');
+          break;
+        default:
+          break;
+      }
+
+      onDateRangeChange(startDate, endDate);
     }
   };
 
-  const handleCustomDateRangeApply = (startDate: string, endDate: string) => {
-    onDateRangeChange(`${startDate} - ${endDate}`);
-    setIsCustomModalOpen(false);
+  const handleCustomDateRangeSubmit = () => {
+    onDateRangeChange(startDate, endDate);
+    setIsCustomDateRangeOpen(false);
   };
-
-  const handleClickOutside = (event: MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-      setIsOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   return (
     <div className="relative inline-block text-left">
@@ -186,7 +197,7 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
       </div>
 
       {isOpen && (
-        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
           <div
             className="py-1"
             role="menu"
@@ -198,8 +209,8 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
                 key={option}
                 href="#"
                 className={`${option === selectedOption
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-700'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-700'
                   } block px-4 py-2 text-sm`}
                 role="menuitem"
                 onClick={() => handleOptionClick(option)}
@@ -211,157 +222,119 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
         </div>
       )}
 
-      <CustomDateRangeModal
-        isOpen={isCustomModalOpen}
-        onClose={() => setIsCustomModalOpen(false)}
-        onApply={handleCustomDateRangeApply}
-      />
+      {isCustomDateRangeOpen && (
+        <div className="fixed inset-0 z-20 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-6 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-900 opacity-75"></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div>
+                  <div className="mt-3 text-center sm:mt-0 sm:text-left">
+                    <h3 className="text-2xl leading-6 font-semibold text-gray-900 mb-4">Custom Date Range</h3>
+                    <div className="mt-4">
+                      <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        name="startDate"
+                        id="startDate"
+                        className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        name="endDate"
+                        id="endDate"
+                        className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-3 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={handleCustomDateRangeSubmit}
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setIsCustomDateRangeOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-interface CustomDateRangeModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onApply: (startDate: string, endDate: string) => void;
+interface CityFilterDropdownProps {
+  cities: string[];
+  onCityFilterChange: (city: string) => void;
+  currentVisits: Visit[];
 }
 
-const CustomDateRangeModal = ({ isOpen, onClose, onApply }: CustomDateRangeModalProps) => {
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-
-  const handleApply = () => {
-    if (startDate && endDate) {
-      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
-      onApply(formattedStartDate, formattedEndDate);
-      onClose();
-    }
-  };
-
-  return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-    >
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-      ></div>
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md mx-auto z-10">
-        <h2 className="text-3xl font-bold mb-6 text-center text-indigo-600">
-          Custom Date Range
-        </h2>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block mb-2 font-bold text-gray-700">Start Date</label>
-            <DatePicker
-              selected={startDate}
-              onChange={(date: Date | null) => setStartDate(date)}
-              selectsStart
-              startDate={startDate}
-              endDate={endDate}
-              placeholderText="Select start date"
-              className="w-full px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-700"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-bold text-gray-700">End Date</label>
-            <DatePicker
-              selected={endDate}
-              onChange={(date: Date | null) => setEndDate(date)}
-              selectsEnd
-              startDate={startDate}
-              endDate={endDate}
-              minDate={startDate}
-              placeholderText="Select end date"
-              className="w-full px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-700"
-            />
-          </div>
-        </div>
-        <div className="flex justify-center">
-          <button
-            onClick={onClose}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg mr-4 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleApply}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            Apply
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface CityDropdownProps {
-  visits: Visit[];
-  onCityChange: (city: string | null) => void;
-}
-
-const CityDropdown = ({ visits, onCityChange }: CityDropdownProps) => {
+const CityFilterDropdown = ({ cities, onCityFilterChange, currentVisits }: CityFilterDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-
-  const cities = Array.from(new Set(visits.map((visit) => visit.city)));
+  const [selectedCity, setSelectedCity] = useState('');
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleCityClick = (city: string | null) => {
+  const handleCityClick = (city: string) => {
     setSelectedCity(city);
     setIsOpen(false);
-    onCityChange(city);
+    onCityFilterChange(city);
   };
 
+  const currentCities = Array.from(new Set(currentVisits.map((visit) => visit.city)));
+
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative inline-block text-left ml-4">
       <div>
         <button
           type="button"
           className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          id="options-menu"
+          id="city-filter-menu"
           aria-haspopup="true"
           aria-expanded={isOpen}
           onClick={toggleDropdown}
         >
-          {selectedCity ? selectedCity : 'Filter by City'}
+          {selectedCity ? selectedCity : 'Filter By City'}
           <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
       {isOpen && (
         <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-          <div
-            className="py-1"
-            role="menu"
-            aria-orientation="vertical"
-            aria-labelledby="options-menu"
-          >
-            <a
-              href="#"
-              className={`${selectedCity === null
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-700'
-                } block px-4 py-2 text-sm`}
-              role="menuitem"
-              onClick={() => handleCityClick(null)}
-            >
-              All Cities
-            </a>
-            {cities.map((city) => (
+          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="city-filter-menu">
+            {currentCities.map((city) => (
               <a
                 key={city}
                 href="#"
-                className={`${city === selectedCity
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-700'
-                  } block px-4 py-2 text-sm`}
+                className={`block px-4 py-2 text-sm ${selectedCity === city ? 'bg-gray-100 text-gray-900' : 'text-gray-700'}`}
                 role="menuitem"
                 onClick={() => handleCityClick(city)}
               >
@@ -378,56 +351,20 @@ const CityDropdown = ({ visits, onCityChange }: CityDropdownProps) => {
 interface VisitsTableProps {
   visits: Visit[];
   onViewDetails: (visitId: string) => void;
-  selectedCity: string | null;
+  currentPage: number;
+  onPageChange: (page: number) => void;
 }
 
-const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const visitsPerPage = 10;
-  const [dateSort, setDateSort] = useState<'asc' | 'desc' | null>(null);
+interface VisitsTableProps {
+  visits: Visit[];
+  onViewDetails: (visitId: string) => void;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+}
 
-  const filteredVisits = selectedCity
-    ? visits.filter((visit) => visit.city === selectedCity)
-    : visits;
-
-  const indexOfLastVisit = currentPage * visitsPerPage;
-  const indexOfFirstVisit = indexOfLastVisit - visitsPerPage;
-  const currentVisits = filteredVisits
-    .sort((a, b) => {
-      if (dateSort === 'asc') {
-        return new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime();
-      } else if (dateSort === 'desc') {
-        return new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime();
-      }
-      return 0;
-    })
-    .slice(indexOfFirstVisit, indexOfLastVisit);
-
-  const totalPages = Math.ceil(filteredVisits.length / visitsPerPage);
-
-  const goToPage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
-  const handleDateSort = () => {
-    setDateSort((prevSort) => {
-      if (prevSort === 'asc') {
-        return 'desc';
-      } else if (prevSort === 'desc') {
-        return null;
-      } else {
-        return 'asc';
-      }
-    });
-  };
-
-  const goToPreviousPage = () => {
-    setCurrentPage((prevPage) => prevPage - 1);
-  };
-
-  const goToNextPage = () => {
-    setCurrentPage((prevPage) => prevPage + 1);
-  };
-
+const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: VisitsTableProps) => {
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortColumn, setSortColumn] = useState<keyof Visit>('visit_date');
   const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
     if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
       return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
@@ -438,6 +375,43 @@ const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) 
     }
     return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
   };
+  const handleSort = (column: keyof Visit) => {
+    if (column === sortColumn) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortOrder('desc');
+    }
+  };
+  const rowsPerPage = 10;
+  const totalPages = Math.ceil(visits.length / rowsPerPage);
+  const sortedVisits = [...visits].sort((a, b) => {
+    const valueA = a[sortColumn];
+    const valueB = b[sortColumn];
+
+    if (valueA === null || valueA === undefined) {
+      return 1;
+    }
+    if (valueB === null || valueB === undefined) {
+      return -1;
+    }
+
+    if (typeof valueA === 'string' && typeof valueB === 'string') {
+      return sortOrder === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+    }
+
+    if (valueA < valueB) {
+      return sortOrder === 'asc' ? -1 : 1;
+    }
+    if (valueA > valueB) {
+      return sortOrder === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const visitsToDisplay = sortedVisits.slice(startIndex, endIndex);
 
   return (
     <Card>
@@ -448,24 +422,27 @@ const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) 
         <table className="w-full">
           <thead>
             <tr>
-              <th className="px-4 py-2">Store</th>
-              <th className="px-4 py-2">Employee</th>
-              <th
-                className="px-4 py-2 cursor-pointer"
-                onClick={handleDateSort}
-              >
-                Date
-                {dateSort === 'asc' && ' ▲'}
-                {dateSort === 'desc' && ' ▼'}
+              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('storeName')}>
+                Store {sortColumn === 'storeName' && <SortIcon sortOrder={sortOrder} />}
               </th>
-              <th className="px-4 py-2">Purpose</th>
-              <th className="px-4 py-2">City</th>
+              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('employeeName')}>
+                Employee {sortColumn === 'employeeName' && <SortIcon sortOrder={sortOrder} />}
+              </th>
+              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('visit_date')}>
+                Date {sortColumn === 'visit_date' && <SortIcon sortOrder={sortOrder} />}
+              </th>
+              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('purpose')}>
+                Purpose {sortColumn === 'purpose' && <SortIcon sortOrder={sortOrder} />}
+              </th>
+              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('city')}>
+                City {sortColumn === 'city' && <SortIcon sortOrder={sortOrder} />}
+              </th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {currentVisits.map((visit) => {
+            {visitsToDisplay.map((visit) => {
               const { emoji, status, color } = getOutcomeStatus(visit);
               return (
                 <tr key={visit.id}>
@@ -488,118 +465,83 @@ const VisitsTable = ({ visits, onViewDetails, selectedCity }: VisitsTableProps) 
             })}
           </tbody>
         </table>
-        <Pagination className="mt-4">
-          <PaginationContent>
-            <PaginationPrevious
-              className={currentPage === 1 ? 'disabled' : ''}
-              onClick={goToPreviousPage}
-            />
-
-            {Array.from({ length: totalPages }, (_, index) => (
-              <PaginationItem key={index}>
-                <PaginationLink
-                  isActive={index + 1 === currentPage}
-                  onClick={() => goToPage(index + 1)}
-                >
-                  {index + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-
-            <PaginationNext
-              className={currentPage === totalPages ? 'disabled' : ''}
-              onClick={goToNextPage}
-            />
-          </PaginationContent>
-        </Pagination>
       </CardContent>
+      <Pagination>
+        <PaginationContent>
+          <a
+            href="#"
+            className={`px-4 py-2 text-sm font-medium ${currentPage === 1
+                ? 'text-gray-500 cursor-not-allowed'
+                : 'text-gray-700 hover:text-gray-900'
+              }`}
+            onClick={(e) => {
+              if (currentPage !== 1) {
+                onPageChange(currentPage - 1);
+              }
+              e.preventDefault();
+            }}
+          >
+            Previous
+          </a>
+          {Array.from({ length: totalPages }, (_, index) => (
+            <PaginationItem key={index}>
+              <PaginationLink
+                isActive={currentPage === index + 1}
+                onClick={() => onPageChange(index + 1)}
+              >
+                {index + 1}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          <a
+            href="#"
+            className={`px-4 py-2 text-sm font-medium ${currentPage === totalPages
+                ? 'text-gray-500 cursor-not-allowed'
+                : 'text-gray-700 hover:text-gray-900'
+              }`}
+            onClick={(e) => {
+              if (currentPage !== totalPages) {
+                onPageChange(currentPage + 1);
+              }
+              e.preventDefault();
+            }}
+          >
+            Next
+          </a>
+        </PaginationContent>
+      </Pagination>
     </Card>
   );
 };
-
 const Dashboard = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [selectedState, setSelectedState] = useState<string | null>(null);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState('Today');
-  const [isInitialRender, setIsInitialRender] = useState(true);
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCity, setSelectedCity] = useState('All');
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
+
   useEffect(() => {
     if (token) {
-      fetchVisits();
+      fetchVisits(startDate, endDate, selectedCity);
     }
-  }, [dateRange, selectedCity, token]);
-  useEffect(() => {
-    const handleRouteChange = () => {
-      setSelectedState(null);
-      setSelectedCity(null);
-      setSelectedEmployee(null);
-      setIsInitialRender(true);
-    };
-
-    router.events.on('routeChangeStart', handleRouteChange);
-
-    return () => {
-      router.events.off('routeChangeStart', handleRouteChange);
-    };
-  }, [router.events]);
-
-  useEffect(() => {
-    if (isInitialRender) {
-      setIsInitialRender(false);
-    }
-  }, [isInitialRender]);
-
-  const handleEmployeeClick = (employeeName: string) => {
-    setSelectedEmployee(employeeName);
-  };
-
-  const handleCityChange = (city: string | null) => {
-    setSelectedCity(city);
-  };
-
-  const fetchVisits = async () => {
+  }, [startDate, endDate, selectedCity, token]);
+ 
+  const fetchVisits = async (start: string, end: string, city: string) => {
     try {
-      let startDate = '';
-      let endDate = '';
-
-      if (dateRange.includes(' - ')) {
-        const [start, end] = dateRange.split(' - ');
-        startDate = start;
-        endDate = end;
-      } else {
-        switch (dateRange) {
-          case 'Today':
-            startDate = format(new Date(), 'yyyy-MM-dd');
-            endDate = format(new Date(), 'yyyy-MM-dd');
-            break;
-          case 'Last 7 Days':
-            startDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
-            endDate = format(new Date(), 'yyyy-MM-dd');
-            break;
-          case 'Last 15 Days':
-            startDate = format(subDays(new Date(), 15), 'yyyy-MM-dd');
-            endDate = format(new Date(), 'yyyy-MM-dd');
-            break;
-          case 'Last 30 Days':
-            startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-            endDate = format(new Date(), 'yyyy-MM-dd');
-            break;
-          default:
-            break;
-        }
+      let url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange1?start=${start}&end=${end}`;
+      if (city !== 'All') {
+        url += `&city=${encodeURIComponent(city)}`;
       }
 
-      const response = await fetch(
-        `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateSorted?start=${startDate}&end=${endDate}&page=0&size=1000&sortField=visitDate&sortDir=desc`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch visits');
       }
@@ -613,22 +555,25 @@ const Dashboard = () => {
     setSelectedState(state);
     setSelectedEmployee(null);
   };
-  const handleEmployeeChange = (employeeName: string | null) => {
-    setSelectedEmployee(employeeName === 'all' ? null : employeeName);
+  const handleEmployeeClick = (employeeName: string) => {
+    setSelectedEmployee(employeeName);
   };
-  const handleDateRangeChange = (selectedDateRange: string) => {
-    setDateRange(selectedDateRange);
+  const handleDateRangeChange = (start: string, end: string) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+  const handleCityFilterChange = (city: string) => {
+    setSelectedCity(city);
   };
   const handleViewDetails = (visitId: string) => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
   const states = Array.from(new Set(visits.map((visit) => visit.state)));
   const cities = Array.from(new Set(visits.map((visit) => visit.city)));
-  const stateCards = Array.from(new Set(visits.map((visit) => visit.state))).map((state) => {
+  const stateCards = states.map((state) => {
     const stateVisits = visits.filter((visit) => visit.state === state);
     const totalVisits = stateVisits.length;
     const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
-
     return (
       <StateCard
         key={state}
@@ -639,114 +584,129 @@ const Dashboard = () => {
       />
     );
   });
-  if (isInitialRender) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Sales Dashboard</h1>
-        <div className="mb-8 flex gap-4">
-          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-          <CityDropdown visits={visits} onCityChange={handleCityChange} />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{stateCards}</div>
-      </div>
-    );
-  }
-  if (selectedState) {
+
+  if (selectedState && !selectedEmployee) {
     const stateVisits = visits.filter((visit) => visit.state === selectedState);
+    const employeeVisits = stateVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
+      if (!acc[visit.employeeName]) {
+        acc[visit.employeeName] = [];
+      }
+      acc[visit.employeeName].push(visit);
+      return acc;
+    }, {});
 
-    const employeeCards = Array.from(new Set(stateVisits.map((visit) => visit.employeeName))).map((employeeName) => {
-      const employeeVisits = stateVisits.filter((visit) => visit.employeeName === employeeName);
-      const totalVisits = employeeVisits.length;
-
-      return (
-        <EmployeeCard
-          key={employeeName}
-          employeeName={employeeName}
-          totalVisits={totalVisits}
-          onClick={() => handleEmployeeClick(employeeName)}
-        />
-      );
-    });
-
-    if (selectedEmployee) {
-      const employeeVisits = stateVisits.filter((visit) => visit.employeeName === selectedEmployee);
-
-      const totalVisits = employeeVisits.length;
-      const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
-      const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
-      const assignedVisits = employeeVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
-      const visitsByPurpose = employeeVisits.reduce((acc: { [key: string]: number }, visit) => {
-        if (!acc[visit.purpose]) {
-          acc[visit.purpose] = 0;
-        }
-        acc[visit.purpose]++;
-        return acc;
-      }, {});
-
-      const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
-        purpose,
-        visits: Number(visits),
-      }));
-
-      return (
-        <div className="container mx-auto py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">{selectedEmployee}</h1>
-            <Button
-              variant="outline"
-              onClick={() => setSelectedEmployee(null)}
-            >
-              <ArrowLeftIcon className="h-5 w-5 mr-2" />
-              Back
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <KPICard title="Total Visits" value={totalVisits} />
-            <KPICard title="Completed Visits" value={completedVisits} />
-            <KPICard title="Ongoing Visits" value={ongoingVisits} />
-            <KPICard title="Assigned Visits" value={assignedVisits} />
-          </div>
-          <div className="mb-8 flex gap-4">
-            <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-            <CityDropdown visits={employeeVisits} onCityChange={handleCityChange} />
-          </div>
-          <div className="mb-8">
-            <VisitsTable visits={employeeVisits} onViewDetails={handleViewDetails} selectedCity={selectedCity} />
-          </div>
-          <div className="mb-8 mt-12">
-            <VisitsByPurposeChart data={visitsByPurposeChartData} />
-          </div>
-        </div>
-      );
-    }
+    const employeeCards = Object.entries(employeeVisits).map(([employeeName, visits]) => (
+      <EmployeeCard
+        key={employeeName}
+        employeeName={employeeName}
+        totalVisits={visits.length}
+        onClick={() => handleEmployeeClick(employeeName)}
+      />
+    ));
 
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">{selectedState}</h1>
           <Button
-            variant="outline"
+            variant="ghost"
+            size="lg"
             onClick={() => setSelectedState(null)}
           >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            Back
+            <ArrowLeftIcon className="h-6 w-6" />
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{employeeCards}</div>
+        <div className="mb-8">
+          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+    
+        
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {employeeCards}
+        </div>
       </div>
     );
     }
+  if (selectedEmployee) {
+    const employeeVisits = visits.filter((visit) => visit.employeeName === selectedEmployee);
 
+
+    const totalVisits = employeeVisits.length;
+    const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
+    const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
+    const assignedVisits = employeeVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
+    const totalEmployees = Array.from(new Set(employeeVisits.map((visit) => visit.employeeId))).length;
+    const activeEmployees = Array.from(new Set(employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime).map((visit) => visit.employeeId))).length;
+
+    const visitsByPurpose = employeeVisits.reduce((acc: { [key: string]: number }, visit) => {
+      if (!acc[visit.purpose]) {
+        acc[visit.purpose] = 0;
+      }
+      acc[visit.purpose]++;
+      return acc;
+    }, {});
+
+    const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
+      purpose,
+      visits: Number(visits),
+    }));
+
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">{selectedEmployee}</h1>
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={() => setSelectedEmployee(null)}
+          >
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <KPICard title="Total Visits" value={totalVisits} />
+          <KPICard title="Completed Visits" value={completedVisits} />
+          <KPICard title="Ongoing Visits" value={ongoingVisits} />
+          <KPICard title="Assigned Visits" value={assignedVisits} />
+          <KPICard title="Total Employees" value={totalEmployees} />
+          <KPICard title="Active Employees" value={activeEmployees} />
+        </div>
+        <div className="mb-8">
+          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+          <CityFilterDropdown
+
+
+            cities={cities}
+            onCityFilterChange={handleCityFilterChange}
+            currentVisits={employeeVisits}
+          />
+        
+        </div>
+        <VisitsTable
+          visits={employeeVisits}
+          onViewDetails={handleViewDetails}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
+        <div className="mt-8">
+          <VisitsByPurposeChart data={visitsByPurposeChartData} />
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Sales Dashboard</h1>
-        <div className="relative z-10">
+        <div className="flex justify-end">
           <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3 gap-8">{stateCards}</div>
+    
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {stateCards}
+      </div>
     </div>
   );
-}
+};
 export default Dashboard;
