@@ -26,10 +26,6 @@ const fetchVisits = async (
   currentPage: number,
   itemsPerPage: number
 ) => {
-  if (!token) {
-    throw new Error('Authentication token is missing');
-  }
-
   const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
   const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
   let url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateSorted?startDate=${formattedStartDate}&endDate=${formattedEndDate}&page=${currentPage - 1}&size=${itemsPerPage}`;
@@ -48,13 +44,17 @@ const fetchVisits = async (
     url += `&employeeName=${encodeURIComponent(employeeName)}`;
   }
 
+  const headers: { Authorization?: string } = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
   });
   return response.data;
 };
+
 const VisitsList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
   const token = useSelector((state: RootState) => state.auth.token);
@@ -102,7 +102,6 @@ const VisitsList: React.FC = () => {
   const visits = data?.content || [];
   const totalPages = data ? data.totalPages : 1;
 
-  // Mapping between display names and backend field names
   const columnMapping: { [key: string]: string } = {
     'Customer Name': 'storeName',
     'Executive': 'employeeName',
@@ -116,7 +115,7 @@ const VisitsList: React.FC = () => {
   };
 
   const handleSort = (column: string) => {
-    const backendColumn = columnMapping[column] || column; // Use backend field name if available
+    const backendColumn = columnMapping[column] || column;
     if (backendColumn === sortColumn) {
       setSortDirection((prevDirection) => (prevDirection === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -131,7 +130,6 @@ const VisitsList: React.FC = () => {
     setEmployeeName(employeeName);
     setPurpose(purpose);
 
-    // No need to setFilteredVisits, as we're fetching filtered data from the server.
     setCurrentPage(1); // Reset to the first page when filters change
   };
 
@@ -202,7 +200,6 @@ const VisitsList: React.FC = () => {
       link.click();
     });
   };
-
 
   const handleColumnSelect = (column: string) => {
     if (selectedColumns.includes(column)) {

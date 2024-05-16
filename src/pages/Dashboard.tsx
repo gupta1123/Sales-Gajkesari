@@ -297,7 +297,7 @@ interface CityFilterDropdownProps {
 
 const CityFilterDropdown = ({ cities, onCityFilterChange, currentVisits }: CityFilterDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState('Filter By City');
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -309,7 +309,9 @@ const CityFilterDropdown = ({ cities, onCityFilterChange, currentVisits }: CityF
     onCityFilterChange(city);
   };
 
-  const currentCities = Array.from(new Set(currentVisits.map((visit) => visit.city)));
+  // Filter unique cities and add "All" option
+  const uniqueCities = Array.from(new Set(currentVisits.map((visit) => visit.city)));
+  uniqueCities.unshift('All');
 
   return (
     <div className="relative inline-block text-left ml-4">
@@ -322,7 +324,7 @@ const CityFilterDropdown = ({ cities, onCityFilterChange, currentVisits }: CityF
           aria-expanded={isOpen}
           onClick={toggleDropdown}
         >
-          {selectedCity ? selectedCity : 'Filter By City'}
+          {selectedCity}
           <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
         </button>
       </div>
@@ -330,7 +332,7 @@ const CityFilterDropdown = ({ cities, onCityFilterChange, currentVisits }: CityF
       {isOpen && (
         <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="city-filter-menu">
-            {currentCities.map((city) => (
+            {uniqueCities.map((city) => (
               <a
                 key={city}
                 href="#"

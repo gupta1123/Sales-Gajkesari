@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { QueryKey, isError as isQueryError } from 'react-query';
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import ChangeFieldOfficerDialog from './ChangeFieldOfficerDialog';
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Pagination,
@@ -21,7 +20,6 @@ import { Progress } from "@/components/ui/progress";
 import { FiPhone, FiUser, FiDollarSign, FiTarget, FiBriefcase } from "react-icons/fi";
 import { HomeOutlined, SettingOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -39,7 +37,6 @@ import { AiFillCaretDown } from "react-icons/ai";
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
-
 // Create a QueryClient instance
 const queryClient = new QueryClient();
 
@@ -50,7 +47,6 @@ export default function App() {
         </QueryClientProvider>
     );
 }
-
 
 type Customer = {
     storeId: number;
@@ -269,11 +265,13 @@ interface QueryFilters {
     page: number;
     size: number;
     filters: {
-        name: string;
-        phone: string;
-        owner: string;
+        storeName: string;
+        primaryContact: string;
+        ownerName: string;
         city: string;
-        clientType: string; // Added client type filter
+        state: string;
+        monthlySale: string;
+        clientType: string;
     };
     sortColumn: string | null;
     sortDirection: 'asc' | 'desc';
@@ -309,11 +307,13 @@ function CustomerListPage() {
     ]);
 
     const [filters, setFilters] = useState({
+        storeName: '',
+        primaryContact: '',
+        ownerName: '',
         city: '',
-        name: '',
-        owner: '',
-        phone: '',
-        clientType: '', // Added client type filter state
+        state: '',
+        monthlySale: '',
+        clientType: '',
     });
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState<number>(10);
@@ -329,44 +329,31 @@ function CustomerListPage() {
     const invalidateCustomersCache = () => {
         queryClient.invalidateQueries('customers');
     };
-    const fetchFilteredCustomers = async ({ queryKey }: { queryKey: QueryKey }) => {
-        if (isQueryError(queryKey)) {
-            // Handle error case
-            return;
-        }
 
-        if (!Array.isArray(queryKey) || queryKey.length !== 2) {
-            // Handle invalid queryKey structure
-            return;
-        }
 
-        const [_, { page, size, filters, sortColumn, sortDirection }] = queryKey as [unknown, QueryFilters];
+    const fetchFilteredCustomers = async ({ queryKey }: { queryKey: any }) => {
+        const { page, size, filters, sortColumn, sortDirection } = queryKey[1];
+
         const queryParams = new URLSearchParams();
         queryParams.append('page', (page - 1).toString());
         queryParams.append('size', size.toString());
 
-        if (filters.name) {
-            queryParams.append('storeName', filters.name);
-        }
-        if (filters.phone) {
-            queryParams.append('primaryContact', filters.phone);
-        }
-        if (filters.owner) {
-            queryParams.append('ownerName', filters.owner);
-        }
-        if (filters.city) {
-            queryParams.append('city', filters.city);
-        }
-        if (filters.clientType) {
-            queryParams.append('clientType', filters.clientType);
-        }
+        if (filters.storeName) queryParams.append('storeName', filters.storeName);
+        if (filters.primaryContact) queryParams.append('primaryContact', filters.primaryContact);
+        if (filters.ownerName) queryParams.append('ownerName', filters.ownerName);
+        if (filters.city) queryParams.append('city', filters.city);
+        if (filters.state) queryParams.append('state', filters.state);
+        if (filters.monthlySale) queryParams.append('monthlySale', filters.monthlySale);
+        if (filters.clientType) queryParams.append('clientType', filters.clientType);
+
+        // Append the sorting parameters without URL encoding
+        let queryString = queryParams.toString();
         if (sortColumn) {
-            queryParams.append('sortColumn', sortColumn);
-            queryParams.append('sortDirection', sortDirection);
+            queryString += `&sort=${sortColumn},${sortDirection}`;
         }
 
         const response = await fetch(
-            `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/filteredValues?${queryParams.toString()}`,
+            `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/filteredValues?${queryString}`,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -380,6 +367,9 @@ function CustomerListPage() {
 
         return response.json();
     };
+
+
+
 
     const [sortColumn, setSortColumn] = useState<string | null>('storeName');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -565,7 +555,7 @@ function CustomerListPage() {
                         <input
                             type="text"
                             placeholder="Filter by city"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-40"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-full"
                             value={filters.city}
                             onChange={(e) => handleFilterChange('city', e.target.value)}
                         />
@@ -581,15 +571,15 @@ function CustomerListPage() {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Filter by  Shop name"
+                            placeholder="Filter by Shop name"
                             className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                            value={filters.name}
-                            onChange={(e) => handleFilterChange('name', e.target.value)}
+                            value={filters.storeName}
+                            onChange={(e) => handleFilterChange('storeName', e.target.value)}
                         />
-                        {filters.name && (
+                        {filters.storeName && (
                             <button
                                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                onClick={() => handleFilterClear('name')}
+                                onClick={() => handleFilterClear('storeName')}
                             >
                                 &times;
                             </button>
@@ -600,18 +590,69 @@ function CustomerListPage() {
                             type="text"
                             placeholder="Filter by owner"
                             className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                            value={filters.owner}
-                            onChange={(e) => handleFilterChange('owner', e.target.value)}
+                            value={filters.ownerName}
+                            onChange={(e) => handleFilterChange('ownerName', e.target.value)}
                         />
-                        {filters.owner && (
+                        {filters.ownerName && (
                             <button
                                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                onClick={() => handleFilterClear('owner')}
+                                onClick={() => handleFilterClear('ownerName')}
                             >
                                 &times;
                             </button>
                         )}
                     </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by phone number"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.primaryContact}
+                            onChange={(e) => handleFilterChange('primaryContact', e.target.value)}
+                        />
+                        {filters.primaryContact && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('primaryContact')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div>
+                    {/* <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by state"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.state}
+                            onChange={(e) => handleFilterChange('state', e.target.value)}
+                        />
+                        {filters.state && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('state')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div> */}
+                    {/* <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Filter by monthly sale"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            value={filters.monthlySale}
+                            onChange={(e) => handleFilterChange('monthlySale', e.target.value)}
+                        />
+                        {filters.monthlySale && (
+                            <button
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                onClick={() => handleFilterClear('monthlySale')}
+                            >
+                                &times;
+                            </button>
+                        )}
+                    </div> */}
                     <div className="relative">
                         <input
                             type="text"
@@ -624,23 +665,6 @@ function CustomerListPage() {
                             <button
                                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                                 onClick={() => handleFilterClear('clientType')}
-                            >
-                                &times;
-                            </button>
-                        )}
-                    </div>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Filter by phone number"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                            value={filters.phone}
-                            onChange={(e) => handleFilterChange('phone', e.target.value)}
-                        />
-                        {filters.phone && (
-                            <button
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                onClick={() => handleFilterClear('phone')}
                             >
                                 &times;
                             </button>

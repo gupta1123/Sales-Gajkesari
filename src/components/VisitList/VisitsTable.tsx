@@ -44,6 +44,9 @@ const columnMapping = {
     'Last Updated': 'updatedAt',
 };
 
+// Columns where sorting is disabled
+const nonSortableColumns = ['outcome', 'visitStart', 'visitEnd', 'updatedAt'];
+
 const VisitsTable: React.FC<VisitsTableProps> = ({
     visits,
     selectedColumns,
@@ -92,8 +95,8 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             </th>
                         )}
                         {selectedColumns.includes('outcome') && (
-                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('outcome')}>
-                                Status {sortColumn === 'outcome' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            <th className="px-4 py-2">
+                                Status
                             </th>
                         )}
                         {selectedColumns.includes('purpose') && (
@@ -102,13 +105,13 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                             </th>
                         )}
                         {selectedColumns.includes('visitStart') && (
-                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visitStart')}>
-                                Visit Start {sortColumn === 'visitStart' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            <th className="px-4 py-2">
+                                Visit Start
                             </th>
                         )}
                         {selectedColumns.includes('visitEnd') && (
-                            <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('visitEnd')}>
-                                Visit End {sortColumn === 'visitEnd' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            <th className="px-4 py-2">
+                                Visit End
                             </th>
                         )}
                         {selectedColumns.includes('intent') && (
@@ -116,8 +119,8 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                 Intent {sortColumn === 'intent' && (sortDirection === 'asc' ? '↑' : '↓')}
                             </th>
                         )}
-                        <th className="px-4 py-2 cursor-pointer" onClick={() => onSort('updatedAt')}>
-                            Last Updated {sortColumn === 'updatedAt' && (sortDirection === 'asc' ? '↑' : '↓')}
+                        <th className="px-4 py-2">
+                            Last Updated
                         </th>
                         <th className="px-4 py-2">Actions</th>
                     </tr>

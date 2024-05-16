@@ -3,12 +3,9 @@ import { NextPage } from 'next';
 import { AppProps } from 'next/app';
 import Sidebar from '../components/Sidebar';
 import styles from './App.module.css';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
 import { store, loginUser, logoutUser, setToken } from '../store';
 import React, { useState, ReactNode, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../store';
-import Image from 'next/image';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
@@ -47,11 +44,28 @@ const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const authStatus = useSelector((state: any) => state.auth.status);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(loginUser({ username, password }) as any);
+    setErrorMessage('');
+    try {
+      await dispatch(loginUser({ username, password }) as any).unwrap();
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        const { message } = error.response.data;
+        if (message.includes('password')) {
+          setErrorMessage('Invalid password. Please try again.');
+        } else if (message.includes('username')) {
+          setErrorMessage('Invalid username. Please check your username and try again.');
+        } else {
+          setErrorMessage('Invalid username or password. Please try again.');
+        }
+      } else {
+        setErrorMessage('Invalid username or password. Please try again.');
+      }
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -64,6 +78,8 @@ const LoginPage = () => {
         <div className="text-center">
           <Typography.Title level={2}>Gajkesari</Typography.Title>
           <img src="/image.gif" alt="Login" className="mx-auto mb-4" />
+          {errorMessage && <p className="text-center mb-4 text-red-500">{errorMessage}</p>}
+          
           <div className="mb-4">
             <Input
               type="text"
@@ -109,13 +125,13 @@ const LoginPage = () => {
           <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={(e) => handleLogin(e)}>
             Login
           </Button>
+          {authStatus === 'loading' && <p className="text-center mt-4">Loading...</p>}
         </div>
       </Card>
-      {authStatus === 'loading' && <p className="text-center mt-4"></p>}
     </div>
   );
 };
-
+type AppDispatch = typeof store.dispatch;
 type AppPropsWithLayout = AppProps & {
   Component: NextPage & {
     getLayout?: (page: React.ReactElement) => React.ReactNode;
@@ -187,4 +203,4 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-export default MyApp; 
+export default MyApp;
