@@ -65,6 +65,7 @@ type Customer = {
     city: string;
     state: string;
     country: string | null;
+    customClientType: string | null;
 };
 
 type CustomerTableProps = {
@@ -214,9 +215,12 @@ const CustomerTable = ({
                         {selectedColumns.includes('fieldOfficer') && <TableCell>{customer.employeeName}</TableCell>}
                         {selectedColumns.includes('clientType') && (
                             <TableCell>
-                                <Badge variant="outline">{customer.clientType}</Badge>
+                                <Badge variant="outline">
+                                    {customer.customClientType || customer.clientType}
+                                </Badge>
                             </TableCell>
                         )}
+
                         {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisitCount}</TableCell>}
                         {selectedColumns.includes('lastVisitDate') && (
                             <TableCell>

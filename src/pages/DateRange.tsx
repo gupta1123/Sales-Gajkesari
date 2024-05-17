@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { useRouter } from 'next/router';
 
 interface Visit {
     id: number;
@@ -41,6 +42,8 @@ interface DateRangeProps {
 const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
     const [selectedRange, setSelectedRange] = useState('last2Days');
     const token = useSelector((state: RootState) => state.auth.token);
+    const router = useRouter();
+    const { id } = router.query;
 
     const dateRanges = [
         { label: 'Today', value: 'today' },
@@ -95,24 +98,22 @@ const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
                         break;
                 }
 
-                if (startDate && endDate) {
-                    const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange?start=${startDate}&end=${endDate}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    });
-                    const data: Visit[] = await response.json();
-                    setVisits(data);
-                }
+                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRangeAndEmployee?id=${id}&start=${startDate}&end=${endDate}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                const data: Visit[] = await response.json();
+                setVisits(data);
             } catch (error) {
                 console.error('Error fetching visits:', error);
             }
         };
 
-        if (token) {
+        if (token && id) {
             fetchVisits();
         }
-    }, [selectedRange, token, setVisits]);
+    }, [selectedRange, token, setVisits, id]);
 
     return (
         <div>

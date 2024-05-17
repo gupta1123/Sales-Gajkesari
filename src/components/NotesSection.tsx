@@ -23,6 +23,7 @@ type NotesSectionProps = {
 type RootState = {
   auth: {
     token: string;
+    employeeId: number;  // Add employeeId to the auth state
   };
 };
 
@@ -33,6 +34,10 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [showTextarea, setShowTextarea] = useState<boolean>(false);
   const token = useSelector((state: RootState) => state.auth.token);
+  const employeeId = useSelector((state: RootState) => state.auth.employeeId);
+
+  console.log("Redux state - Token:", token);
+  console.log("Redux state - Employee ID:", employeeId);
 
   useEffect(() => {
     fetchNotes();
@@ -63,8 +68,14 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
 
     const url = editingNoteId
       ? `http://ec2-13-49-190-97.eu-north-1.compute.amazonaws.com:8081/notes/edit?id=${editingNoteId}`
-      : "hhttp://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/create";
+      : "http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/notes/create";
     const method = editingNoteId ? "PUT" : "POST";
+
+    const payload = editingNoteId
+      ? { id: parseInt(editingNoteId), content: newNote }
+      : { content: newNote, employeeId, storeId: parseInt(storeId) };
+
+    console.log("Payload:", payload);
 
     try {
       const response = await fetch(url, {
@@ -73,7 +84,7 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: newNote, employeeId: 1, employeeName: "XYZ", storeId }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -166,7 +177,6 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
                     {format(new Date(note.createdDate), "MMM d, yyyy")}
                   </div>
                   <div className="notes-timeline-text">{note.content}</div>
-                  {/* <div className="text-gray-500">Employee: {note.employeeName}</div> */}
                   {note.visitId && (
                     <Link href={`/VisitDetailPage/${note.visitId}`} className="visit-id-display">
                       Visit ID: {note.visitId}

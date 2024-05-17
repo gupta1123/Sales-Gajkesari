@@ -20,7 +20,6 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
   const [error, setError] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
 
-
   useEffect(() => {
     if (storeId && token) {
       fetchVisits();
@@ -35,7 +34,9 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
         },
       });
       const data: Visit[] = await response.json();
-      setVisits(data);
+      // Sort visits in descending order by visit_date
+      const sortedVisits = data.sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+      setVisits(sortedVisits);
       setIsLoading(false);
     } catch (error) {
       setError('Failed to fetch visits.');
@@ -67,8 +68,6 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
                   <Link href={`/VisitDetailPage/[id]`} as={`/VisitDetailPage/${visit.id}`} passHref>
                     <div className="timeline-visit-id">Visit ID: {visit.id}</div>
                   </Link>
-
-
                 </div>
                 <div className="timeline-title">{visit.purpose}</div>
                 <div className="timeline-description">

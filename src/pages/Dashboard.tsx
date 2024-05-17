@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { useRouter } from 'next/router';
-import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ChevronUpIcon, ChevronDownIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { format, parseISO, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import SortIcon from './SortIcon';
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import {
   Pagination,
   PaginationContent,
@@ -48,6 +47,25 @@ const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardPro
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
       <h2 className="text-2xl font-bold mb-4">{state}</h2>
+      <div className="flex justify-between">
+        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
+        <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
+      </div>
+    </div>
+  );
+};
+
+interface CityCardProps {
+  city: string;
+  totalVisits: number;
+  totalEmployees: number;
+  onClick: () => void;
+}
+
+const CityCard = ({ city, totalVisits, totalEmployees, onClick }: CityCardProps) => {
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
+      <h2 className="text-2xl font-bold mb-4">{city}</h2>
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
         <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
@@ -209,8 +227,8 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
                 key={option}
                 href="#"
                 className={`${option === selectedOption
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-700'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-700'
                   } block px-4 py-2 text-sm`}
                 role="menuitem"
                 onClick={() => handleOptionClick(option)}
@@ -292,47 +310,47 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
 interface CityFilterDropdownProps {
   cities: string[];
   onCityFilterChange: (city: string) => void;
-  currentVisits: Visit[];
 }
 
-const CityFilterDropdown = ({ cities, onCityFilterChange, currentVisits }: CityFilterDropdownProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const CityFilterDropdown = ({ cities, onCityFilterChange }: CityFilterDropdownProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('Filter By City');
-
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
 
   const handleCityClick = (city: string) => {
     setSelectedCity(city);
-    setIsOpen(false);
     onCityFilterChange(city);
   };
 
-  // Filter unique cities and add "All" option
-  const uniqueCities = Array.from(new Set(currentVisits.map((visit) => visit.city)));
-  uniqueCities.unshift('All');
+  const handleClearClick = () => {
+    setSelectedCity('Filter By City');
+    setSearchQuery('');
+    onCityFilterChange('');
+  };
+
+  const filteredCities = cities ? cities.filter(city => city.toLowerCase().includes(searchQuery.toLowerCase())) : [];
 
   return (
     <div className="relative inline-block text-left ml-4">
-      <div>
+      <div className="flex items-center">
+        <input
+          type="text"
+          className="block w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="Type a city"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <button
           type="button"
-          className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          id="city-filter-menu"
-          aria-haspopup="true"
-          aria-expanded={isOpen}
-          onClick={toggleDropdown}
+          className="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          onClick={handleClearClick}
         >
-          {selectedCity}
-          <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
+          Clear
         </button>
       </div>
-
-      {isOpen && (
-        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+      {filteredCities.length > 0 && (
+        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="city-filter-menu">
-            {uniqueCities.map((city) => (
+            {filteredCities.map((city) => (
               <a
                 key={city}
                 href="#"
@@ -355,18 +373,12 @@ interface VisitsTableProps {
   onViewDetails: (visitId: string) => void;
   currentPage: number;
   onPageChange: (page: number) => void;
+  selectedCity: string | null; // Add this line
 }
-
-interface VisitsTableProps {
-  visits: Visit[];
-  onViewDetails: (visitId: string) => void;
-  currentPage: number;
-  onPageChange: (page: number) => void;
-}
-
-const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: VisitsTableProps) => {
+const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selectedCity }: VisitsTableProps) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortColumn, setSortColumn] = useState<keyof Visit>('visit_date');
+
   const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
     if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
       return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
@@ -377,6 +389,7 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
     }
     return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
   };
+
   const handleSort = (column: keyof Visit) => {
     if (column === sortColumn) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -385,9 +398,16 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
       setSortOrder('desc');
     }
   };
+
   const rowsPerPage = 10;
-  const totalPages = Math.ceil(visits.length / rowsPerPage);
-  const sortedVisits = [...visits].sort((a, b) => {
+
+  const filteredVisits = selectedCity
+    ? visits.filter((visit) => visit.city === selectedCity)
+    : visits;
+
+  const totalPages = Math.ceil(filteredVisits.length / rowsPerPage);
+
+  const sortedVisits = [...filteredVisits].sort((a, b) => {
     const valueA = a[sortColumn];
     const valueB = b[sortColumn];
 
@@ -414,7 +434,6 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const visitsToDisplay = sortedVisits.slice(startIndex, endIndex);
-
   return (
     <Card>
       <CardHeader>
@@ -465,78 +484,88 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
                 </tr>
               );
             })}
+            {visitsToDisplay.length === 0 && (
+              <tr>
+                <td className="px-4 py-2 text-center" colSpan={7}>No visits available</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </CardContent>
-      <Pagination>
-        <PaginationContent>
-          <a
-            href="#"
-            className={`px-4 py-2 text-sm font-medium ${currentPage === 1
-                ? 'text-gray-500 cursor-not-allowed'
-                : 'text-gray-700 hover:text-gray-900'
-              }`}
-            onClick={(e) => {
-              if (currentPage !== 1) {
-                onPageChange(currentPage - 1);
-              }
-              e.preventDefault();
-            }}
-          >
-            Previous
-          </a>
-          {Array.from({ length: totalPages }, (_, index) => (
-            <PaginationItem key={index}>
-              <PaginationLink
-                isActive={currentPage === index + 1}
-                onClick={() => onPageChange(index + 1)}
+      {totalPages > 1 && visitsToDisplay.length > 0 && (
+        <Pagination>
+          <PaginationContent>
+            <a
+              href="#"
+              className={`px-4 py-2 text-sm font-medium ${currentPage === 1
+                  ? 'text-gray-500 cursor-not-allowed'
+                  : 'text-gray-700 hover:text-gray-900'
+                }`}
+              onClick={(e) => {
+                if (currentPage !== 1) {
+                  onPageChange(currentPage - 1);
+                }
+                e.preventDefault();
+              }}
+            >
+              Previous
+            </a>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  isActive={currentPage === index + 1}
+                  onClick={() => onPageChange(index + 1)}
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            {totalPages > 1 && (
+              <a
+                href="#"
+                className={`px-4 py-2 text-sm font-medium ${currentPage === totalPages
+                    ? 'text-gray-500 cursor-not-allowed'
+                    : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                onClick={(e) => {
+                  if (currentPage !== totalPages) {
+                    onPageChange(currentPage + 1);
+                  }
+                  e.preventDefault();
+                }}
               >
-                {index + 1}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
-          <a
-            href="#"
-            className={`px-4 py-2 text-sm font-medium ${currentPage === totalPages
-                ? 'text-gray-500 cursor-not-allowed'
-                : 'text-gray-700 hover:text-gray-900'
-              }`}
-            onClick={(e) => {
-              if (currentPage !== totalPages) {
-                onPageChange(currentPage + 1);
-              }
-              e.preventDefault();
-            }}
-          >
-            Next
-          </a>
-        </PaginationContent>
-      </Pagination>
+                Next
+              </a>
+            )}
+          </PaginationContent>
+        </Pagination>
+      )}
     </Card>
   );
 };
+
 const Dashboard = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCity, setSelectedCity] = useState('All');
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
 
   useEffect(() => {
     if (token) {
-      fetchVisits(startDate, endDate, selectedCity);
+      fetchVisits(startDate, endDate);
     }
-  }, [startDate, endDate, selectedCity, token]);
- 
-  const fetchVisits = async (start: string, end: string, city: string) => {
+  }, [startDate, endDate, token, selectedCity]);
+
+  const fetchVisits = async (start: string, end: string) => {
     try {
       let url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange1?start=${start}&end=${end}`;
-      if (city !== 'All') {
-        url += `&city=${encodeURIComponent(city)}`;
+      if (selectedCity && selectedCity !== 'Filter By City') {
+        url += `&city=${encodeURIComponent(selectedCity)}`;
       }
 
       const response = await fetch(url, {
@@ -553,25 +582,45 @@ const Dashboard = () => {
       console.error('Error fetching visits:', error);
     }
   };
+  useEffect(() => {
+    const { reset } = router.query;
+    if (reset === 'true') {
+      setSelectedState(null);
+      setSelectedCity(null);
+      setSelectedEmployee(null);
+      setCurrentPage(1);
+      router.replace('/Dashboard', undefined, { shallow: true });
+    }
+  }, [router.query]);
   const handleStateClick = (state: string) => {
     setSelectedState(state);
+    setSelectedCity(null);
     setSelectedEmployee(null);
   };
+
+  const handleCityClick = (city: string) => {
+    setSelectedCity(city);
+    setSelectedEmployee(null);
+  };
+
   const handleEmployeeClick = (employeeName: string) => {
     setSelectedEmployee(employeeName);
   };
+
   const handleDateRangeChange = (start: string, end: string) => {
     setStartDate(start);
     setEndDate(end);
   };
+
   const handleCityFilterChange = (city: string) => {
     setSelectedCity(city);
   };
+
   const handleViewDetails = (visitId: string) => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
+
   const states = Array.from(new Set(visits.map((visit) => visit.state)));
-  const cities = Array.from(new Set(visits.map((visit) => visit.city)));
   const stateCards = states.map((state) => {
     const stateVisits = visits.filter((visit) => visit.state === state);
     const totalVisits = stateVisits.length;
@@ -587,9 +636,49 @@ const Dashboard = () => {
     );
   });
 
-  if (selectedState && !selectedEmployee) {
+  if (selectedState && !selectedCity && !selectedEmployee) {
     const stateVisits = visits.filter((visit) => visit.state === selectedState);
-    const employeeVisits = stateVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
+    const cities = Array.from(new Set(stateVisits.map((visit) => visit.city)));
+    const cityCards = cities.map((city) => {
+      const cityVisits = stateVisits.filter((visit) => visit.city === city);
+      const totalVisits = cityVisits.length;
+      const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeId))).length;
+      return (
+        <CityCard
+          key={city}
+          city={city}
+          totalVisits={totalVisits}
+          totalEmployees={totalEmployees}
+          onClick={() => handleCityClick(city)}
+        />
+      );
+    });
+
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">{selectedState}</h1>
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={() => setSelectedState(null)}
+          >
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="mb-8">
+          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {cityCards}
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedCity && !selectedEmployee) {
+    const cityVisits = visits.filter((visit) => visit.city === selectedCity);
+    const employeeVisits = cityVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
       if (!acc[visit.employeeName]) {
         acc[visit.employeeName] = [];
       }
@@ -609,29 +698,27 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">{selectedState}</h1>
+          <h1 className="text-3xl font-bold">{selectedCity}</h1>
           <Button
             variant="ghost"
             size="lg"
-            onClick={() => setSelectedState(null)}
+            onClick={() => setSelectedCity(null)}
           >
             <ArrowLeftIcon className="h-6 w-6" />
           </Button>
         </div>
         <div className="mb-8">
           <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-    
-        
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {employeeCards}
         </div>
       </div>
     );
-    }
+  }
+
   if (selectedEmployee) {
     const employeeVisits = visits.filter((visit) => visit.employeeName === selectedEmployee);
-
 
     const totalVisits = employeeVisits.length;
     const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
@@ -675,20 +762,14 @@ const Dashboard = () => {
         </div>
         <div className="mb-8">
           <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-          <CityFilterDropdown
 
-
-            cities={cities}
-            onCityFilterChange={handleCityFilterChange}
-            currentVisits={employeeVisits}
-          />
-        
         </div>
         <VisitsTable
           visits={employeeVisits}
           onViewDetails={handleViewDetails}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
+          selectedCity={selectedCity} // Add this line
         />
         <div className="mt-8">
           <VisitsByPurposeChart data={visitsByPurposeChartData} />
@@ -696,19 +777,23 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  const uniqueCities = Array.from(new Set(visits.map((visit) => visit.city)));
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Sales Dashboard</h1>
-        <div className="flex justify-end">
+        <div className="flex">
           <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+
         </div>
       </div>
-    
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {stateCards}
       </div>
     </div>
   );
 };
+
 export default Dashboard;

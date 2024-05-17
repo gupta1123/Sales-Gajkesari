@@ -15,7 +15,7 @@ export default function Sidebar() {
     <div className={styles.sidebar}>
       <ul className={styles.sidebarList}>
         <li className={styles.sidebarItem}>
-          <Link href="/Dashboard" shallow={true} className={styles.sidebarLink}>
+          <Link href="/Dashboard?reset=true" shallow={true} className={styles.sidebarLink}>
             Dashboard
           </Link>
         </li>

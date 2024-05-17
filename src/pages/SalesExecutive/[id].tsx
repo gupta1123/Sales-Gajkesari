@@ -172,11 +172,13 @@ const SalesExecutivePage: React.FC = () => {
                 }
 
                 return (
-                  <Card key={visit.id} className="bg-white shadow-md rounded-lg cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold">{visit.storeName}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
+                  <Card key={visit.id} className="bg-white shadow-md rounded-lg p-4 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg" onClick={() => router.push(`/VisitDetailPage/${visit.id}`)}>
+                    <CardContent>
+                      <div className="mb-4">
+                        <div className="bg-white rounded-lg p-3 shadow-md">
+                          <div className="text-lg font-semibold">{visit.storeName}</div>
+                        </div>
+                      </div>
                       <div className="flex justify-between items-center mb-2">
                         <div className="text-sm text-gray-500">
                           <FaCalendarAlt className="inline-block mr-1" />

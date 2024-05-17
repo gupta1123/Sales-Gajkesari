@@ -1,17 +1,14 @@
-'use client'
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Edit, Phone, Mail, MapPin, ShoppingBag, Users, Flag } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import VisitsTimeline from "../VisitsTimeline"
-import NotesSection from "../../components/NotesSection"
-import BrandsSection from "../../components/BrandsSection"
-import LikesSection from "../../components/LikesSection"
-import { Button } from "@/components/ui/button"
-import TimelineOverview from "../../components/TimelineOverview"
+import { Card, CardContent } from "@/components/ui/card";
+import { Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VisitsTimeline from "../VisitsTimeline";
+import NotesSection from "../../components/NotesSection";
+import BrandsSection from "../../components/BrandsSection";
+import LikesSection from "../../components/LikesSection";
+import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/router';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
@@ -50,8 +47,12 @@ interface CustomerData {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
-  customClientType?: string; // Add this line
+  customClientType?: string;
 }
+
+
+
+
 export default function CustomerDetailPage() {
   const [activeTab, setActiveTab] = useState<"basic" | "contact" | "address" | "additional">("basic");
   const [rightTab, setRightTab] = useState<"visits" | "notes" | "Brands" | "Likes">("visits");
@@ -60,6 +61,7 @@ export default function CustomerDetailPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<CustomerData>({});
+  const [initialData, setInitialData] = useState<CustomerData>({});
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const token = useSelector((state: RootState) => state.auth.token);
   const [customClientType, setCustomClientType] = useState<string | null>(null);
@@ -90,44 +92,15 @@ export default function CustomerDetailPage() {
 
   const handleSave = async () => {
     try {
+      const payload = getEditedFields(initialData, customerData);
+
       const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/edit?id=${storeId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          managers: customerData.managers || [],
-          latitude: customerData.latitude || 0,
-          longitude: customerData.longitude || 0,
-          brandsInUse: customerData.brandsInUse || [],
-          monthlySale: customerData.monthlySale || "",
-          brandProCons: customerData.brandProCons || [],
-          notes: customerData.notes || null,
-          clientType: customerData.clientType === 'custom' ? 'custom' : customerData.clientType,
-          customClientType: customerData.clientType === 'custom' ? (customClientType || null) : null,
-          createdAt: customerData.createdAt || "",
-          updatedAt: customerData.updatedAt || "",
-          storeId: storeId,
-          storeName: customerData.storeName || "",
-          clientFirstName: customerData.clientFirstName || "",
-          clientLastName: customerData.clientLastName || "",
-          primaryContact: customerData.primaryContact || "",
-          secondaryContact: customerData.secondaryContact || "",
-          email: customerData.email || "",
-          industry: customerData.industry || "",
-          companySize: customerData.companySize || 0,
-          gstNumber: customerData.gstNumber || "",
-          addressLine1: customerData.addressLine1 || "",
-          addressLine2: customerData.addressLine2 || "",
-          city: customerData.city || "",
-          district: customerData.district || "",
-          subDistrict: customerData.subDistrict || "",
-          state: customerData.state || "",
-          country: customerData.country || "",
-          pincode: customerData.pincode || "",
-          intent: customerData.intent,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -140,12 +113,37 @@ export default function CustomerDetailPage() {
     }
   };
 
-  const handleInputChange = (field: keyof CustomerData, value: string | number) => {
+  const handleInputChange = (field: keyof CustomerData, value: string | number | string[]) => {
     setCustomerData((prevData) => ({
       ...prevData,
       [field]: value,
     }));
   };
+  const getEditedFields = (initialData: CustomerData, currentData: CustomerData): Partial<Record<keyof CustomerData, string | number | string[] | undefined>> => {
+    const editedFields: Partial<Record<keyof CustomerData, string | number | string[] | undefined>> = {};
+
+    for (const key in currentData) {
+      const initialValue = initialData[key as keyof CustomerData];
+      const currentValue = currentData[key as keyof CustomerData];
+
+      if (initialValue !== currentValue) {
+        if (Array.isArray(currentValue)) {
+          // If the current value is an array, convert it to a string before assigning
+          editedFields[key as keyof CustomerData] = currentValue.join(',');
+        } else if (typeof currentValue !== 'undefined') {
+          // If the current value is not an array and not undefined, assign it as is
+          editedFields[key as keyof CustomerData] = currentValue;
+        }
+      }
+    }
+
+    return editedFields;
+  };
+
+
+
+
+
 
   useEffect(() => {
     const fetchCustomerData = async () => {
@@ -157,6 +155,7 @@ export default function CustomerDetailPage() {
         });
         const data = await response.json();
         setCustomerData(data);
+        setInitialData(data);
         if (data.clientType === 'custom') {
           setCustomClientType(data.customClientType);
         }
@@ -374,8 +373,8 @@ export default function CustomerDetailPage() {
                     <div>
                       <Label htmlFor="intent" className="text-sm font-medium text-#000000-700">Intent Level</Label>
                       <Select
-                        value={customerData.intent ? String(customerData.intent) : ''}
-                        onValueChange={(value) => handleInputChange('intent', Number(value))}
+                        value={customerData.intent ? String(customerData.intent) : undefined}
+                        onValueChange={(value: string) => handleInputChange('intent', Number(value))}
                         disabled={!isEditing}
                       >
                         <SelectTrigger className={`w-full mt-1 text-sm px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}>
@@ -395,10 +394,10 @@ export default function CustomerDetailPage() {
                         Client Type
                       </Label>
                       <Select
-                        value={customClientType || customerData.clientType || ''}
-                        onValueChange={(value) => {
+                        value={customerData.clientType || undefined}
+                        onValueChange={(value: string) => {
                           if (value === 'custom') {
-                            setCustomClientType(customerData.customClientType || '');
+                            setCustomClientType('');
                           } else {
                             setCustomClientType(null);
                             handleInputChange('clientType', value);
@@ -431,18 +430,23 @@ export default function CustomerDetailPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="customClientType" className="text-sm font-medium text-#000000-700">
-                        Custom Client Type
-                      </Label>
-                      <Input
-                        id="customClientType"
-                        value={customClientType || ''}
-                        onChange={(e) => setCustomClientType(e.target.value)}
-                        className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
-                        disabled={!isEditing || customerData.clientType !== 'custom'}
-                      />
-                    </div>
+                    {customClientType !== null && (
+                      <div>
+                        <Label htmlFor="customClientType" className="text-sm font-medium text-#000000-700">
+                          Custom Client Type
+                        </Label>
+                        <Input
+                          id="customClientType"
+                          value={customClientType || ''}
+                          onChange={(e) => {
+                            setCustomClientType(e.target.value);
+                            handleInputChange('clientType', e.target.value);
+                          }}
+                          className={`w-full mt-1 text-sm rounded-md px-3 py-2 ${!isEditing ? 'bg-#000000-200 text-#000000-700' : 'text-#000000'}`}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -495,4 +499,4 @@ export default function CustomerDetailPage() {
       </div>
     </div>
   );
-} 
+}
