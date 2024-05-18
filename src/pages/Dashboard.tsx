@@ -15,9 +15,6 @@ import {
   PaginationContent,
   PaginationItem,
   PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
 } from "@/components/ui/pagination";
 
 interface Visit {
@@ -46,7 +43,7 @@ interface StateCardProps {
 const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardProps) => {
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4">{state}</h2>
+      <h2 className="text-2xl font-bold mb-4 capitalize">{state}</h2>
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
         <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
@@ -65,7 +62,7 @@ interface CityCardProps {
 const CityCard = ({ city, totalVisits, totalEmployees, onClick }: CityCardProps) => {
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4">{city}</h2>
+      <h2 className="text-2xl font-bold mb-4 capitalize">{city}</h2>
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
         <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
@@ -83,7 +80,7 @@ interface EmployeeCardProps {
 const EmployeeCard = ({ employeeName, totalVisits, onClick }: EmployeeCardProps) => {
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4">{employeeName}</h2>
+      <h2 className="text-2xl font-bold mb-4 capitalize">{employeeName}</h2>
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
       </div>
@@ -136,12 +133,12 @@ const VisitsByPurposeChart = ({ data }: VisitsByPurposeChartProps) => {
 };
 
 interface DateRangeDropdownProps {
-  onDateRangeChange: (startDate: string, endDate: string) => void;
+  selectedOption: string;
+  onDateRangeChange: (startDate: string, endDate: string, selectedOption: string) => void;
 }
 
-const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
+const DateRangeDropdown = ({ selectedOption, onDateRangeChange }: DateRangeDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('Today');
   const [isCustomDateRangeOpen, setIsCustomDateRangeOpen] = useState(false);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -159,7 +156,6 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   };
 
   const handleOptionClick = (option: string) => {
-    setSelectedOption(option);
     setIsOpen(false);
 
     if (option === 'Custom Date Range') {
@@ -189,12 +185,12 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
           break;
       }
 
-      onDateRangeChange(startDate, endDate);
+      onDateRangeChange(startDate, endDate, option);
     }
   };
 
   const handleCustomDateRangeSubmit = () => {
-    onDateRangeChange(startDate, endDate);
+    onDateRangeChange(startDate, endDate, 'Custom Date Range');
     setIsCustomDateRangeOpen(false);
   };
 
@@ -307,75 +303,14 @@ const DateRangeDropdown = ({ onDateRangeChange }: DateRangeDropdownProps) => {
   );
 };
 
-interface CityFilterDropdownProps {
-  cities: string[];
-  onCityFilterChange: (city: string) => void;
-}
-
-const CityFilterDropdown = ({ cities, onCityFilterChange }: CityFilterDropdownProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState('Filter By City');
-
-  const handleCityClick = (city: string) => {
-    setSelectedCity(city);
-    onCityFilterChange(city);
-  };
-
-  const handleClearClick = () => {
-    setSelectedCity('Filter By City');
-    setSearchQuery('');
-    onCityFilterChange('');
-  };
-
-  const filteredCities = cities ? cities.filter(city => city.toLowerCase().includes(searchQuery.toLowerCase())) : [];
-
-  return (
-    <div className="relative inline-block text-left ml-4">
-      <div className="flex items-center">
-        <input
-          type="text"
-          className="block w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder="Type a city"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <button
-          type="button"
-          className="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          onClick={handleClearClick}
-        >
-          Clear
-        </button>
-      </div>
-      {filteredCities.length > 0 && (
-        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="city-filter-menu">
-            {filteredCities.map((city) => (
-              <a
-                key={city}
-                href="#"
-                className={`block px-4 py-2 text-sm ${selectedCity === city ? 'bg-gray-100 text-gray-900' : 'text-gray-700'}`}
-                role="menuitem"
-                onClick={() => handleCityClick(city)}
-              >
-                {city}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 interface VisitsTableProps {
   visits: Visit[];
   onViewDetails: (visitId: string) => void;
   currentPage: number;
   onPageChange: (page: number) => void;
-  selectedCity: string | null; // Add this line
 }
-const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selectedCity }: VisitsTableProps) => {
+
+const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: VisitsTableProps) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortColumn, setSortColumn] = useState<keyof Visit>('visit_date');
 
@@ -400,14 +335,9 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selecte
   };
 
   const rowsPerPage = 10;
+  const totalPages = Math.ceil(visits.length / rowsPerPage);
 
-  const filteredVisits = selectedCity
-    ? visits.filter((visit) => visit.city === selectedCity)
-    : visits;
-
-  const totalPages = Math.ceil(filteredVisits.length / rowsPerPage);
-
-  const sortedVisits = [...filteredVisits].sort((a, b) => {
+  const sortedVisits = [...visits].sort((a, b) => {
     const valueA = a[sortColumn];
     const valueB = b[sortColumn];
 
@@ -434,6 +364,7 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selecte
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const visitsToDisplay = sortedVisits.slice(startIndex, endIndex);
+
   return (
     <Card>
       <CardHeader>
@@ -468,10 +399,10 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selecte
               return (
                 <tr key={visit.id}>
                   <td className="px-4 py-2">{visit.storeName}</td>
-                  <td className="px-4 py-2">{visit.employeeName}</td>
+                  <td className="px-4 py-2 capitalize">{visit.employeeName}</td>
                   <td className="px-4 py-2">{format(parseISO(visit.visit_date), 'MMM d, yyyy')}</td>
                   <td className="px-4 py-2">{visit.purpose}</td>
-                  <td className="px-4 py-2">{visit.city}</td>
+                  <td className="px-4 py-2 capitalize">{visit.city}</td>
                   <td className={`px-4 py-2 ${color}`}>{emoji} {status}</td>
                   <td className="px-4 py-2">
                     <button
@@ -498,8 +429,8 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selecte
             <a
               href="#"
               className={`px-4 py-2 text-sm font-medium ${currentPage === 1
-                  ? 'text-gray-500 cursor-not-allowed'
-                  : 'text-gray-700 hover:text-gray-900'
+                ? 'text-gray-500 cursor-not-allowed'
+                : 'text-gray-700 hover:text-gray-900'
                 }`}
               onClick={(e) => {
                 if (currentPage !== 1) {
@@ -524,8 +455,8 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange, selecte
               <a
                 href="#"
                 className={`px-4 py-2 text-sm font-medium ${currentPage === totalPages
-                    ? 'text-gray-500 cursor-not-allowed'
-                    : 'text-gray-700 hover:text-gray-900'
+                  ? 'text-gray-500 cursor-not-allowed'
+                  : 'text-gray-700 hover:text-gray-900'
                   }`}
                 onClick={(e) => {
                   if (currentPage !== totalPages) {
@@ -551,6 +482,7 @@ const Dashboard = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedOption, setSelectedOption] = useState('Today');
   const [currentPage, setCurrentPage] = useState(1);
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
@@ -559,7 +491,7 @@ const Dashboard = () => {
     if (token) {
       fetchVisits(startDate, endDate);
     }
-  }, [startDate, endDate, token, selectedCity]);
+  }, [startDate, endDate, token]);
 
   const fetchVisits = async (start: string, end: string) => {
     try {
@@ -582,6 +514,7 @@ const Dashboard = () => {
       console.error('Error fetching visits:', error);
     }
   };
+
   useEffect(() => {
     const { reset } = router.query;
     if (reset === 'true') {
@@ -592,43 +525,41 @@ const Dashboard = () => {
       router.replace('/Dashboard', undefined, { shallow: true });
     }
   }, [router.query]);
+
   const handleStateClick = (state: string) => {
-    setSelectedState(state);
+    setSelectedState(state.trim().toLowerCase());
     setSelectedCity(null);
     setSelectedEmployee(null);
   };
 
   const handleCityClick = (city: string) => {
-    setSelectedCity(city);
+    setSelectedCity(city.trim().toLowerCase());
     setSelectedEmployee(null);
   };
 
   const handleEmployeeClick = (employeeName: string) => {
-    setSelectedEmployee(employeeName);
+    setSelectedEmployee(employeeName.trim().toLowerCase());
   };
 
-  const handleDateRangeChange = (start: string, end: string) => {
+  const handleDateRangeChange = (start: string, end: string, option: string) => {
     setStartDate(start);
     setEndDate(end);
-  };
-
-  const handleCityFilterChange = (city: string) => {
-    setSelectedCity(city);
+    setSelectedOption(option);
   };
 
   const handleViewDetails = (visitId: string) => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
 
-  const states = Array.from(new Set(visits.map((visit) => visit.state)));
+  const states = Array.from(new Set(visits.map((visit) => visit.state.trim().toLowerCase())));
   const stateCards = states.map((state) => {
-    const stateVisits = visits.filter((visit) => visit.state === state);
+    const stateVisits = visits.filter((visit) => visit.state.trim().toLowerCase() === state);
     const totalVisits = stateVisits.length;
     const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
     return (
       <StateCard
         key={state}
-        state={state}
+        state={state.charAt(0).toUpperCase() + state.slice(1)}
         totalVisits={totalVisits}
         totalEmployees={totalEmployees}
         onClick={() => handleStateClick(state)}
@@ -637,16 +568,16 @@ const Dashboard = () => {
   });
 
   if (selectedState && !selectedCity && !selectedEmployee) {
-    const stateVisits = visits.filter((visit) => visit.state === selectedState);
-    const cities = Array.from(new Set(stateVisits.map((visit) => visit.city)));
+    const stateVisits = visits.filter((visit) => visit.state.trim().toLowerCase() === selectedState);
+    const cities = Array.from(new Set(stateVisits.map((visit) => visit.city.trim().toLowerCase())));
     const cityCards = cities.map((city) => {
-      const cityVisits = stateVisits.filter((visit) => visit.city === city);
+      const cityVisits = stateVisits.filter((visit) => visit.city.trim().toLowerCase() === city);
       const totalVisits = cityVisits.length;
       const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeId))).length;
       return (
         <CityCard
           key={city}
-          city={city}
+          city={city.charAt(0).toUpperCase() + city.slice(1)}
           totalVisits={totalVisits}
           totalEmployees={totalEmployees}
           onClick={() => handleCityClick(city)}
@@ -657,7 +588,7 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">{selectedState}</h1>
+          <h1 className="text-3xl font-bold capitalize">{selectedState}</h1>
           <Button
             variant="ghost"
             size="lg"
@@ -667,7 +598,7 @@ const Dashboard = () => {
           </Button>
         </div>
         <div className="mb-8">
-          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+          <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {cityCards}
@@ -677,19 +608,20 @@ const Dashboard = () => {
   }
 
   if (selectedCity && !selectedEmployee) {
-    const cityVisits = visits.filter((visit) => visit.city === selectedCity);
+    const cityVisits = visits.filter((visit) => visit.city.trim().toLowerCase() === selectedCity);
     const employeeVisits = cityVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
-      if (!acc[visit.employeeName]) {
-        acc[visit.employeeName] = [];
+      const employeeName = visit.employeeName.trim().toLowerCase();
+      if (!acc[employeeName]) {
+        acc[employeeName] = [];
       }
-      acc[visit.employeeName].push(visit);
+      acc[employeeName].push(visit);
       return acc;
     }, {});
 
     const employeeCards = Object.entries(employeeVisits).map(([employeeName, visits]) => (
       <EmployeeCard
         key={employeeName}
-        employeeName={employeeName}
+        employeeName={employeeName.charAt(0).toUpperCase() + employeeName.slice(1)}
         totalVisits={visits.length}
         onClick={() => handleEmployeeClick(employeeName)}
       />
@@ -698,7 +630,7 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">{selectedCity}</h1>
+          <h1 className="text-3xl font-bold capitalize">{selectedCity}</h1>
           <Button
             variant="ghost"
             size="lg"
@@ -708,7 +640,7 @@ const Dashboard = () => {
           </Button>
         </div>
         <div className="mb-8">
-          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
+          <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {employeeCards}
@@ -718,32 +650,31 @@ const Dashboard = () => {
   }
 
   if (selectedEmployee) {
-    const employeeVisits = visits.filter((visit) => visit.employeeName === selectedEmployee);
+    const employeeVisits = visits.filter((visit) => visit.employeeName.trim().toLowerCase() === selectedEmployee);
 
     const totalVisits = employeeVisits.length;
     const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
     const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
     const assignedVisits = employeeVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
-    const totalEmployees = Array.from(new Set(employeeVisits.map((visit) => visit.employeeId))).length;
-    const activeEmployees = Array.from(new Set(employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime).map((visit) => visit.employeeId))).length;
 
     const visitsByPurpose = employeeVisits.reduce((acc: { [key: string]: number }, visit) => {
-      if (!acc[visit.purpose]) {
-        acc[visit.purpose] = 0;
+      const purpose = visit.purpose.trim().toLowerCase();
+      if (!acc[purpose]) {
+        acc[purpose] = 0;
       }
-      acc[visit.purpose]++;
+      acc[purpose]++;
       return acc;
     }, {});
 
     const visitsByPurposeChartData = Object.entries(visitsByPurpose).map(([purpose, visits]) => ({
-      purpose,
+      purpose: purpose.charAt(0).toUpperCase() + purpose.slice(1),
       visits: Number(visits),
     }));
 
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">{selectedEmployee}</h1>
+          <h1 className="text-3xl font-bold capitalize">{selectedEmployee}</h1>
           <Button
             variant="ghost"
             size="lg"
@@ -757,19 +688,15 @@ const Dashboard = () => {
           <KPICard title="Completed Visits" value={completedVisits} />
           <KPICard title="Ongoing Visits" value={ongoingVisits} />
           <KPICard title="Assigned Visits" value={assignedVisits} />
-          <KPICard title="Total Employees" value={totalEmployees} />
-          <KPICard title="Active Employees" value={activeEmployees} />
         </div>
         <div className="mb-8">
-          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-
+          <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
         </div>
         <VisitsTable
           visits={employeeVisits}
           onViewDetails={handleViewDetails}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
-          selectedCity={selectedCity} // Add this line
         />
         <div className="mt-8">
           <VisitsByPurposeChart data={visitsByPurposeChartData} />
@@ -778,15 +705,12 @@ const Dashboard = () => {
     );
   }
 
-  const uniqueCities = Array.from(new Set(visits.map((visit) => visit.city)));
-
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Sales Dashboard</h1>
         <div className="flex">
-          <DateRangeDropdown onDateRangeChange={handleDateRangeChange} />
-
+          <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

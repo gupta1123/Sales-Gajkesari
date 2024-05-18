@@ -243,6 +243,75 @@ const VisitsList: React.FC = () => {
     return <div>Error fetching visits: {(error as Error).message}</div>;
   }
 
+  const renderPagination = () => {
+    const pageNumbers = [];
+    const displayPages = 5; // Show first 5 pages
+    const groupSize = 10; // Show 10 pages at a time before showing "..."
+
+    let startPage = Math.max(currentPage - Math.floor(displayPages / 2), 1);
+    let endPage = startPage + displayPages - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(endPage - displayPages + 1, 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <Pagination>
+        <PaginationContent>
+          {currentPage !== 1 && (
+            <PaginationPrevious
+              onClick={() => handlePageChange(currentPage - 1)}
+            />
+          )}
+          {startPage > 1 && (
+            <>
+              <PaginationItem>
+                <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
+              </PaginationItem>
+              {startPage > 2 && (
+                <PaginationItem>
+                  <PaginationLink>...</PaginationLink>
+                </PaginationItem>
+              )}
+            </>
+          )}
+          {pageNumbers.map((page) => (
+            <PaginationItem key={page}>
+              <PaginationLink
+                isActive={page === currentPage}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && (
+                <PaginationItem>
+                  <PaginationLink>...</PaginationLink>
+                </PaginationItem>
+              )}
+              <PaginationItem>
+                <PaginationLink onClick={() => handlePageChange(totalPages)}>{totalPages}</PaginationLink>
+              </PaginationItem>
+            </>
+          )}
+          {currentPage !== totalPages && (
+            <PaginationNext
+              onClick={() => handlePageChange(currentPage + 1)}
+            />
+          )}
+        </PaginationContent>
+      </Pagination>
+    );
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Customer Visits</h2>
@@ -292,30 +361,7 @@ const VisitsList: React.FC = () => {
           </Select>
         </div>
 
-        <Pagination>
-          <PaginationContent>
-            {currentPage !== 1 && (
-              <PaginationPrevious
-                onClick={() => handlePageChange(currentPage - 1)}
-              />
-            )}
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  isActive={page === currentPage}
-                  onClick={() => handlePageChange(page)}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            {currentPage !== totalPages && (
-              <PaginationNext
-                onClick={() => handlePageChange(currentPage + 1)}
-              />
-            )}
-          </PaginationContent>
-        </Pagination>
+        {renderPagination()}
       </div>
     </div>
   );
