@@ -93,7 +93,7 @@ const CustomerTable = ({
     onSort,
 }: CustomerTableProps) => {
     return (
-        <Table>
+        <Table className="text-sm font-poppins">
             <TableHeader>
                 <TableRow>
                     {selectedColumns.includes('shopName') && (
@@ -372,9 +372,6 @@ function CustomerListPage() {
         return response.json();
     };
 
-
-
-
     const [sortColumn, setSortColumn] = useState<string | null>('storeName');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -394,6 +391,7 @@ function CustomerListPage() {
 
     const customers = data?.content || [];
     const totalCustomers = data?.totalElements || 0;
+    const totalPages = data ? data.totalPages : 1; // Add totalPages
 
     const openDeleteModal = (customerId: string) => {
         setSelectedCustomerId(customerId);
@@ -410,6 +408,7 @@ function CustomerListPage() {
             ...prevFilters,
             [filterName]: value,
         }));
+        setCurrentPage(1); // Reset to page 1 whenever a filter is changed
     };
 
     const handleFilterClear = (filterName: keyof typeof filters) => {
@@ -417,6 +416,7 @@ function CustomerListPage() {
             ...prevFilters,
             [filterName]: '',
         }));
+        setCurrentPage(1); // Reset to page 1 whenever a filter is cleared
     };
 
     const handleDeleteConfirm = async () => {
@@ -445,6 +445,7 @@ function CustomerListPage() {
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
+
     const handleItemsPerPageChange = (value: string) => {
         const newValue = parseInt(value, 10);
         if (!isNaN(newValue)) {
@@ -452,6 +453,7 @@ function CustomerListPage() {
             setCurrentPage(1);
         }
     };
+
     const toggleViewMode = () => {
         setViewMode((prevMode) => (prevMode === 'card' ? 'table' : 'card'));
     };
@@ -463,6 +465,7 @@ function CustomerListPage() {
             setSelectedColumns([...selectedColumns, column]);
         }
     };
+
     const handleSelectAllRows = () => {
         if (selectedRows.length === customers.length) {
             setSelectedRows([]);
@@ -502,6 +505,75 @@ function CustomerListPage() {
 
     const closeModal = () => {
         setIsModalOpen(false);
+    };
+
+    const renderPagination = () => {
+        const pageNumbers = [];
+        const displayPages = 5; // Show first 5 pages
+        const groupSize = 10; // Show 10 pages at a time before showing "..."
+
+        let startPage = Math.max(currentPage - Math.floor(displayPages / 2), 1);
+        let endPage = startPage + displayPages - 1;
+
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(endPage - displayPages + 1, 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+
+        return (
+            <Pagination>
+                <PaginationContent>
+                    {currentPage !== 1 && (
+                        <PaginationPrevious
+                            onClick={() => handlePageChange(currentPage - 1)}
+                        />
+                    )}
+                    {startPage > 1 && (
+                        <>
+                            <PaginationItem>
+                                <PaginationLink onClick={() => handlePageChange(1)}>1</PaginationLink>
+                            </PaginationItem>
+                            {startPage > 2 && (
+                                <PaginationItem>
+                                    <PaginationLink>...</PaginationLink>
+                                </PaginationItem>
+                            )}
+                        </>
+                    )}
+                    {pageNumbers.map((page) => (
+                        <PaginationItem key={page}>
+                            <PaginationLink
+                                isActive={page === currentPage}
+                                onClick={() => handlePageChange(page)}
+                            >
+                                {page}
+                            </PaginationLink>
+                        </PaginationItem>
+                    ))}
+                    {endPage < totalPages && (
+                        <>
+                            {endPage < totalPages - 1 && (
+                                <PaginationItem>
+                                    <PaginationLink>...</PaginationLink>
+                                </PaginationItem>
+                            )}
+                            <PaginationItem>
+                                <PaginationLink onClick={() => handlePageChange(totalPages)}>{totalPages}</PaginationLink>
+                            </PaginationItem>
+                        </>
+                    )}
+                    {currentPage !== totalPages && (
+                        <PaginationNext
+                            onClick={() => handlePageChange(currentPage + 1)}
+                        />
+                    )}
+                </PaginationContent>
+            </Pagination>
+        );
     };
 
     return (
@@ -554,8 +626,8 @@ function CustomerListPage() {
             />
 
             <>
-                <div className="mb-4 flex space-x-4">
-                    <div className="relative">
+                <div className="mb-4 flex flex-wrap space-x-4 text-sm font-poppins">
+                    <div className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 mb-4 sm:mb-0">
                         <input
                             type="text"
                             placeholder="Filter by city"
@@ -572,11 +644,11 @@ function CustomerListPage() {
                             </button>
                         )}
                     </div>
-                    <div className="relative">
+                    <div className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 mb-4 sm:mb-0">
                         <input
                             type="text"
                             placeholder="Filter by Shop name"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-full"
                             value={filters.storeName}
                             onChange={(e) => handleFilterChange('storeName', e.target.value)}
                         />
@@ -589,11 +661,11 @@ function CustomerListPage() {
                             </button>
                         )}
                     </div>
-                    <div className="relative">
+                    <div className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 mb-4 sm:mb-0">
                         <input
                             type="text"
                             placeholder="Filter by owner"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-full"
                             value={filters.ownerName}
                             onChange={(e) => handleFilterChange('ownerName', e.target.value)}
                         />
@@ -606,11 +678,11 @@ function CustomerListPage() {
                             </button>
                         )}
                     </div>
-                    <div className="relative">
+                    <div className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 mb-4 sm:mb-0">
                         <input
                             type="text"
                             placeholder="Filter by phone number"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-full"
                             value={filters.primaryContact}
                             onChange={(e) => handleFilterChange('primaryContact', e.target.value)}
                         />
@@ -623,45 +695,11 @@ function CustomerListPage() {
                             </button>
                         )}
                     </div>
-                    {/* <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Filter by state"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                            value={filters.state}
-                            onChange={(e) => handleFilterChange('state', e.target.value)}
-                        />
-                        {filters.state && (
-                            <button
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                onClick={() => handleFilterClear('state')}
-                            >
-                                &times;
-                            </button>
-                        )}
-                    </div> */}
-                    {/* <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Filter by monthly sale"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
-                            value={filters.monthlySale}
-                            onChange={(e) => handleFilterChange('monthlySale', e.target.value)}
-                        />
-                        {filters.monthlySale && (
-                            <button
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                onClick={() => handleFilterClear('monthlySale')}
-                            >
-                                &times;
-                            </button>
-                        )}
-                    </div> */}
-                    <div className="relative">
+                    <div className="relative w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 mb-4 sm:mb-0">
                         <input
                             type="text"
                             placeholder="Filter by client type"
-                            className="border border-gray-300 rounded-md px-4 py-2 pr-10"
+                            className="border border-gray-300 rounded-md px-4 py-2 pr-10 w-full"
                             value={filters.clientType}
                             onChange={(e) => handleFilterChange('clientType', e.target.value)}
                         />
@@ -690,31 +728,8 @@ function CustomerListPage() {
                     onSort={handleSort}
                 />
 
-                <div className="mt-8">
-                    <Pagination>
-                        <PaginationPrevious
-                            onClick={() => {
-                                if (currentPage !== 1) {
-                                    handlePageChange(currentPage - 1);
-                                }
-                            }}
-                        >
-                            Previous
-                        </PaginationPrevious>
-                        <PaginationContent>
-                            <PaginationItem>{currentPage}</PaginationItem>
-                        </PaginationContent>
-                        <PaginationNext
-                            onClick={() => {
-                                if (currentPage !== Math.ceil(totalCustomers / itemsPerPage)) {
-                                    handlePageChange(currentPage + 1);
-                                }
-                            }}
-                        >
-                            Next
-                        </PaginationNext>
-                    </Pagination>
-                    <div className="flex items-center space-x-2 mt-4">
+                <div className="mt-8 flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
                         <span>Items per page:</span>
                         <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger className="w-20">
@@ -727,9 +742,10 @@ function CustomerListPage() {
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {renderPagination()}
                 </div>
             </>
-
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}

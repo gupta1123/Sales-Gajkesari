@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -76,7 +75,7 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
 
     return (
         <div>
-            <table className="w-full text-left table-auto">
+            <table className="w-full text-left table-auto text-sm font-poppins">
                 <thead>
                     <tr className="bg-gray-100">
                         {selectedColumns.includes('storeName') && (
