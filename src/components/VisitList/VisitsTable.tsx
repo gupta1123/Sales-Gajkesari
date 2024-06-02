@@ -187,7 +187,7 @@ const VisitsTable: React.FC<VisitsTableProps> = ({
                                     <Button
                                         variant="outline"
                                         className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                                        onClick={() => viewDetails(visit.id)}
+                                        onClick={() => viewDetails(visit.id.toString())}
                                     >
                                         View Details
                                     </Button>

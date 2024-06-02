@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
@@ -35,11 +35,26 @@ interface Visit {
     updatedTime: string | null;
 }
 
-interface DateRangeProps {
-    setVisits: (visits: Visit[]) => void;
+interface Stats {
+    // Define the properties of the statsDto object
+    // Example:
+    // totalVisits: number;
+    // completedVisits: number;
+    // pendingVisits: number;
+}
+interface StatsDto {
+    visitCount: number;
+    fullDays: number;
+    halfDays: number;
+    absences: number;
 }
 
-const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
+interface DateRangeProps {
+    setVisits: Dispatch<SetStateAction<Visit[]>>;
+    setStats: Dispatch<SetStateAction<StatsDto | null>>;
+}
+
+const DateRange: React.FC<DateRangeProps> = ({ setVisits, setStats }) => {
     const [selectedRange, setSelectedRange] = useState('last2Days');
     const token = useSelector((state: RootState) => state.auth.token);
     const router = useRouter();
@@ -98,13 +113,14 @@ const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
                         break;
                 }
 
-                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRangeAndEmployee?id=${id}&start=${startDate}&end=${endDate}`, {
+                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRangeAndEmployeeStats?id=${id}&start=${startDate}&end=${endDate}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                const data: Visit[] = await response.json();
-                setVisits(data);
+                const data = await response.json();
+                setVisits(data.visitDto);
+                setStats(data.statsDto);
             } catch (error) {
                 console.error('Error fetching visits:', error);
             }
@@ -113,7 +129,7 @@ const DateRange: React.FC<DateRangeProps> = ({ setVisits }) => {
         if (token && id) {
             fetchVisits();
         }
-    }, [selectedRange, token, setVisits, id]);
+    }, [selectedRange, token, setVisits, setStats, id]);
 
     return (
         <div>

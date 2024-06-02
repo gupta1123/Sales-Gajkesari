@@ -1,226 +1,222 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import {
-    Table,
-    TableHeader,
-    TableRow,
-    TableHead,
-    TableBody,
-    TableCell,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { DownloadIcon } from '@radix-ui/react-icons';
-import { utils, writeFile } from 'xlsx';
+import * as React from "react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from '@/components/ui/pagination';
+import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext, PaginationEllipsis } from "@/components/ui/pagination"
 
-interface AttendanceRecord {
-    id: number;
-    employeeName: string;
-    attendanceStatus: string;
-    visitCount: number;
-    checkinDate: string;
-    checkoutDate: string;
-    checkinTime: string;
-    checkoutTime: string;
+interface Employee {
+    id: number
+    firstName: string
+    lastName: string
+    employeeId: string
+    // Other properties...
 }
 
-const AttendancePage: React.FC = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(undefined);
-    const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(undefined);
-    const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+interface AttendanceData {
+    employeeId: number
+    employeeFirstName: string
+    employeeLastName: string
+    fullDays: number
+    halfDays: number
+    travelAllowance: number
+    dearnessAllowance: number
+    salary: number
+}
+
+const Attendance: React.FC = () => {
+    const [employees, setEmployees] = React.useState<Employee[]>([])
+    const [attendanceData, setAttendanceData] = React.useState<AttendanceData[]>([])
+    const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear())
+    const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth())
+    const [currentPage, setCurrentPage] = React.useState<number>(1)
+    const [rowsPerPage] = React.useState<number>(10)
+    const [noDataMessage, setNoDataMessage] = React.useState<string>("")
+
+    const years = Array.from({ length: 27 }, (_, index) => 2024 + index)
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
     const token = useSelector((state: RootState) => state.auth.token);
 
-    useEffect(() => {
-        const fetchAttendanceData = async () => {
-            try {
-                const startDate = selectedStartDate ? format(selectedStartDate, 'yyyy-MM-dd') : '';
-                const endDate = selectedEndDate ? format(selectedEndDate, 'yyyy-MM-dd') : '';
+    React.useEffect(() => {
+        fetchEmployees()
+    }, [token])
 
-                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+    React.useEffect(() => {
+        fetchAttendanceData()
+    }, [selectedYear, selectedMonth, token])
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setAttendanceData(data);
-                } else {
-                    console.error('Error fetching attendance data:', response.status);
-                    // Handle the error case, e.g., show an error message to the user
-                }
-            } catch (error) {
-                console.error('Error fetching attendance data:', error);
-                // Handle the error case, e.g., show an error message to the user
+    const fetchEmployees = async () => {
+        if (!token) {
+            console.error("Auth token is missing")
+            return
+        }
+
+        try {
+            const response = await fetch("http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll", {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch employees")
             }
-        };
 
-        fetchAttendanceData();
-    }, [selectedStartDate, selectedEndDate, token]);
+            const data = await response.json()
+            setEmployees(data)
+        } catch (error) {
+            console.error("Error fetching employees:", error)
+        }
+    }
 
-    const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-        setCurrentPage(1); // Reset to the first page when the search query changes
-    };
+    const fetchAttendanceData = async () => {
+        if (!token) {
+            console.error("Auth token is missing")
+            return
+        }
 
-    const filteredAttendanceData = attendanceData.filter((attendance) => {
-        const fieldOfficerName = attendance.employeeName.toLowerCase();
-        const searchTerm = searchQuery.toLowerCase();
-        return fieldOfficerName.includes(searchTerm);
-    });
+        const startDate = new Date(selectedYear, selectedMonth, 1).toISOString().split("T")[0]
+        const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString().split("T")[0]
 
-    const totalPages = Math.ceil(filteredAttendanceData.length / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredAttendanceData.slice(indexOfFirstItem, indexOfLastItem);
+        try {
+            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch attendance data")
+            }
+
+            const data = await response.json()
+            setAttendanceData(data)
+            setNoDataMessage("")
+
+            if (data.length === 0) {
+                setNoDataMessage("No data available for the selected month and year. Please choose a different month or year.")
+            }
+        } catch (error) {
+            console.error("Error fetching attendance data:", error)
+            setAttendanceData([])
+            setNoDataMessage("No data available for the selected month and year. Please choose a different month or year.")
+        }
+    }
+
+    const getEmployeeName = (employeeId: number) => {
+        const employee = employees.find((emp) => emp.id === employeeId)
+        return employee ? `${employee.firstName} ${employee.lastName}` : ""
+    }
+
+    const calculateTotalDays = (fullDays: number, halfDays: number) => {
+        return fullDays + halfDays / 2
+    }
+
+    const calculateTotalSalary = (salary: number, travelAllowance: number, dearnessAllowance: number) => {
+        return salary + travelAllowance + dearnessAllowance
+    }
+
+    // Pagination logic
+    const indexOfLastRow = currentPage * rowsPerPage
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage
+    const currentRows = attendanceData.slice(indexOfFirstRow, indexOfLastRow)
+    const totalPages = Math.ceil(attendanceData.length / rowsPerPage)
+
+    const handlePageChange = (pageNumber: number) => {
+        setCurrentPage(pageNumber)
+    }
 
     return (
-        <div className="container mx-auto py-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-3xl font-bold">Attendance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="mb-4 flex items-center">
-                        <div className="mr-4">
-                            <Input
-                                type="text"
-                                placeholder="Search by Field Officer"
-                                value={searchQuery}
-                                onChange={handleSearchQueryChange}
-                                className="w-[300px]"
-                            />
-                        </div>
-
-                        <div className="mr-4">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline">
-                                        {selectedStartDate ? format(selectedStartDate, 'MMM d, yyyy') : 'Start Date'}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedStartDate}
-                                        onSelect={setSelectedStartDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="mr-4">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline">
-                                        {selectedEndDate ? format(selectedEndDate, 'MMM d, yyyy') : 'End Date'}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedEndDate}
-                                        onSelect={setSelectedEndDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
-
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Field Officer</TableHead>
-                                <TableHead>Attendance Status</TableHead>
-                                <TableHead>Visit Count</TableHead>
-                                <TableHead>Check-in Date</TableHead>
-                                <TableHead>Check-out Date</TableHead>
-                                <TableHead>Check-in Time</TableHead>
-                                <TableHead>Check-out Time</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {currentItems.map((attendance) => (
-                                <TableRow key={attendance.id}>
-                                    <TableCell>{attendance.employeeName}</TableCell>
-                                    <TableCell>
-                                        <span
-                                            className={`px-2 py-1 rounded-full font-semibold ${attendance.attendanceStatus === 'Present'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
-                                                }`}
-                                        >
-                                            {attendance.attendanceStatus}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>{attendance.visitCount}</TableCell>
-                                    <TableCell>{attendance.checkinDate}</TableCell>
-                                    <TableCell>{attendance.checkoutDate}</TableCell>
-                                    <TableCell>{attendance.checkinTime}</TableCell>
-                                    <TableCell>{attendance.checkoutTime}</TableCell>
-                                </TableRow>
+        <div>
+            <div className="mb-4 flex items-center space-x-4">
+                <div>
+                    <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {years.map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                    {year}
+                                </SelectItem>
                             ))}
-                        </TableBody>
-                    </Table>
-
-                    <Pagination className="mt-4">
-                        <PaginationContent>
-                            {currentPage !== 1 && (
-                                <PaginationPrevious onClick={() => setCurrentPage(currentPage - 1)} />
-                            )}
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <PaginationItem key={i}>
-                                    <PaginationLink
-                                        isActive={currentPage === i + 1}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                    >
-                                        {i + 1}
-                                    </PaginationLink>
-                                </PaginationItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {months.map((month, index) => (
+                                <SelectItem key={month} value={index.toString()}>
+                                    {month}
+                                </SelectItem>
                             ))}
-                            {totalPages > 5 && (
-                                <>
-                                    {currentPage < 4 && <PaginationEllipsis />}
-                                    {currentPage > 3 && currentPage < totalPages - 2 && (
-                                        <>
-                                            <PaginationEllipsis />
-                                            <PaginationItem>
-                                                <PaginationLink
-                                                    isActive={currentPage === currentPage}
-                                                    onClick={() => setCurrentPage(currentPage)}
-                                                >
-                                                    {currentPage}
-                                                </PaginationLink>
-                                            </PaginationItem>
-                                            <PaginationEllipsis />
-                                        </>
-                                    )}
-                                    {currentPage > totalPages - 3 && <PaginationEllipsis />}
-                                </>
-                            )}
-                            {currentPage !== totalPages && (
-                                <PaginationNext onClick={() => setCurrentPage(currentPage + 1)} />
-                            )}
-                        </PaginationContent>
-                    </Pagination>
-                </CardContent>
-            </Card>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            {noDataMessage && (
+                <p className="mb-4 text-red-500">{noDataMessage}</p>
+            )}
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Full Days</TableHead>
+                        <TableHead>Half Days</TableHead>
+                        <TableHead>Total Days</TableHead>
+                        <TableHead>TA</TableHead>
+                        <TableHead>DA</TableHead>
+                        <TableHead>Total Salary</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {currentRows.map((data) => (
+                        <TableRow key={data.employeeId}>
+                            <TableCell>{getEmployeeName(data.employeeId)}</TableCell>
+                            <TableCell>{data.fullDays}</TableCell>
+                            <TableCell>{data.halfDays}</TableCell>
+                            <TableCell>{calculateTotalDays(data.fullDays, data.halfDays)}</TableCell>
+                            <TableCell>{data.travelAllowance}</TableCell>
+                            <TableCell>{data.dearnessAllowance}</TableCell>
+                            <TableCell>{calculateTotalSalary(data.salary, data.travelAllowance, data.dearnessAllowance)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+            <Pagination>
+                <PaginationContent>
+                    {currentPage > 1 && (
+                        <PaginationItem>
+                            <PaginationPrevious onClick={() => setCurrentPage(currentPage - 1)} />
+                        </PaginationItem>
+                    )}
+                    {[...Array(totalPages)].map((_, i) => (
+                        <PaginationItem key={i}>
+                            <PaginationLink
+                                isActive={currentPage === i + 1}
+                                onClick={() => setCurrentPage(i + 1)}
+                            >
+                                {i + 1}
+                            </PaginationLink>
+                        </PaginationItem>
+                    ))}
+                    {currentPage < totalPages && (
+                        <PaginationItem>
+                            <PaginationNext onClick={() => setCurrentPage(currentPage + 1)} />
+                        </PaginationItem>
+                    )}
+                </PaginationContent>
+            </Pagination>
         </div>
-    );
-};
+    )
+}
 
-export default AttendancePage;
+
+export default Attendance

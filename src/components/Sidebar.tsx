@@ -2,7 +2,7 @@ import Link from 'next/link';
 import styles from './Sidebar.module.css';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiSettings } from 'react-icons/fi';
 
 export default function Sidebar() {
   const dispatch = useDispatch();
@@ -13,7 +13,14 @@ export default function Sidebar() {
 
   return (
     <div className={styles.sidebar}>
+      <div className={styles.sidebarHeader}>
+        <Link href="/Settings" className={styles.sidebarSettings}>
+          <FiSettings className={styles.settingsIcon} />
+          <span className={styles.settingsText}>Settings</span>
+        </Link>
+      </div>
       <ul className={styles.sidebarList}>
+        {/* Existing sidebar items */}
         <li className={styles.sidebarItem}>
           <Link href="/Dashboard?reset=true" shallow={true} className={styles.sidebarLink}>
             Dashboard
@@ -34,8 +41,7 @@ export default function Sidebar() {
             Employee list
           </Link>
         </li>
-        {/* Add the new sidebar items */}
-        {/* <li className={styles.sidebarItem}>
+        <li className={styles.sidebarItem}>
           <Link href="/Expense" className={styles.sidebarLink}>
             Expense
           </Link>
@@ -45,21 +51,6 @@ export default function Sidebar() {
             Attendance
           </Link>
         </li>
-        {/* <li className={styles.sidebarItem}>
-          <Link href="/CustomerDetailPage" className={styles.sidebarLink}>
-            Customer Details
-          </Link>
-        </li>
-        <li className={styles.sidebarItem}>
-          <Link href="/VisitDetailPage" className={styles.sidebarLink}>
-            Visit Details
-          </Link>
-        </li>
-        <li className={styles.sidebarItem}>
-          <Link href="/SalesExecutivePage" className={styles.sidebarLink}>
-            Sales Executives
-          </Link>
-        </li> */}
       </ul>
       <div className={styles.sidebarFooter}>
         <button className={styles.sidebarLink} onClick={handleLogout}>

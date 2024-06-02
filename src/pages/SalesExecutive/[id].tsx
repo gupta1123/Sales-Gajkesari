@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import "./SalesExecutivePage.css";
-import { FaStore, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaStore, FaCalendarAlt, FaCheck, FaClock, FaTimes } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import DateRange from '../DateRange';
@@ -17,7 +17,6 @@ import {
   PaginationItem,
   PaginationPrevious,
   PaginationNext,
-  PaginationEllipsis,
 } from '@/components/ui/pagination';
 
 interface Visit {
@@ -51,6 +50,13 @@ interface Visit {
   updatedTime: string | null;
 }
 
+interface StatsDto {
+  visitCount: number;
+  fullDays: number;
+  halfDays: number;
+  absences: number;
+}
+
 const SalesExecutivePage: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
 
@@ -62,6 +68,7 @@ const SalesExecutivePage: React.FC = () => {
     role: string;
   } | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [stats, setStats] = useState<StatsDto | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const visitsPerPage = 15;
 
@@ -99,25 +106,25 @@ const SalesExecutivePage: React.FC = () => {
     endDate: new Date().toISOString().split('T')[0]   // today's date as end date
   });
 
-
   useEffect(() => {
-    const fetchVisits = async () => {
+    const fetchVisitsAndStats = async () => {
       if (token && id) {
         try {
-          const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/by-employee?employeeId=${id}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`, {
+          const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRangeAndEmployeeStats?id=${id}&start=${dateRange.startDate}&end=${dateRange.endDate}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
-          const data: Visit[] = await response.json();
-          setVisits(data);
+          const data = await response.json();
+          setVisits(data.visitDto);
+          setStats(data.statsDto);
         } catch (error) {
-          console.error("Error fetching visits:", error);
+          console.error("Error fetching visits and stats:", error);
         }
       }
     };
 
-    fetchVisits();
+    fetchVisitsAndStats();
   }, [token, id, dateRange]);
 
   // Get current visits
@@ -146,10 +153,45 @@ const SalesExecutivePage: React.FC = () => {
         </div>
       </header>
       <main className="container mx-auto py-8 px-4">
+        <Card className="bg-white shadow-md rounded-lg mb-6">
+          <CardContent className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Visit Metrics</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg shadow-md p-6 text-blue-800 text-center">
+                <div className="text-4xl font-bold mb-2">{stats?.visitCount}</div>
+                <div className="text-lg font-semibold flex items-center justify-center">
+                  <FaCheck className="mr-2" />
+                  <span>Total Visits</span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-green-100 to-green-200 rounded-lg shadow-md p-6 text-green-800 text-center">
+                <div className="text-4xl font-bold mb-2">{stats?.fullDays}</div>
+                <div className="text-lg font-semibold flex items-center justify-center">
+                  <FaClock className="mr-2" />
+                  <span>Full Days</span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg shadow-md p-6 text-yellow-800 text-center">
+                <div className="text-4xl font-bold mb-2">{stats?.halfDays}</div>
+                <div className="text-lg font-semibold flex items-center justify-center">
+                  <FaClock className="mr-2" />
+                  <span>Half Days</span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-red-100 to-red-200 rounded-lg shadow-md p-6 text-red-800 text-center">
+                <div className="text-4xl font-bold mb-2">{stats?.absences}</div>
+                <div className="text-lg font-semibold flex items-center justify-center">
+                  <FaTimes className="mr-2" />
+                  <span>Absences</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         <Card className="bg-white shadow-md rounded-lg">
           <CardContent className="p-6">
             <div className="mb-6">
-              <DateRange setVisits={setVisits} />
+              <DateRange setVisits={setVisits} setStats={setStats} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {currentVisits.map((visit) => {
@@ -254,7 +296,6 @@ const SalesExecutivePage: React.FC = () => {
       </main>
     </div>
   );
-
 };
 
 export default SalesExecutivePage;

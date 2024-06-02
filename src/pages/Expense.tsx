@@ -32,6 +32,7 @@ interface Expense {
     employeeName: string;
     expenseDate: string;
     type: string;
+    subType: string;
     amount: number;
     description: string;
     approvalStatus: string;
@@ -50,7 +51,7 @@ const ExpensePage = () => {
 
     const fetchExpenseData = async () => {
         try {
-            const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081expense/getAll', {
+            const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/getAll', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -183,6 +184,7 @@ const ExpensePage = () => {
                                 <TableHead>Field Officer Name</TableHead>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Expense Category</TableHead>
+                                <TableHead>Sub Category</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Description</TableHead>
                                 <TableHead>Status</TableHead>
@@ -195,6 +197,7 @@ const ExpensePage = () => {
                                     <TableCell>{expense.employeeName}</TableCell>
                                     <TableCell>{expense.expenseDate}</TableCell>
                                     <TableCell>{expense.type}</TableCell>
+                                    <TableCell>{expense.subType}</TableCell>
                                     <TableCell>{expense.amount}</TableCell>
                                     <TableCell>{expense.description}</TableCell>
                                     <TableCell>

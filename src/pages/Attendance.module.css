@@ -1,0 +1,29 @@
+.filterContainer {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.dropdownTrigger {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dropdownContent {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+}
+
+.noDataMessage {
+    text-align: center;
+    margin-top: 32px;
+    color: #666;
+}
+
+.pagination {
+    margin-top: 16px;
+}

@@ -2,40 +2,31 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import Link from 'next/link';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, message } from "antd";
-import { InboxOutlined, CaretDownOutlined, PushpinOutlined, ClockCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
-import { SyncOutlined } from '@ant-design/icons';
+import { InboxOutlined, CaretDownOutlined, PushpinOutlined, ClockCircleOutlined, CheckCircleOutlined, SyncOutlined } from "@ant-design/icons";
 import VisitsTimeline from "../VisitsTimeline";
 import NotesSection from "../../components/NotesSection";
 import LikesSection from "../../components/BrandsSection";
 import BrandsSection from "../../components/LikesSection";
 import PerformanceMetrics from "../../components/PerformanceMetrics";
 import "../VisitDetail.css";
-import Link from 'next/link';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import { UploadProps, UploadFile } from 'antd';
-import { UploadChangeParam } from 'antd/lib/upload/interface';
-import ImageGallery from '../ImageGallery';
-
 
 const { Dragger } = Upload;
+
 interface Attachment {
   id: number;
   fileName: string;
   url: string;
   tag: string;
 }
+
 interface VisitData {
   id?: number;
   storeId?: number;
@@ -69,16 +60,15 @@ interface VisitData {
 }
 
 const VisitDetailPage = () => {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  const router = useRouter();
-  const { id } = router.query;
   const [visit, setVisit] = useState<VisitData | null>(null);
   const [checkinImages, setCheckinImages] = useState<string[]>([]);
   const [checkoutImages, setCheckoutImages] = useState<string[]>([]);
   const token = useSelector((state: RootState) => state.auth.token);
   const [checkInStatus, setCheckInStatus] = useState<'Assigned' | 'On Going' | 'Checked Out' | 'Completed'>('Assigned');
-  const [activeTab, setActiveTab] = useState('checkin');
+
+  const router = useRouter();
+  const { id } = router.query;
+
   const getStatusIndicator = (status: 'Assigned' | 'On Going' | 'Checked Out' | 'Completed') => {
     switch (status) {
       case 'Assigned':
@@ -91,12 +81,6 @@ const VisitDetailPage = () => {
         return { icon: ' ', bgColor: 'bg-green-100', textColor: 'text-green-800' };
       default:
         return { icon: '', bgColor: 'bg-transparent', textColor: 'text-gray-500' };
-    }
-  };
-
-  const handleViewStore = () => {
-    if (visit?.storeId) {
-      router.push(`/CustomerDetailPage/${visit.storeId}`);
     }
   };
 
@@ -147,7 +131,6 @@ const VisitDetailPage = () => {
           setCheckinImages(checkinImageUrls);
           setCheckoutImages(checkoutImageUrls);
 
-          // Update checkInStatus based on checkinTime and checkoutTime
           if (response.data.checkoutTime) {
             setCheckInStatus('Completed');
           } else if (response.data.checkinTime) {
@@ -165,38 +148,6 @@ const VisitDetailPage = () => {
       fetchVisitDetails();
     }
   }, [id, token]);
-
-  const handleImageUpload = (info: UploadChangeParam<UploadFile<any>>) => {
-    const { status } = info.file;
-    if (status === "done") {
-      message.success(`${info.file.name} file uploaded successfully.`);
-      // Extract the URL or path of the uploaded file from the response
-      const fileUrl = info.file.response?.url || '';
-      setCheckinImages([...checkinImages, fileUrl]);
-    } else if (status === "error") {
-      message.error(`${info.file.name} file upload failed.`);
-    }
-  };
-
-  const uploadProps: UploadProps = {
-    name: "file",
-    multiple: true,
-    action: "https://www.mocky.io/v2/5cc8019d300000980a055e76",
-    onChange: handleImageUpload,
-  };
-
-  function getCheckInStatusColor(status: string) {
-    switch (status) {
-      case 'Assigned':
-        return 'bg-blue-100 text-blue-800';
-      case 'On Going':
-        return 'bg-green-100 text-green-800';
-      case 'Completed':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  }
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '';
@@ -236,7 +187,6 @@ const VisitDetailPage = () => {
     return '';
   };
 
-
   const getStatusIcon = (status: 'Assigned' | 'On Going' | 'Checked Out' | 'Completed') => {
     switch (status) {
       case 'Assigned':
@@ -266,7 +216,6 @@ const VisitDetailPage = () => {
             )}
           </div>
 
-          {/* Visit Summary */}
           <Card className="mb-8 border-none shadow-lg">
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -275,7 +224,7 @@ const VisitDetailPage = () => {
                   <p className="text-sm text-gray-500">Overview of the visit details</p>
                 </div>
                 <div className="flex items-center">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getCheckInStatusColor(checkInStatus)}`}>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getStatusIndicator(checkInStatus).bgColor} ${getStatusIndicator(checkInStatus).textColor}`}>
                     {getStatusIcon(checkInStatus)}
                     <span className="ml-2">{checkInStatus}</span>
                   </span>
@@ -346,7 +295,6 @@ const VisitDetailPage = () => {
             </CardContent>
           </Card>
 
-          {/* Performance Metrics */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Metrics</CardTitle>
@@ -361,11 +309,14 @@ const VisitDetailPage = () => {
               <CardTitle>Check-in Images</CardTitle>
             </CardHeader>
             <CardContent>
-              <ImageGallery images={checkinImages} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {checkinImages.map((image, index) => (
+                  <img key={index} src={image} alt={`Check-in ${index + 1}`} className="rounded-lg shadow-md" />
+                ))}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Likes and Brands */}
           <Card className="mb-8">
             <CardContent>
               <Tabs defaultValue="likes">
@@ -384,7 +335,6 @@ const VisitDetailPage = () => {
           </Card>
         </div>
         <div>
-          {/* Previous Visits */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Previous Visits</CardTitle>
@@ -394,7 +344,6 @@ const VisitDetailPage = () => {
             </CardContent>
           </Card>
 
-          {/* Notes */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Notes</CardTitle>

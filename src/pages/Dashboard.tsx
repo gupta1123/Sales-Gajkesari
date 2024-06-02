@@ -43,7 +43,7 @@ interface StateCardProps {
 const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardProps) => {
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4 capitalize">{state}</h2>
+      <h2 className="text-2xl font-bold mb-4 capitalize">{state || 'Unknown State'}</h2>
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
         <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
@@ -62,7 +62,7 @@ interface CityCardProps {
 const CityCard = ({ city, totalVisits, totalEmployees, onClick }: CityCardProps) => {
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4 capitalize">{city}</h2>
+      <h2 className="text-2xl font-bold mb-4 capitalize">{city || 'Unknown City'}</h2>
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
         <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
@@ -527,13 +527,13 @@ const Dashboard = () => {
   }, [router.query]);
 
   const handleStateClick = (state: string) => {
-    setSelectedState(state.trim().toLowerCase());
+    setSelectedState(state.trim().toLowerCase() || 'unknown');
     setSelectedCity(null);
     setSelectedEmployee(null);
   };
 
   const handleCityClick = (city: string) => {
-    setSelectedCity(city.trim().toLowerCase());
+    setSelectedCity(city.trim().toLowerCase() || 'unknown');
     setSelectedEmployee(null);
   };
 
@@ -551,15 +551,15 @@ const Dashboard = () => {
     router.push(`/VisitDetailPage/${visitId}`);
   };
 
-  const states = Array.from(new Set(visits.map((visit) => visit.state.trim().toLowerCase())));
+  const states = Array.from(new Set(visits.map((visit) => visit.state.trim().toLowerCase() || 'unknown')));
   const stateCards = states.map((state) => {
-    const stateVisits = visits.filter((visit) => visit.state.trim().toLowerCase() === state);
+    const stateVisits = visits.filter((visit) => (visit.state.trim().toLowerCase() || 'unknown') === state);
     const totalVisits = stateVisits.length;
     const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
     return (
       <StateCard
         key={state}
-        state={state.charAt(0).toUpperCase() + state.slice(1)}
+        state={state.charAt(0).toUpperCase() + state.slice(1) || 'Unknown State'}
         totalVisits={totalVisits}
         totalEmployees={totalEmployees}
         onClick={() => handleStateClick(state)}
@@ -568,16 +568,16 @@ const Dashboard = () => {
   });
 
   if (selectedState && !selectedCity && !selectedEmployee) {
-    const stateVisits = visits.filter((visit) => visit.state.trim().toLowerCase() === selectedState);
-    const cities = Array.from(new Set(stateVisits.map((visit) => visit.city.trim().toLowerCase())));
+    const stateVisits = visits.filter((visit) => (visit.state.trim().toLowerCase() || 'unknown') === selectedState);
+    const cities = Array.from(new Set(stateVisits.map((visit) => visit.city.trim().toLowerCase() || 'unknown')));
     const cityCards = cities.map((city) => {
-      const cityVisits = stateVisits.filter((visit) => visit.city.trim().toLowerCase() === city);
+      const cityVisits = stateVisits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === city);
       const totalVisits = cityVisits.length;
       const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeId))).length;
       return (
         <CityCard
           key={city}
-          city={city.charAt(0).toUpperCase() + city.slice(1)}
+          city={city.charAt(0).toUpperCase() + city.slice(1) || 'Unknown City'}
           totalVisits={totalVisits}
           totalEmployees={totalEmployees}
           onClick={() => handleCityClick(city)}
@@ -588,7 +588,7 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold capitalize">{selectedState}</h1>
+          <h1 className="text-3xl font-bold capitalize">{selectedState === 'unknown' ? 'Unknown State' : selectedState}</h1>
           <Button
             variant="ghost"
             size="lg"
@@ -608,7 +608,7 @@ const Dashboard = () => {
   }
 
   if (selectedCity && !selectedEmployee) {
-    const cityVisits = visits.filter((visit) => visit.city.trim().toLowerCase() === selectedCity);
+    const cityVisits = visits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === selectedCity);
     const employeeVisits = cityVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
       const employeeName = visit.employeeName.trim().toLowerCase();
       if (!acc[employeeName]) {
@@ -630,7 +630,7 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold capitalize">{selectedCity}</h1>
+          <h1 className="text-3xl font-bold capitalize">{selectedCity === 'unknown' ? 'Unknown City' : selectedCity}</h1>
           <Button
             variant="ghost"
             size="lg"

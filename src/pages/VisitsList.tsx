@@ -112,6 +112,9 @@ const VisitsList: React.FC = () => {
     'Visit End': 'checkoutDate',
     'Intent': 'intent',
     'Last Updated': 'updatedAt',
+    'Phone Number': 'storePrimaryContact',
+    'District': 'district',
+    'Sub District': 'subDistrict',
   };
 
   const handleSort = (column: string) => {
@@ -156,8 +159,6 @@ const VisitsList: React.FC = () => {
           return 'Date';
         case 'outcome':
           return 'Status';
-        case 'location':
-          return 'Location';
         case 'purpose':
           return 'Purpose';
         case 'visitStart':
@@ -166,6 +167,12 @@ const VisitsList: React.FC = () => {
           return 'Visit End';
         case 'intent':
           return 'Intent';
+        case 'storePrimaryContact': // Added
+          return 'Phone Number';
+        case 'district': // Added
+          return 'District';
+        case 'subDistrict': // Added
+          return 'Sub District';
         default:
           return column;
       }
@@ -180,6 +187,15 @@ const VisitsList: React.FC = () => {
             break;
           case 'visitEnd':
             row[column] = formatDateTime(visit.checkoutDate, visit.checkoutTime);
+            break;
+          case 'storePrimaryContact': // Added
+            row[column] = visit.storePrimaryContact;
+            break;
+          case 'district': // Added
+            row[column] = visit.district;
+            break;
+          case 'subDistrict': // Added
+            row[column] = visit.subDistrict;
             break;
           default:
             row[column] = visit[column as keyof Visit];
@@ -213,7 +229,6 @@ const VisitsList: React.FC = () => {
     'storeName',
     'employeeName',
     'visit_date',
-    'location',
     'purpose',
     'outcome',
     'visitStart',
@@ -221,6 +236,9 @@ const VisitsList: React.FC = () => {
     'intent',
     'city',
     'state',
+    'storePrimaryContact', // Added
+    'district', // Added
+    'subDistrict', // Added
   ]);
 
   const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
