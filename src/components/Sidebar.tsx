@@ -2,7 +2,7 @@ import Link from 'next/link';
 import styles from './Sidebar.module.css';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store';
-import { FiLogOut, FiSettings } from 'react-icons/fi';
+import { FiLogOut } from 'react-icons/fi';
 
 export default function Sidebar() {
   const dispatch = useDispatch();
@@ -13,12 +13,6 @@ export default function Sidebar() {
 
   return (
     <div className={styles.sidebar}>
-      <div className={styles.sidebarHeader}>
-        <Link href="/Settings" className={styles.sidebarSettings}>
-          <FiSettings className={styles.settingsIcon} />
-          <span className={styles.settingsText}>Settings</span>
-        </Link>
-      </div>
       <ul className={styles.sidebarList}>
         {/* Existing sidebar items */}
         <li className={styles.sidebarItem}>
@@ -49,6 +43,11 @@ export default function Sidebar() {
         <li className={styles.sidebarItem}>
           <Link href="/Attendance" className={styles.sidebarLink}>
             Attendance
+          </Link>
+        </li>
+        <li className={styles.sidebarItem}>
+          <Link href="/Settings" className={styles.sidebarLink}>
+            Settings
           </Link>
         </li>
       </ul>
