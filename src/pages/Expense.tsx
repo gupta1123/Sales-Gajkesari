@@ -26,13 +26,13 @@ import { utils, writeFile } from 'xlsx';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ArrowUpIcon, ArrowDownIcon } from '@radix-ui/react-icons'; // Import the sorting icons
 
 interface Expense {
     id: string;
     employeeName: string;
     expenseDate: string;
     type: string;
-    subType: string;
     amount: number;
     description: string;
     approvalStatus: string;
@@ -42,8 +42,23 @@ const ExpensePage = () => {
     const [expenseData, setExpenseData] = useState<Expense[]>([]);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [selectedFieldOfficer, setSelectedFieldOfficer] = useState('');
+    const [selectedExpenseCategory, setSelectedExpenseCategory] = useState('');
     const [fieldOfficers, setFieldOfficers] = useState<string[]>([]);
+    const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
     const token = useSelector((state: RootState) => state.auth.token);
+    const [sortColumn, setSortColumn] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+
+    const handleSort = (column: string) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
 
     useEffect(() => {
         fetchExpenseData();
@@ -62,6 +77,10 @@ const ExpensePage = () => {
             // Extract unique field officer names
             const officers = Array.from(new Set(data.map((expense: Expense) => expense.employeeName))) as string[];
             setFieldOfficers(officers);
+
+            // Extract unique expense categories
+            const categories = Array.from(new Set(data.map((expense: Expense) => expense.type))) as string[];
+            setExpenseCategories(categories);
         } catch (error) {
             console.error('Error fetching expense data:', error);
         }
@@ -73,6 +92,10 @@ const ExpensePage = () => {
 
     const handleFieldOfficerChange = (value: string) => {
         setSelectedFieldOfficer(value);
+    };
+
+    const handleExpenseCategoryChange = (value: string) => {
+        setSelectedExpenseCategory(value);
     };
 
     const handleApprove = async (expenseId: string) => {
@@ -128,7 +151,6 @@ const ExpensePage = () => {
             console.error('Error rejecting expense:', error);
         }
     };
-
     const filteredExpenseData = expenseData.filter((expense) => {
         if (selectedStatus && selectedStatus !== 'all' && expense.approvalStatus !== selectedStatus) {
             return false;
@@ -136,7 +158,20 @@ const ExpensePage = () => {
         if (selectedFieldOfficer && selectedFieldOfficer !== 'all' && expense.employeeName !== selectedFieldOfficer) {
             return false;
         }
+        if (selectedExpenseCategory && selectedExpenseCategory !== 'all' && expense.type !== selectedExpenseCategory) {
+            return false;
+        }
         return true;
+    });
+
+    const sortedExpenseData = filteredExpenseData.sort((a, b) => {
+        if (sortColumn) {
+            const aValue = a[sortColumn as keyof Expense];
+            const bValue = b[sortColumn as keyof Expense];
+            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
     });
 
     return (
@@ -155,7 +190,7 @@ const ExpensePage = () => {
                                     <SelectValue placeholder="Filter by Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">All Statuses</SelectItem>
                                     <SelectItem value="Pending">Pending</SelectItem>
                                     <SelectItem value="Approved">Approved</SelectItem>
                                     <SelectItem value="Rejected">Rejected</SelectItem>
@@ -167,10 +202,24 @@ const ExpensePage = () => {
                                     <SelectValue placeholder="Filter by Field Officer" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">All Field Officers</SelectItem>
                                     {fieldOfficers.map((officer) => (
                                         <SelectItem key={officer} value={officer}>
                                             {officer}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select onValueChange={handleExpenseCategoryChange}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by Expense Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Expense Categories</SelectItem>
+                                    {expenseCategories.map((category) => (
+                                        <SelectItem key={category} value={category}>
+                                            {category}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -181,23 +230,39 @@ const ExpensePage = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Field Officer Name</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Expense Category</TableHead>
-                                <TableHead>Sub Category</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead onClick={() => handleSort('employeeName')} className="cursor-pointer">
+                                    Field Officer Name
+                                    {sortColumn === 'employeeName' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('expenseDate')} className="cursor-pointer">
+                                    Date
+                                    {sortColumn === 'expenseDate' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('type')} className="cursor-pointer">
+                                    Expense Category
+                                    {sortColumn === 'type' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('amount')} className="cursor-pointer">
+                                    Amount
+                                    {sortColumn === 'amount' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('description')} className="cursor-pointer">
+                                    Description
+                                    {sortColumn === 'description' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('approvalStatus')} className="cursor-pointer">
+                                    Status
+                                    {sortColumn === 'approvalStatus' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                </TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredExpenseData.map((expense) => (
+                            {sortedExpenseData.map((expense) => (
                                 <TableRow key={expense.id}>
                                     <TableCell>{expense.employeeName}</TableCell>
                                     <TableCell>{expense.expenseDate}</TableCell>
                                     <TableCell>{expense.type}</TableCell>
-                                    <TableCell>{expense.subType}</TableCell>
                                     <TableCell>{expense.amount}</TableCell>
                                     <TableCell>{expense.description}</TableCell>
                                     <TableCell>

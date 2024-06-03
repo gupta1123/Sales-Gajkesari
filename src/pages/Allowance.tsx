@@ -19,12 +19,13 @@ import {
     PaginationPrevious,
     PaginationNext,
 } from "@/components/ui/pagination";
+import { notification } from 'antd';
 import styles from './Allowance.module.css';
 
 const Allowance: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const [employees, setEmployees] = useState<any[]>([]);
-    const [editMode, setEditMode] = useState<boolean>(false);
-    const [editedData, setEditedData] = useState<any[]>([]);
+    const [editMode, setEditMode] = useState<{ [key: number]: boolean }>({});
+    const [editedData, setEditedData] = useState<{ [key: number]: any }>({});
     const [currentPage, setCurrentPage] = useState<number>(1);
     const rowsPerPage = 10;
 
@@ -43,19 +44,25 @@ const Allowance: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                 fullMonthSalary: employee.fullMonthSalary || 0,
             }));
             setEmployees(employeesWithAllowances);
-            setEditedData(employeesWithAllowances);
         } catch (error) {
             console.error('Error fetching employees:', error);
         }
     }, [authToken]);
 
-    const handleInputChange = (index: number, field: string, value: string) => {
-        const updatedData = [...editedData];
-        updatedData[index] = { ...updatedData[index], [field]: parseInt(value, 10) || 0 };
-        setEditedData(updatedData);
+    const handleInputChange = (employeeId: number, field: string, value: string) => {
+        setEditedData(prevData => ({
+            ...prevData,
+            [employeeId]: {
+                ...prevData[employeeId],
+                [field]: parseInt(value, 10) || 0
+            }
+        }));
     };
 
-    const updateSalary = async (employee: any) => {
+    const updateSalary = async (employeeId: number) => {
+        const employee = editedData[employeeId];
+        if (!employee) return;
+
         try {
             const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/setSalary`, {
                 method: 'PUT',
@@ -67,18 +74,32 @@ const Allowance: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     travelAllowance: employee.travelAllowance,
                     dearnessAllowance: employee.dearnessAllowance,
                     fullMonthSalary: employee.fullMonthSalary,
-                    employeeId: employee.id,
+                    employeeId: employeeId,
                 }),
             });
             const result = await response.text();
             if (result === 'Salary Updated!') {
                 fetchEmployees();
+                setEditMode(prevMode => ({
+                    ...prevMode,
+                    [employeeId]: false
+                }));
+                notification.success({
+                    message: 'Success',
+                    description: 'Salary updated successfully!',
+                });
             } else {
-                alert('Failed to update salary.');
+                notification.error({
+                    message: 'Error',
+                    description: 'Failed to update salary.',
+                });
             }
         } catch (error) {
             console.error('Error saving changes:', error);
-            alert('Error saving changes.');
+            notification.error({
+                message: 'Error',
+                description: 'Error saving changes.',
+            });
         }
     };
 
@@ -105,50 +126,47 @@ const Allowance: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {currentRows.map((employee, index) => (
-                        <TableRow key={index}>
+                    {currentRows.map((employee) => (
+                        <TableRow key={employee.id}>
                             <TableCell>{employee.firstName} {employee.lastName}</TableCell>
                             <TableCell>
-                                {editMode ? (
+                                {editMode[employee.id] ? (
                                     <input
                                         type="number"
-                                        value={editedData[index].travelAllowance}
-                                        onChange={(e) => handleInputChange(index, 'travelAllowance', e.target.value)}
+                                        value={editedData[employee.id]?.travelAllowance || employee.travelAllowance}
+                                        onChange={(e) => handleInputChange(employee.id, 'travelAllowance', e.target.value)}
                                     />
                                 ) : (
                                     employee.travelAllowance
                                 )}
                             </TableCell>
                             <TableCell>
-                                {editMode ? (
+                                {editMode[employee.id] ? (
                                     <input
                                         type="number"
-                                        value={editedData[index].dearnessAllowance}
-                                        onChange={(e) => handleInputChange(index, 'dearnessAllowance', e.target.value)}
+                                        value={editedData[employee.id]?.dearnessAllowance || employee.dearnessAllowance}
+                                        onChange={(e) => handleInputChange(employee.id, 'dearnessAllowance', e.target.value)}
                                     />
                                 ) : (
                                     employee.dearnessAllowance
                                 )}
                             </TableCell>
                             <TableCell>
-                                {editMode ? (
+                                {editMode[employee.id] ? (
                                     <input
                                         type="number"
-                                        value={editedData[index].fullMonthSalary}
-                                        onChange={(e) => handleInputChange(index, 'fullMonthSalary', e.target.value)}
+                                        value={editedData[employee.id]?.fullMonthSalary || employee.fullMonthSalary}
+                                        onChange={(e) => handleInputChange(employee.id, 'fullMonthSalary', e.target.value)}
                                     />
                                 ) : (
-                                    parseInt(employee.fullMonthSalary, 10)
+                                    employee.fullMonthSalary
                                 )}
                             </TableCell>
                             <TableCell>
-                                {editMode ? (
-                                    <Button variant="outline" size="sm" onClick={() => {
-                                        setEditMode(false);
-                                        updateSalary(editedData[index]);
-                                    }}>Save</Button>
+                                {editMode[employee.id] ? (
+                                    <Button variant="outline" size="sm" onClick={() => updateSalary(employee.id)}>Save</Button>
                                 ) : (
-                                    <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>Edit</Button>
+                                    <Button variant="outline" size="sm" onClick={() => setEditMode(prevMode => ({ ...prevMode, [employee.id]: true }))}>Edit</Button>
                                 )}
                             </TableCell>
                         </TableRow>
