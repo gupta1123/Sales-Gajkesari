@@ -24,12 +24,13 @@ import {
     PaginationLink,
     PaginationPrevious,
     PaginationNext,
+    PaginationEllipsis,
 } from "@/components/ui/pagination";
 import styles from './Salary.module.css';
 
 const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const currentYear = new Date().getFullYear();
-    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0'); // Months are 0-based in JavaScript
+    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
 
     const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
     const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
@@ -61,7 +62,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const fetchData = useCallback(async () => {
         try {
             if (selectedYear && selectedMonth) {
-                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${selectedYear}-${selectedMonth}-01&end=${selectedYear}-${selectedMonth}-31`, {
+                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange1?start=2024-03-01&end=2024-05-31`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
                     },
@@ -105,6 +106,58 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(data.length / rowsPerPage);
 
+    const renderPaginationItems = () => {
+        const maxVisiblePages = 5;
+        const halfVisiblePages = Math.floor(maxVisiblePages / 2);
+        let startPage = Math.max(1, currentPage - halfVisiblePages);
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        const paginationItems = [];
+
+        if (startPage > 1) {
+            paginationItems.push(
+                <PaginationItem key="start">
+                    <PaginationLink onClick={() => setCurrentPage(1)}>1</PaginationLink>
+                </PaginationItem>
+            );
+            if (startPage > 2) {
+                paginationItems.push(<PaginationEllipsis key="startEllipsis" />);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationItems.push(
+                <PaginationItem key={i}>
+                    <PaginationLink
+                        isActive={currentPage === i}
+                        onClick={() => setCurrentPage(i)}
+                    >
+                        {i}
+                    </PaginationLink>
+                </PaginationItem>
+            );
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationItems.push(<PaginationEllipsis key="endEllipsis" />);
+            }
+            paginationItems.push(
+                <PaginationItem key="end">
+                    <PaginationLink onClick={() => setCurrentPage(totalPages)}>
+                        {totalPages}
+                    </PaginationLink>
+                </PaginationItem>
+            );
+        }
+
+        return paginationItems;
+    };
+
     return (
         <div className={styles.salaryContainer}>
             <h2>Salary Details</h2>
@@ -144,24 +197,24 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Employee</TableHead>
-                                <TableHead>Full Days</TableHead>
-                                <TableHead>Half Days</TableHead>
-                                <TableHead>Total Days</TableHead>
-                                <TableHead>TA</TableHead>
-                                <TableHead>DA</TableHead>
-                                <TableHead>Total Salary</TableHead>
+                                <TableHead>Attendance Status</TableHead>
+                                <TableHead>Visit Count</TableHead>
+                                <TableHead>Check-in Date</TableHead>
+                                <TableHead>Check-out Date</TableHead>
+                                <TableHead>Check-in Time</TableHead>
+                                <TableHead>Check-out Time</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {currentRows.map((row, index) => (
                                 <TableRow key={index}>
-                                    <TableCell>{row.employeeFirstName} {row.employeeLastName}</TableCell>
-                                    <TableCell>{row.statsDto.fullDays}</TableCell>
-                                    <TableCell>{row.statsDto.halfDays}</TableCell>
-                                    <TableCell>{row.statsDto.fullDays + row.statsDto.halfDays}</TableCell>
-                                    <TableCell>{row.travelAllowance}</TableCell>
-                                    <TableCell>{row.dearnessAllowance}</TableCell>
-                                    <TableCell>{(row.fullMonthSalary / 25).toFixed(2)}</TableCell>
+                                    <TableCell>{row.employeeName}</TableCell>
+                                    <TableCell>{row.attendanceStatus}</TableCell>
+                                    <TableCell>{row.visitCount}</TableCell>
+                                    <TableCell>{row.checkinDate}</TableCell>
+                                    <TableCell>{row.checkoutDate}</TableCell>
+                                    <TableCell>{row.checkinTime}</TableCell>
+                                    <TableCell>{row.checkoutTime}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -173,16 +226,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                                     <PaginationPrevious onClick={() => setCurrentPage(currentPage - 1)} />
                                 </PaginationItem>
                             )}
-                            {[...Array(totalPages)].map((_, i) => (
-                                <PaginationItem key={i}>
-                                    <PaginationLink
-                                        isActive={currentPage === i + 1}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                    >
-                                        {i + 1}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            ))}
+                            {renderPaginationItems()}
                             {currentPage < totalPages && (
                                 <PaginationItem>
                                     <PaginationNext onClick={() => setCurrentPage(currentPage + 1)} />

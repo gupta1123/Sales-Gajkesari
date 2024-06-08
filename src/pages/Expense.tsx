@@ -21,12 +21,18 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { DownloadIcon } from '@radix-ui/react-icons';
-import { utils, writeFile } from 'xlsx';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ArrowUpIcon, ArrowDownIcon } from '@radix-ui/react-icons'; // Import the sorting icons
+import { ArrowUpIcon, ArrowDownIcon } from '@radix-ui/react-icons';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationLink,
+    PaginationItem,
+    PaginationPrevious,
+    PaginationNext,
+} from '@/components/ui/pagination';
 
 interface Expense {
     id: string;
@@ -46,9 +52,10 @@ const ExpensePage = () => {
     const [fieldOfficers, setFieldOfficers] = useState<string[]>([]);
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
     const token = useSelector((state: RootState) => state.auth.token);
-    const [sortColumn, setSortColumn] = useState<string | null>(null);
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
+    const [sortColumn, setSortColumn] = useState<string>('expenseDate');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 10;
 
     const handleSort = (column: string) => {
         if (sortColumn === column) {
@@ -58,7 +65,6 @@ const ExpensePage = () => {
             setSortDirection('asc');
         }
     };
-
 
     useEffect(() => {
         fetchExpenseData();
@@ -151,6 +157,7 @@ const ExpensePage = () => {
             console.error('Error rejecting expense:', error);
         }
     };
+
     const filteredExpenseData = expenseData.filter((expense) => {
         if (selectedStatus && selectedStatus !== 'all' && expense.approvalStatus !== selectedStatus) {
             return false;
@@ -165,14 +172,24 @@ const ExpensePage = () => {
     });
 
     const sortedExpenseData = filteredExpenseData.sort((a, b) => {
-        if (sortColumn) {
-            const aValue = a[sortColumn as keyof Expense];
-            const bValue = b[sortColumn as keyof Expense];
-            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        let aValue = a[sortColumn as keyof Expense];
+        let bValue = b[sortColumn as keyof Expense];
+
+        if (sortColumn === 'expenseDate') {
+            aValue = new Date(aValue as string).getTime();
+            bValue = new Date(bValue as string).getTime();
         }
+
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
         return 0;
     });
+
+    const paginatedExpenseData = sortedExpenseData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     return (
         <div className="container mx-auto py-8">
@@ -212,7 +229,7 @@ const ExpensePage = () => {
                             </Select>
 
                             <Select onValueChange={handleExpenseCategoryChange}>
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="w-[280px]"> {/* Increased width */}
                                     <SelectValue placeholder="Filter by Expense Category" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -234,9 +251,8 @@ const ExpensePage = () => {
                                     Field Officer Name
                                     {sortColumn === 'employeeName' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('expenseDate')} className="cursor-pointer">
+                                <TableHead>
                                     Date
-                                    {sortColumn === 'expenseDate' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('type')} className="cursor-pointer">
                                     Expense Category
@@ -258,7 +274,7 @@ const ExpensePage = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {sortedExpenseData.map((expense) => (
+                            {paginatedExpenseData.map((expense) => (
                                 <TableRow key={expense.id}>
                                     <TableCell>{expense.employeeName}</TableCell>
                                     <TableCell>{expense.expenseDate}</TableCell>
@@ -296,6 +312,22 @@ const ExpensePage = () => {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination className="mt-4">
+                        <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                        <PaginationContent>
+                            {Array.from({ length: Math.ceil(filteredExpenseData.length / rowsPerPage) }, (_, index) => (
+                                <PaginationItem key={index}>
+                                    <PaginationLink
+                                        isActive={index + 1 === currentPage}
+                                        onClick={() => handlePageChange(index + 1)}
+                                    >
+                                        {index + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                        </PaginationContent>
+                        <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                    </Pagination>
                 </CardContent>
             </Card>
         </div>

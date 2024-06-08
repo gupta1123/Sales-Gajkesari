@@ -509,7 +509,7 @@ const Dashboard = () => {
         throw new Error('Failed to fetch visits');
       }
       const data: Visit[] = await response.json();
-      setVisits(data);
+      setVisits(data.filter(visit => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime));
     } catch (error) {
       console.error('Error fetching visits:', error);
     }
@@ -555,7 +555,7 @@ const Dashboard = () => {
   const stateCards = states.map((state) => {
     const stateVisits = visits.filter((visit) => (visit.state.trim().toLowerCase() || 'unknown') === state);
     const totalVisits = stateVisits.length;
-    const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeId))).length;
+    const totalEmployees = Array.from(new Set(stateVisits.map((visit) => visit.employeeName))).length;
     return (
       <StateCard
         key={state}
@@ -573,7 +573,7 @@ const Dashboard = () => {
     const cityCards = cities.map((city) => {
       const cityVisits = stateVisits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === city);
       const totalVisits = cityVisits.length;
-      const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeId))).length;
+      const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeName))).length;
       return (
         <CityCard
           key={city}
@@ -584,7 +584,6 @@ const Dashboard = () => {
         />
       );
     });
-
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
@@ -618,14 +617,18 @@ const Dashboard = () => {
       return acc;
     }, {});
 
-    const employeeCards = Object.entries(employeeVisits).map(([employeeName, visits]) => (
-      <EmployeeCard
-        key={employeeName}
-        employeeName={employeeName.charAt(0).toUpperCase() + employeeName.slice(1)}
-        totalVisits={visits.length}
-        onClick={() => handleEmployeeClick(employeeName)}
-      />
-    ));
+    const employeeCards = Object.entries(employeeVisits).map(([employeeName, visits]) => {
+      const employeeVisitsInCity = visits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === selectedCity);
+      const totalVisits = employeeVisitsInCity.length;
+      return (
+        <EmployeeCard
+          key={employeeName}
+          employeeName={employeeName.charAt(0).toUpperCase() + employeeName.slice(1)}
+          totalVisits={totalVisits}
+          onClick={() => handleEmployeeClick(employeeName)}
+        />
+      );
+    });
 
     return (
       <div className="container mx-auto py-8">
@@ -653,7 +656,7 @@ const Dashboard = () => {
     const employeeVisits = visits.filter((visit) => visit.employeeName.trim().toLowerCase() === selectedEmployee);
 
     const totalVisits = employeeVisits.length;
-    const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
+    const completedVisits = employeeVisits.length;
     const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
     const assignedVisits = employeeVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
 
@@ -686,7 +689,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <KPICard title="Total Visits" value={totalVisits} />
           <KPICard title="Completed Visits" value={completedVisits} />
-          <KPICard title="Ongoing Visits" value={ongoingVisits} />
+          {/* <KPICard title="Ongoing Visits" value={ongoingVisits} /> */}
           <KPICard title="Assigned Visits" value={assignedVisits} />
         </div>
         <div className="mb-8">

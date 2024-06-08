@@ -1,6 +1,4 @@
-'use client'
-
-import * as React from "react";
+import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSelector } from 'react-redux';
@@ -22,16 +20,17 @@ interface Employee {
 
 interface AttendanceData {
     employeeId: number;
-    employeeFirstName: string;
-    employeeLastName: string;
-    fullDays: number;
-    halfDays: number;
-    salary: number;
-    expenseTotal: number;
-    travelAllowance: number;
-    dearnessAllowance: number;
-    baseSalary: number;
-    totalSalary: number;
+    employeeName: string;
+    attendanceStatus: string;
+    visitCount: number;
+    uniqueStoreCount: number | null;
+    travelAllowance: number | null;
+    dearnessAllowance: number | null;
+    checkinDate: string;
+    checkoutDate: string;
+    checkinTime: string;
+    checkoutTime: string;
+    fullMonthSalary: number | null;
 }
 
 const Attendance: React.FC = () => {
@@ -40,10 +39,10 @@ const Attendance: React.FC = () => {
     const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth());
     const [currentPage, setCurrentPage] = React.useState<number>(1);
-    const [rowsPerPage] = React.useState<number>(10);
+    const rowsPerPage = 10; // Set rows per page to 10
     const [noDataMessage, setNoDataMessage] = React.useState<string>("");
 
-    const [sortColumn, setSortColumn] = React.useState<string>('employeeFirstName');
+    const [sortColumn, setSortColumn] = React.useState<string>('employeeName');
     const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
 
     const years = Array.from({ length: 27 }, (_, index) => 2024 + index);
@@ -94,7 +93,7 @@ const Attendance: React.FC = () => {
         const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString().split("T")[0];
 
         try {
-            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`, {
+            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange1?start=${startDate}&end=${endDate}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -106,10 +105,11 @@ const Attendance: React.FC = () => {
 
             const data = await response.json();
             setAttendanceData(data);
-            setNoDataMessage("");
 
             if (data.length === 0) {
                 setNoDataMessage("No data available for the selected month and year. Please choose a different month or year.");
+            } else {
+                setNoDataMessage("");
             }
         } catch (error) {
             console.error("Error fetching attendance data:", error);
@@ -163,10 +163,10 @@ const Attendance: React.FC = () => {
     const sortedAttendanceData = React.useMemo(() => {
         return [...attendanceData].map((data) => ({
             ...data,
-            travelAllowance: getEmployeeTravelAllowance(data.employeeId) * (data.fullDays + data.halfDays),
-            dearnessAllowance: getEmployeeDearnessAllowance(data.employeeId) * (data.fullDays + data.halfDays),
-            baseSalary: calculateBaseSalary(data.employeeId, data.fullDays, data.halfDays),
-            totalSalary: calculateTotalSalary(data.employeeId, data.fullDays, data.halfDays, data.expenseTotal),
+            travelAllowance: getEmployeeTravelAllowance(data.employeeId) * (data.visitCount),
+            dearnessAllowance: getEmployeeDearnessAllowance(data.employeeId) * (data.visitCount),
+            baseSalary: calculateBaseSalary(data.employeeId, data.visitCount, 0),
+            totalSalary: calculateTotalSalary(data.employeeId, data.visitCount, 0, 0),
         })).sort((a, b) => {
             if (sortColumn) {
                 const aValue = a[sortColumn as keyof AttendanceData];
@@ -186,10 +186,74 @@ const Attendance: React.FC = () => {
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentRows = sortedAttendanceData.slice(indexOfFirstRow, indexOfLastRow);
-    const totalPages = Math.ceil(attendanceData.length / rowsPerPage);
+    const totalPages = Math.ceil(sortedAttendanceData.length / rowsPerPage);
 
     const handlePageChange = (pageNumber: number) => {
         setCurrentPage(pageNumber);
+    };
+
+    const renderPaginationItems = () => {
+        const paginationItems: JSX.Element[] = [];
+
+        if (totalPages <= 1) return paginationItems;
+
+        const ellipsis = <span key="ellipsis" className="mx-1">...</span>;
+
+        const addPageItem = (pageNumber: number) => {
+            paginationItems.push(
+                <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                        isActive={currentPage === pageNumber}
+                        onClick={() => handlePageChange(pageNumber)}
+                    >
+                        {pageNumber}
+                    </PaginationLink>
+                </PaginationItem>
+            );
+        };
+
+        if (currentPage > 1) {
+            paginationItems.push(
+                <PaginationItem key="prev">
+                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                </PaginationItem>
+            );
+        }
+
+        addPageItem(1);
+        if (totalPages > 1) addPageItem(2);
+        if (totalPages > 2) addPageItem(3);
+
+        if (currentPage > 4) {
+            paginationItems.push(ellipsis);
+        }
+
+        if (currentPage > 3 && currentPage < totalPages - 2) {
+            addPageItem(currentPage - 1);
+            addPageItem(currentPage);
+            addPageItem(currentPage + 1);
+        } else if (currentPage <= 4) {
+            for (let i = 4; i < Math.min(totalPages - 1, 6); i++) {
+                addPageItem(i);
+            }
+        }
+
+        if (currentPage < totalPages - 3) {
+            paginationItems.push(ellipsis);
+        }
+
+        if (totalPages > 2) addPageItem(totalPages - 1);
+        if (totalPages > 1) addPageItem(totalPages);
+
+        if (currentPage < totalPages) {
+            paginationItems.push(
+                <PaginationItem key="next">
+                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                </PaginationItem>
+            );
+        }
+
+        return paginationItems;
     };
 
     return (
@@ -203,7 +267,10 @@ const Attendance: React.FC = () => {
                 <CardContent>
                     <div className="mb-4 flex items-center space-x-4">
                         <div>
-                            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                            <Select value={selectedYear.toString()} onValueChange={(value) => {
+                                setSelectedYear(parseInt(value));
+                                setCurrentPage(1); // Reset to first page when year changes
+                            }}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select a year" />
                                 </SelectTrigger>
@@ -217,7 +284,10 @@ const Attendance: React.FC = () => {
                             </Select>
                         </div>
                         <div>
-                            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                            <Select value={selectedMonth.toString()} onValueChange={(value) => {
+                                setSelectedMonth(parseInt(value));
+                                setCurrentPage(1); // Reset to first page when month changes
+                            }}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select a month" />
                                 </SelectTrigger>
@@ -231,85 +301,59 @@ const Attendance: React.FC = () => {
                             </Select>
                         </div>
                     </div>
-                    {noDataMessage && (
+                    {noDataMessage ? (
                         <p className="mb-4 text-red-500">{noDataMessage}</p>
+                    ) : (
+                        <>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead onClick={() => handleSort('employeeName')} className="cursor-pointer">
+                                            Employee
+                                            {sortColumn === 'employeeName' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                        </TableHead>
+                                        <TableHead onClick={() => handleSort('visitCount')} className="cursor-pointer">
+                                            Visit Count
+                                            {sortColumn === 'visitCount' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                        </TableHead>
+                                        <TableHead onClick={() => handleSort('baseSalary')} className="cursor-pointer">
+                                            Base Salary
+                                            {sortColumn === 'baseSalary' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                        </TableHead>
+                                        <TableHead onClick={() => handleSort('travelAllowance')} className="cursor-pointer">
+                                            TA
+                                            {sortColumn === 'travelAllowance' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                        </TableHead>
+                                        <TableHead onClick={() => handleSort('dearnessAllowance')} className="cursor-pointer">
+                                            DA
+                                            {sortColumn === 'dearnessAllowance' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                        </TableHead>
+                                        <TableHead onClick={() => handleSort('totalSalary')} className="cursor-pointer">
+                                            Total Salary
+                                            {sortColumn === 'totalSalary' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {currentRows.map((data, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>{data.employeeName}</TableCell>
+                                            <TableCell>{data.visitCount}</TableCell>
+                                            <TableCell>{data.baseSalary.toFixed(2)}</TableCell>
+                                            <TableCell>{data.travelAllowance}</TableCell>
+                                            <TableCell>{data.dearnessAllowance}</TableCell>
+                                            <TableCell>{data.totalSalary.toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <Pagination>
+                                <PaginationContent>
+                                    {renderPaginationItems()}
+                                </PaginationContent>
+                            </Pagination>
+                        </>
                     )}
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead onClick={() => handleSort('employeeFirstName')} className="cursor-pointer">
-                                    Employee
-                                    {sortColumn === 'employeeFirstName' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('fullDays')} className="cursor-pointer">
-                                    Full Days
-                                    {sortColumn === 'fullDays' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('halfDays')} className="cursor-pointer">
-                                    Half Days
-                                    {sortColumn === 'halfDays' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('baseSalary')} className="cursor-pointer">
-                                    Base Salary
-                                    {sortColumn === 'baseSalary' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('travelAllowance')} className="cursor-pointer">
-                                    TA
-                                    {sortColumn === 'travelAllowance' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('dearnessAllowance')} className="cursor-pointer">
-                                    DA
-                                    {sortColumn === 'dearnessAllowance' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('expenseTotal')} className="cursor-pointer">
-                                    Expense
-                                    {sortColumn === 'expenseTotal' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                                <TableHead onClick={() => handleSort('totalSalary')} className="cursor-pointer">
-                                    Total Salary
-                                    {sortColumn === 'totalSalary' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {currentRows.map((data) => (
-                                <TableRow key={data.employeeId}>
-                                    <TableCell>{getEmployeeName(data.employeeId)}</TableCell>
-                                    <TableCell>{data.fullDays}</TableCell>
-                                    <TableCell>{data.halfDays}</TableCell>
-                                    <TableCell>{data.baseSalary.toFixed(2)}</TableCell>
-                                    <TableCell>{data.travelAllowance}</TableCell>
-                                    <TableCell>{data.dearnessAllowance}</TableCell>
-                                    <TableCell>{data.expenseTotal}</TableCell>
-                                    <TableCell>{data.totalSalary.toFixed(2)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    <Pagination>
-                        <PaginationContent>
-                            {currentPage > 1 && (
-                                <PaginationItem>
-                                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                                </PaginationItem>
-                            )}
-                            {[...Array(totalPages)].map((_, i) => (
-                                <PaginationItem key={i}>
-                                    <PaginationLink
-                                        isActive={currentPage === i + 1}
-                                        onClick={() => handlePageChange(i + 1)}
-                                    >
-                                        {i + 1}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            ))}
-                            {currentPage < totalPages && (
-                                <PaginationItem>
-                                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                                </PaginationItem>
-                            )}
-                        </PaginationContent>
-                    </Pagination>
                 </CardContent>
             </Card>
         </div>

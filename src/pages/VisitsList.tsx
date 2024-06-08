@@ -11,7 +11,7 @@ import { stringify } from 'csv-stringify';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 
-// Create a QueryClient instance
+
 const queryClient = new QueryClient();
 
 const fetchVisits = async (
@@ -55,11 +55,51 @@ const fetchVisits = async (
   return response.data;
 };
 
+const fetchAllVisits = async (
+  token: string | null,
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  purpose: string,
+  storeName: string,
+  employeeName: string,
+  sortColumn: string | null,
+  sortDirection: 'asc' | 'desc'
+) => {
+  let page = 0;
+  const itemsPerPage = 100;
+  const allVisits = [];
+
+  while (true) {
+    const response = await fetchVisits(
+      token,
+      startDate,
+      endDate,
+      purpose,
+      storeName,
+      employeeName,
+      sortColumn,
+      sortDirection,
+      page + 1,
+      itemsPerPage
+    );
+
+    allVisits.push(...response.content);
+
+    if (response.last) {
+      break;
+    }
+
+    page++;
+  }
+
+  return allVisits;
+};
+
 const VisitsList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
   const token = useSelector((state: RootState) => state.auth.token);
-  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 2)); // Default start date is 2 days ago
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date()); // Default end date is today
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 2));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [purpose, setPurpose] = useState<string>('');
   const [storeName, setStoreName] = useState<string>('');
   const [employeeName, setEmployeeName] = useState<string>('');
@@ -67,6 +107,7 @@ const VisitsList: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [allVisits, setAllVisits] = useState<Visit[]>([]);
 
   const { data, error, isLoading } = useQuery(
     [
@@ -133,7 +174,7 @@ const VisitsList: React.FC = () => {
     setEmployeeName(employeeName);
     setPurpose(purpose);
 
-    setCurrentPage(1); // Reset to the first page when filters change
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -148,59 +189,61 @@ const VisitsList: React.FC = () => {
     }
   };
 
-  const handleExport = () => {
-    const headers = selectedColumns.map((column) => {
-      switch (column) {
-        case 'storeName':
-          return 'Customer Name';
-        case 'employeeName':
-          return 'Executive';
-        case 'visit_date':
-          return 'Date';
-        case 'outcome':
-          return 'Status';
-        case 'purpose':
-          return 'Purpose';
-        case 'visitStart':
-          return 'Visit Start';
-        case 'visitEnd':
-          return 'Visit End';
-        case 'intent':
-          return 'Intent';
-        case 'storePrimaryContact': // Added
-          return 'Phone Number';
-        case 'district': // Added
-          return 'District';
-        case 'subDistrict': // Added
-          return 'Sub District';
-        default:
-          return column;
-      }
-    });
-
-    const data = visits.map((visit: Visit) => {
-      const row: any = {};
-      selectedColumns.forEach((column) => {
+  const handleExport = (allVisits: Visit[]) => {
+    const headers = selectedColumns
+      .filter(column => column !== 'outcome')
+      .map((column) => {
         switch (column) {
+          case 'storeName':
+            return 'Customer Name';
+          case 'employeeName':
+            return 'Executive';
+          case 'visit_date':
+            return 'Date';
+          case 'purpose':
+            return 'Purpose';
           case 'visitStart':
-            row[column] = formatDateTime(visit.checkinDate, visit.checkinTime);
-            break;
+            return 'Visit Start';
           case 'visitEnd':
-            row[column] = formatDateTime(visit.checkoutDate, visit.checkoutTime);
-            break;
-          case 'storePrimaryContact': // Added
-            row[column] = visit.storePrimaryContact;
-            break;
-          case 'district': // Added
-            row[column] = visit.district;
-            break;
-          case 'subDistrict': // Added
-            row[column] = visit.subDistrict;
-            break;
+            return 'Visit End';
+          case 'intent':
+            return 'Intent';
+          case 'storePrimaryContact':
+            return 'Phone Number';
+          case 'district':
+            return 'District';
+          case 'subDistrict':
+            return 'Sub District';
           default:
-            row[column] = visit[column as keyof Visit];
+            return column;
         }
       });
+
+    const data = allVisits.map((visit: Visit) => {
+      const row: any = {};
+      selectedColumns
+        .filter(column => column !== 'outcome')
+        .forEach((column) => {
+          switch (column) {
+            case 'visitStart':
+              row[column] = formatDateTime(visit.checkinDate, visit.checkinTime);
+              break;
+            case 'visitEnd':
+              row[column] = formatDateTime(visit.checkoutDate, visit.checkoutTime);
+              break;
+            case 'storePrimaryContact':
+              row[column] = visit.storePrimaryContact;
+              break;
+            case 'district':
+              row[column] = visit.district;
+              break;
+            case 'subDistrict':
+              row[column] = visit.subDistrict;
+              break;
+            default:
+              row[column] = visit[column as keyof Visit];
+          }
+        });
       return Object.values(row);
     });
 
@@ -236,9 +279,9 @@ const VisitsList: React.FC = () => {
     'intent',
     'city',
     'state',
-    'storePrimaryContact', // Added
-    'district', // Added
-    'subDistrict', // Added
+    'storePrimaryContact',
+    'district',
+    'subDistrict',
   ]);
 
   const formatDateTime = (date: string | null | undefined, time: string | null | undefined) => {
@@ -253,6 +296,21 @@ const VisitsList: React.FC = () => {
     return '';
   };
 
+  const fetchAndExportAllVisits = async () => {
+    const allVisits = await fetchAllVisits(
+      token,
+      startDate,
+      endDate,
+      purpose,
+      storeName,
+      employeeName,
+      sortColumn,
+      sortDirection
+    );
+    setAllVisits(allVisits);
+    handleExport(allVisits);
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -263,8 +321,8 @@ const VisitsList: React.FC = () => {
 
   const renderPagination = () => {
     const pageNumbers = [];
-    const displayPages = 5; // Show first 5 pages
-    const groupSize = 10; // Show 10 pages at a time before showing "..."
+    const displayPages = 5;
+    const groupSize = 10;
 
     let startPage = Math.max(currentPage - Math.floor(displayPages / 2), 1);
     let endPage = startPage + displayPages - 1;
@@ -337,7 +395,7 @@ const VisitsList: React.FC = () => {
       <VisitsFilter
         onFilter={handleFilter}
         onColumnSelect={handleColumnSelect}
-        onExport={handleExport}
+        onExport={fetchAndExportAllVisits}
         selectedColumns={selectedColumns}
         viewMode={viewMode}
         startDate={startDate}
