@@ -8,7 +8,9 @@ interface AuthState {
   employeeId: null | string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: null | string | { [key: string]: any };
+  username: null | string; // Add username here
 }
+
 
 interface UserData {
   username: string;
@@ -31,7 +33,7 @@ export const registerUser = createAsyncThunk<string, UserData, { rejectValue: st
   }
 );
 
-export const loginUser = createAsyncThunk<{ token: string; employeeId: string }, UserData, { rejectValue: string }>(
+export const loginUser = createAsyncThunk<{ token: string; employeeId: string; username: string }, UserData, { rejectValue: string }>(
   'auth/login',
   async (userData, { rejectWithValue }) => {
     try {
@@ -52,14 +54,15 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string },
           },
         }
       );
-      const employeeId = employeeResponse.data.employeeId;
-      return { token, employeeId };
+      const { employeeId } = employeeResponse.data;
+      return { token, employeeId, username: userData.username };
     } catch (error: any) {
       console.error('Login User Error:', error);
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
 
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
@@ -80,6 +83,7 @@ const initialState: AuthState = {
   employeeId: null,
   status: 'idle',
   error: null,
+  username: null, // Add username to initial state
 };
 
 const authSlice = createSlice({
@@ -106,10 +110,11 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.status = 'loading';
       })
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<{ token: string; employeeId: string }>) => {
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<{ token: string; employeeId: string; username: string }>) => {
         state.status = 'succeeded';
         state.token = action.payload.token;
         state.employeeId = action.payload.employeeId;
+        state.username = action.payload.username;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
@@ -122,6 +127,7 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.employeeId = null;
+        state.username = null; // Clear username on logout
         state.status = 'succeeded';
       })
       .addCase(logoutUser.rejected, (state, action) => {
@@ -130,6 +136,7 @@ const authSlice = createSlice({
       });
   },
 });
+
 
 export const { setToken } = authSlice.actions;
 

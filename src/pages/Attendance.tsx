@@ -1,62 +1,48 @@
-import React from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
+import EmployeeCard from './EmployeeInfoCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ArrowUpIcon, ArrowDownIcon } from '@radix-ui/react-icons';
-
-interface Employee {
-    id: number
-    firstName: string
-    lastName: string
-    employeeId: string
-    fullMonthSalary: number
-    travelAllowance: number
-    dearnessAllowance: number
-    // Other properties...
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 interface AttendanceData {
+    id: number;
     employeeId: number;
     employeeName: string;
-    attendanceStatus: string;
-    visitCount: number;
-    uniqueStoreCount: number | null;
-    travelAllowance: number | null;
-    dearnessAllowance: number | null;
+    attendanceStatus: 'full day' | 'half day' | 'Present' | 'absent';
     checkinDate: string;
     checkoutDate: string;
-    checkinTime: string;
-    checkoutTime: string;
-    fullMonthSalary: number | null;
+}
+
+interface Employee {
+    id: number;
+    firstName: string;
+    lastName: string;
+    employeeId: string;
+    department: string;
+    position: string;
 }
 
 const Attendance: React.FC = () => {
-    const [employees, setEmployees] = React.useState<Employee[]>([]);
-    const [attendanceData, setAttendanceData] = React.useState<AttendanceData[]>([]);
-    const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
-    const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth());
-    const [currentPage, setCurrentPage] = React.useState<number>(1);
-    const rowsPerPage = 10; // Set rows per page to 10
-    const [noDataMessage, setNoDataMessage] = React.useState<string>("");
-
-    const [sortColumn, setSortColumn] = React.useState<string>('employeeName');
-    const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
+    const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+    const [noDataMessage, setNoDataMessage] = useState<string>("");
+    const [nameFilter, setNameFilter] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const years = Array.from({ length: 27 }, (_, index) => 2024 + index);
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const workingDaysInMonth = [27, 24, 26, 26, 27, 26, 26, 27, 25, 26, 26, 27]; // Assuming fixed number of working days for each month
 
     const token = useSelector((state: RootState) => state.auth.token);
 
-    React.useEffect(() => {
-        fetchEmployees();
-    }, [token]);
-
-    React.useEffect(() => {
+    useEffect(() => {
         fetchAttendanceData();
+        fetchEmployees();
     }, [selectedYear, selectedMonth, token]);
 
     const fetchEmployees = async () => {
@@ -84,6 +70,8 @@ const Attendance: React.FC = () => {
     };
 
     const fetchAttendanceData = async () => {
+        setIsLoading(true);
+
         if (!token) {
             console.error("Auth token is missing");
             return;
@@ -105,156 +93,33 @@ const Attendance: React.FC = () => {
 
             const data = await response.json();
             setAttendanceData(data);
+            setNoDataMessage("");
 
             if (data.length === 0) {
                 setNoDataMessage("No data available for the selected month and year. Please choose a different month or year.");
-            } else {
-                setNoDataMessage("");
             }
         } catch (error) {
             console.error("Error fetching attendance data:", error);
             setAttendanceData([]);
             setNoDataMessage("No data available for the selected month and year. Please choose a different month or year.");
         }
+
+        setIsLoading(false);
     };
 
-    const handleSort = (column: string) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('asc');
-        }
+    const getAttendanceSummary = (employeeId: number) => {
+        const employeeAttendance = attendanceData.filter(data => data.employeeId === employeeId);
+        const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
+        const halfDays = employeeAttendance.filter(data => data.attendanceStatus === 'half day').length;
+        const presentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Present').length;
+        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'absent').length;
+
+        return { fullDays, halfDays, presentDays, absentDays };
     };
 
-    const getEmployeeName = (employeeId: number) => {
-        const employee = employees.find((emp) => emp.id === employeeId);
-        return employee ? `${employee.firstName} ${employee.lastName}` : "";
-    };
-
-    const getEmployeeTravelAllowance = (employeeId: number) => {
-        const employee = employees.find((emp) => emp.id === employeeId);
-        return employee?.travelAllowance || 0;
-    };
-
-    const getEmployeeDearnessAllowance = (employeeId: number) => {
-        const employee = employees.find((emp) => emp.id === employeeId);
-        return employee?.dearnessAllowance || 0;
-    };
-
-    const calculateTotalDays = (fullDays: number, halfDays: number) => {
-        return (fullDays * 1) + (halfDays * 0.5);
-    };
-
-    const calculateBaseSalary = (employeeId: number, fullDays: number, halfDays: number) => {
-        const employee = employees.find((emp) => emp.id === employeeId);
-        const fullMonthSalary = employee?.fullMonthSalary || 0;
-        const totalDays = calculateTotalDays(fullDays, halfDays);
-        return (fullMonthSalary / workingDaysInMonth[selectedMonth]) * totalDays;
-    };
-
-    const calculateTotalSalary = (employeeId: number, fullDays: number, halfDays: number, expenseTotal: number) => {
-        const baseSalary = calculateBaseSalary(employeeId, fullDays, halfDays);
-        const travelAllowance = getEmployeeTravelAllowance(employeeId) * (fullDays + halfDays);
-        const dearnessAllowance = getEmployeeDearnessAllowance(employeeId) * (fullDays + halfDays);
-        return baseSalary + travelAllowance + dearnessAllowance + expenseTotal;
-    };
-
-    const sortedAttendanceData = React.useMemo(() => {
-        return [...attendanceData].map((data) => ({
-            ...data,
-            travelAllowance: getEmployeeTravelAllowance(data.employeeId) * (data.visitCount),
-            dearnessAllowance: getEmployeeDearnessAllowance(data.employeeId) * (data.visitCount),
-            baseSalary: calculateBaseSalary(data.employeeId, data.visitCount, 0),
-            totalSalary: calculateTotalSalary(data.employeeId, data.visitCount, 0, 0),
-        })).sort((a, b) => {
-            if (sortColumn) {
-                const aValue = a[sortColumn as keyof AttendanceData];
-                const bValue = b[sortColumn as keyof AttendanceData];
-
-                if (typeof aValue === 'string' && typeof bValue === 'string') {
-                    return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-                } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-                    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-                }
-            }
-            return 0;
-        });
-    }, [attendanceData, sortColumn, sortDirection]);
-
-    // Pagination logic
-    const indexOfLastRow = currentPage * rowsPerPage;
-    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentRows = sortedAttendanceData.slice(indexOfFirstRow, indexOfLastRow);
-    const totalPages = Math.ceil(sortedAttendanceData.length / rowsPerPage);
-
-    const handlePageChange = (pageNumber: number) => {
-        setCurrentPage(pageNumber);
-    };
-
-    const renderPaginationItems = () => {
-        const paginationItems: JSX.Element[] = [];
-
-        if (totalPages <= 1) return paginationItems;
-
-        const ellipsis = <span key="ellipsis" className="mx-1">...</span>;
-
-        const addPageItem = (pageNumber: number) => {
-            paginationItems.push(
-                <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                        isActive={currentPage === pageNumber}
-                        onClick={() => handlePageChange(pageNumber)}
-                    >
-                        {pageNumber}
-                    </PaginationLink>
-                </PaginationItem>
-            );
-        };
-
-        if (currentPage > 1) {
-            paginationItems.push(
-                <PaginationItem key="prev">
-                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                </PaginationItem>
-            );
-        }
-
-        addPageItem(1);
-        if (totalPages > 1) addPageItem(2);
-        if (totalPages > 2) addPageItem(3);
-
-        if (currentPage > 4) {
-            paginationItems.push(ellipsis);
-        }
-
-        if (currentPage > 3 && currentPage < totalPages - 2) {
-            addPageItem(currentPage - 1);
-            addPageItem(currentPage);
-            addPageItem(currentPage + 1);
-        } else if (currentPage <= 4) {
-            for (let i = 4; i < Math.min(totalPages - 1, 6); i++) {
-                addPageItem(i);
-            }
-        }
-
-        if (currentPage < totalPages - 3) {
-            paginationItems.push(ellipsis);
-        }
-
-        if (totalPages > 2) addPageItem(totalPages - 1);
-        if (totalPages > 1) addPageItem(totalPages);
-
-        if (currentPage < totalPages) {
-            paginationItems.push(
-                <PaginationItem key="next">
-                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                </PaginationItem>
-            );
-        }
-
-        return paginationItems;
-    };
+    const filteredEmployees = employees.filter((employee) =>
+        `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(nameFilter.toLowerCase())
+    );
 
     return (
         <div className="container mx-auto py-8">
@@ -267,10 +132,7 @@ const Attendance: React.FC = () => {
                 <CardContent>
                     <div className="mb-4 flex items-center space-x-4">
                         <div>
-                            <Select value={selectedYear.toString()} onValueChange={(value) => {
-                                setSelectedYear(parseInt(value));
-                                setCurrentPage(1); // Reset to first page when year changes
-                            }}>
+                            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select a year" />
                                 </SelectTrigger>
@@ -284,10 +146,7 @@ const Attendance: React.FC = () => {
                             </Select>
                         </div>
                         <div>
-                            <Select value={selectedMonth.toString()} onValueChange={(value) => {
-                                setSelectedMonth(parseInt(value));
-                                setCurrentPage(1); // Reset to first page when month changes
-                            }}>
+                            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select a month" />
                                 </SelectTrigger>
@@ -300,60 +159,39 @@ const Attendance: React.FC = () => {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div>
+                            <Input
+                                type="text"
+                                placeholder="Filter by name"
+                                value={nameFilter}
+                                onChange={(e) => setNameFilter(e.target.value)}
+                            />
+                        </div>
                     </div>
-                    {noDataMessage ? (
+                    {noDataMessage && (
                         <p className="mb-4 text-red-500">{noDataMessage}</p>
-                    ) : (
-                        <>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead onClick={() => handleSort('employeeName')} className="cursor-pointer">
-                                            Employee
-                                            {sortColumn === 'employeeName' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                        </TableHead>
-                                        <TableHead onClick={() => handleSort('visitCount')} className="cursor-pointer">
-                                            Visit Count
-                                            {sortColumn === 'visitCount' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                        </TableHead>
-                                        <TableHead onClick={() => handleSort('baseSalary')} className="cursor-pointer">
-                                            Base Salary
-                                            {sortColumn === 'baseSalary' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                        </TableHead>
-                                        <TableHead onClick={() => handleSort('travelAllowance')} className="cursor-pointer">
-                                            TA
-                                            {sortColumn === 'travelAllowance' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                        </TableHead>
-                                        <TableHead onClick={() => handleSort('dearnessAllowance')} className="cursor-pointer">
-                                            DA
-                                            {sortColumn === 'dearnessAllowance' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                        </TableHead>
-                                        <TableHead onClick={() => handleSort('totalSalary')} className="cursor-pointer">
-                                            Total Salary
-                                            {sortColumn === 'totalSalary' && (sortDirection === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />)}
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {currentRows.map((data, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{data.employeeName}</TableCell>
-                                            <TableCell>{data.visitCount}</TableCell>
-                                            <TableCell>{data.baseSalary.toFixed(2)}</TableCell>
-                                            <TableCell>{data.travelAllowance}</TableCell>
-                                            <TableCell>{data.dearnessAllowance}</TableCell>
-                                            <TableCell>{data.totalSalary.toFixed(2)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <Pagination>
-                                <PaginationContent>
-                                    {renderPaginationItems()}
-                                </PaginationContent>
-                            </Pagination>
-                        </>
                     )}
+                    <div className="space-y-4">
+                        {isLoading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                                <Skeleton key={index} height={200} />
+                            ))
+                        ) : (
+                            filteredEmployees.map((employee) => {
+                                const summary = getAttendanceSummary(employee.id);
+                                return (
+                                    <EmployeeCard
+                                        key={employee.id}
+                                        employee={employee}
+                                        summary={summary}
+                                        month={selectedMonth}
+                                        year={selectedYear}
+                                        attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
+                                    />
+                                );
+                            })
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>

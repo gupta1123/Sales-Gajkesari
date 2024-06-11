@@ -8,14 +8,11 @@ import { ChevronUpIcon, ChevronDownIcon, ArrowLeftIcon } from '@heroicons/react/
 import { format, parseISO, subDays } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import SortIcon from './SortIcon';
 import { Button } from "@/components/ui/button";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { ClipLoader } from 'react-spinners';
 
 interface Visit {
   id: string;
@@ -39,6 +36,16 @@ interface StateCardProps {
   totalEmployees: number;
   onClick: () => void;
 }
+
+const renderSkeletons = (count: number) => {
+  return Array.from({ length: count }).map((_, index) => (
+    <div key={index} className="bg-white shadow-lg rounded-lg p-6">
+      <Skeleton height={30} width="50%" />
+      <Skeleton height={20} width="80%" />
+      <Skeleton height={20} width="60%" />
+    </div>
+  ));
+};
 
 const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardProps) => {
   return (
@@ -316,13 +323,13 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
 
   const getOutcomeStatus = (visit: Visit): { emoji: React.ReactNode; status: string; color: string } => {
     if (visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime) {
-      return { emoji: '✅', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
+      return { emoji: ' ', status: 'Completed', color: 'bg-purple-100 text-purple-800' };
     } else if (visit.checkoutDate && visit.checkoutTime) {
-      return { emoji: '🚪', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
+      return { emoji: ' ', status: 'Checked Out', color: 'bg-orange-100 text-orange-800' };
     } else if (visit.checkinDate && visit.checkinTime) {
-      return { emoji: '⏳', status: 'On Going', color: 'bg-green-100 text-green-800' };
+      return { emoji: ' ', status: 'On Going', color: 'bg-green-100 text-green-800' };
     }
-    return { emoji: '📝', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
+    return { emoji: ' ', status: 'Assigned', color: 'bg-blue-100 text-blue-800' };
   };
 
   const handleSort = (column: keyof Visit) => {
@@ -375,19 +382,54 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
           <thead>
             <tr>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('storeName')}>
-                Store {sortColumn === 'storeName' && <SortIcon sortOrder={sortOrder} />}
+                Store
+                {sortColumn === 'storeName' && (
+                  sortOrder === 'asc' ? (
+                    <ChevronUpIcon className="w-4 h-4 inline-block ml-1" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />
+                  )
+                )}
               </th>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('employeeName')}>
-                Employee {sortColumn === 'employeeName' && <SortIcon sortOrder={sortOrder} />}
+                Employee
+                {sortColumn === 'employeeName' && (
+                  sortOrder === 'asc' ? (
+                    <ChevronUpIcon className="w-4 h-4 inline-block ml-1" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />
+                  )
+                )}
               </th>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('visit_date')}>
-                Date {sortColumn === 'visit_date' && <SortIcon sortOrder={sortOrder} />}
+                Date
+                {sortColumn === 'visit_date' && (
+                  sortOrder === 'asc' ? (
+                    <ChevronUpIcon className="w-4 h-4 inline-block ml-1" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />
+                  )
+                )}
               </th>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('purpose')}>
-                Purpose {sortColumn === 'purpose' && <SortIcon sortOrder={sortOrder} />}
+                Purpose
+                {sortColumn === 'purpose' && (
+                  sortOrder === 'asc' ? (
+                    <ChevronUpIcon className="w-4 h-4 inline-block ml-1" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />
+                  )
+                )}
               </th>
               <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort('city')}>
-                City {sortColumn === 'city' && <SortIcon sortOrder={sortOrder} />}
+                City
+                {sortColumn === 'city' && (
+                  sortOrder === 'asc' ? (
+                    <ChevronUpIcon className="w-4 h-4 inline-block ml-1" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />
+                  )
+                )}
               </th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Actions</th>
@@ -484,6 +526,7 @@ const Dashboard = () => {
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedOption, setSelectedOption] = useState('Today');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
 
@@ -494,6 +537,7 @@ const Dashboard = () => {
   }, [startDate, endDate, token]);
 
   const fetchVisits = async (start: string, end: string) => {
+    setIsLoading(true);
     try {
       let url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange1?start=${start}&end=${end}`;
       if (selectedCity && selectedCity !== 'Filter By City') {
@@ -512,6 +556,8 @@ const Dashboard = () => {
       setVisits(data.filter(visit => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime));
     } catch (error) {
       console.error('Error fetching visits:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -567,11 +613,113 @@ const Dashboard = () => {
     );
   });
 
+  const renderSkeletons = (count: number) => {
+    return Array.from({ length: count }).map((_, index) => (
+      <div key={index} className="bg-white shadow-lg rounded-lg p-6">
+        <Skeleton height={30} width="50%" />
+        <Skeleton height={20} width="80%" />
+        <Skeleton height={20} width="60%" />
+      </div>
+    ));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Sales Dashboard</h1>
+        </div>
+        <div className="flex justify-center mb-8">
+          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {renderSkeletons(6)}
+        </div>
+      </div>
+    );
+  }
+  if (isLoading && !selectedState && !selectedCity && !selectedEmployee) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Sales Dashboard</h1>
+        </div>
+        <div className="flex justify-center mb-8">
+          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {renderSkeletons(6)}
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading && selectedState && !selectedCity && !selectedEmployee) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold capitalize">{selectedState === 'unknown' ? 'Unknown State' : selectedState}</h1>
+          <Button variant="ghost" size="lg" onClick={() => setSelectedState(null)}>
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="flex justify-center mb-8">
+          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {renderSkeletons(6)}
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading && selectedCity && !selectedEmployee) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold capitalize">{selectedCity === 'unknown' ? 'Unknown City' : selectedCity}</h1>
+          <Button variant="ghost" size="lg" onClick={() => setSelectedCity(null)}>
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="flex justify-center mb-8">
+          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">          {renderSkeletons(6)}
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading && selectedEmployee) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold capitalize">{selectedEmployee}</h1>
+          <Button variant="ghost" size="lg" onClick={() => setSelectedEmployee(null)}>
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="flex justify-center mb-8">
+          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {renderSkeletons(4)}
+        </div>
+        <div className="mb-8">
+          <Skeleton height={30} width="100%" />
+        </div>
+        <div className="mt-8">
+          <Skeleton height={300} width="100%" />
+        </div>
+      </div>
+    );
+  }
   if (selectedState && !selectedCity && !selectedEmployee) {
     const stateVisits = visits.filter((visit) => (visit.state.trim().toLowerCase() || 'unknown') === selectedState);
     const cities = Array.from(new Set(stateVisits.map((visit) => visit.city.trim().toLowerCase() || 'unknown')));
     const cityCards = cities.map((city) => {
-      const cityVisits = stateVisits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === city);
+      const cityVisits = visits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === city && (visit.state.trim().toLowerCase() || 'unknown') === selectedState);
       const totalVisits = cityVisits.length;
       const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeName))).length;
       return (
@@ -588,11 +736,7 @@ const Dashboard = () => {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold capitalize">{selectedState === 'unknown' ? 'Unknown State' : selectedState}</h1>
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={() => setSelectedState(null)}
-          >
+          <Button variant="ghost" size="lg" onClick={() => setSelectedState(null)}>
             <ArrowLeftIcon className="h-6 w-6" />
           </Button>
         </div>
@@ -618,8 +762,7 @@ const Dashboard = () => {
     }, {});
 
     const employeeCards = Object.entries(employeeVisits).map(([employeeName, visits]) => {
-      const employeeVisitsInCity = visits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === selectedCity);
-      const totalVisits = employeeVisitsInCity.length;
+      const totalVisits = visits.length;
       return (
         <EmployeeCard
           key={employeeName}
@@ -634,11 +777,7 @@ const Dashboard = () => {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold capitalize">{selectedCity === 'unknown' ? 'Unknown City' : selectedCity}</h1>
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={() => setSelectedCity(null)}
-          >
+          <Button variant="ghost" size="lg" onClick={() => setSelectedCity(null)}>
             <ArrowLeftIcon className="h-6 w-6" />
           </Button>
         </div>
@@ -653,11 +792,10 @@ const Dashboard = () => {
   }
 
   if (selectedEmployee) {
-    const employeeVisits = visits.filter((visit) => visit.employeeName.trim().toLowerCase() === selectedEmployee);
+    const employeeVisits = visits.filter((visit) => visit.employeeName.trim().toLowerCase() === selectedEmployee && (visit.city.trim().toLowerCase() || 'unknown') === selectedCity);
 
     const totalVisits = employeeVisits.length;
-    const completedVisits = employeeVisits.length;
-    const ongoingVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && !visit.checkoutDate && !visit.checkoutTime).length;
+    const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
     const assignedVisits = employeeVisits.filter((visit) => !visit.checkinDate && !visit.checkinTime).length;
 
     const visitsByPurpose = employeeVisits.reduce((acc: { [key: string]: number }, visit) => {
@@ -678,11 +816,7 @@ const Dashboard = () => {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold capitalize">{selectedEmployee}</h1>
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={() => setSelectedEmployee(null)}
-          >
+          <Button variant="ghost" size="lg" onClick={() => setSelectedEmployee(null)}>
             <ArrowLeftIcon className="h-6 w-6" />
           </Button>
         </div>
@@ -695,12 +829,7 @@ const Dashboard = () => {
         <div className="mb-8">
           <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
         </div>
-        <VisitsTable
-          visits={employeeVisits}
-          onViewDetails={handleViewDetails}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-        />
+        <VisitsTable visits={employeeVisits} onViewDetails={handleViewDetails} currentPage={currentPage} onPageChange={setCurrentPage} />
         <div className="mt-8">
           <VisitsByPurposeChart data={visitsByPurposeChartData} />
         </div>

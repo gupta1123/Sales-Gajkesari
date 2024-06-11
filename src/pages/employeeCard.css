@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+.employee-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background-color: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: none;
+    /* Remove the max-width to make the card full-width */
+}
+
+.employee-info {
+    width: 60%;
+}
+
+.employee-info h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.employee-info p {
+    margin: 5px 0;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.employee-info p i {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.employee-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    padding: 10px;
+    margin-right: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    flex: 1;
+}
+
+.stat-card i {
+    font-size: 2em;
+    color: #007bff;
+    margin-right: 10px;
+}
+
+.stat-card p {
+    margin: 0;
+    color: #555;
+}
+
+.stat-card h3 {
+    margin: 0;
+    color: #333;
+}
+
+.employee-calendar {
+    width: 40%;
+}
