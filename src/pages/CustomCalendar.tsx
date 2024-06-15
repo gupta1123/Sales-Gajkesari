@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import './customCalendar.css';
+import './CustomCalendar.css';
 
 interface CustomCalendarProps {
     month: number;
