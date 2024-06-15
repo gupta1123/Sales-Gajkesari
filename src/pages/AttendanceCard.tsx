@@ -8,7 +8,7 @@ interface AttendanceData {
     id: number;
     employeeId: number;
     employeeName: string;
-    attendanceStatus: 'full day' | 'half day' | 'Present' | 'absent';
+    attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
     checkinDate: string;
     checkoutDate: string;
 }
@@ -35,7 +35,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceDat
         const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
         const halfDays = employeeAttendance.filter(data => data.attendanceStatus === 'half day').length;
         const presentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Present').length;
-        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'absent').length;
+        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Absent').length;
 
         return { fullDays, halfDays, presentDays, absentDays };
     };
@@ -84,7 +84,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceDat
                 <CustomCalendar
                     month={selectedMonth}
                     year={selectedYear}
-                    attendanceData={attendanceData}
+                    attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
                 />
             </div>
         </div>

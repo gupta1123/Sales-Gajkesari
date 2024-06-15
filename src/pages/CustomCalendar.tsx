@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import './CustomCalendar.css';
+import './customCalendar.css';
 
 interface CustomCalendarProps {
     month: number;
     year: number;
     attendanceData: {
         employeeId: number;
-        attendanceStatus: 'full day' | 'half day' | 'Present' | 'absent';
+        attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
         checkinDate: string;
         checkoutDate: string;
     }[];
@@ -35,11 +35,14 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendance
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     const attendanceStatus = attendanceData.find(data => data.checkinDate.startsWith(dateKey))?.attendanceStatus;
 
-                    if (attendanceStatus) {
-                        dateDiv.classList.add(attendanceStatus.replace(' ', '-'));
+                    const date = new Date(year, month, i);
+                    if (date.getDay() === 0) {
+                        dateDiv.classList.add('sunday');
+                    } else if (attendanceStatus) {
+                        dateDiv.classList.add(attendanceStatus.toLowerCase().replace(' ', '-'));
                         const tooltip = document.createElement('span');
                         tooltip.classList.add('calendar-tooltip');
-                        tooltip.textContent = `Status: ${attendanceStatus}`;
+                        tooltip.textContent = ` ${attendanceStatus}`;
                         dateDiv.appendChild(tooltip);
                     }
 

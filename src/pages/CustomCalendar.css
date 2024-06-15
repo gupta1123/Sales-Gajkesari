@@ -3,7 +3,9 @@
     border-radius: 20px;
     background-color: #fff;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    overflow: visible;
+    overflow: hidden;
+    width: 100%;
+    max-width: 300px;
 }
 
 .calendar-days {
@@ -13,7 +15,7 @@
     background-color: #333;
     color: white;
     text-transform: uppercase;
-    font-size: 0.9em;
+    font-size: 0.8em;
     letter-spacing: 1px;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -31,12 +33,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    padding: 5px;
     cursor: pointer;
     border-radius: 10px;
     margin: 2px;
     transition: all 0.3s ease;
     font-weight: 500;
+    font-size: 0.9em;
 }
 
 .calendar-dates div.full-day {

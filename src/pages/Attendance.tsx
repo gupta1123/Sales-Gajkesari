@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import EmployeeCard from './EmployeeInfoCard';
+import EmployeeCard from './EmployeeCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ interface AttendanceData {
     id: number;
     employeeId: number;
     employeeName: string;
-    attendanceStatus: 'full day' | 'half day' | 'Present' | 'absent';
+    attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
     checkinDate: string;
     checkoutDate: string;
 }
@@ -112,7 +112,7 @@ const Attendance: React.FC = () => {
         const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
         const halfDays = employeeAttendance.filter(data => data.attendanceStatus === 'half day').length;
         const presentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Present').length;
-        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'absent').length;
+        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Absent').length;
 
         return { fullDays, halfDays, presentDays, absentDays };
     };
@@ -167,6 +167,33 @@ const Attendance: React.FC = () => {
                                 onChange={(e) => setNameFilter(e.target.value)}
                             />
                         </div>
+                        <div className="mb-4">
+                            <p className="text-lg font-bold">Legend:</p>
+                            <div className="flex space-x-4">
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-green-500 mr-2"></div>
+                                    <p>Full Day</p>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-yellow-500 mr-2"></div>
+                                    <p>Half Day</p>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-blue-500 mr-2"></div>
+                                    <p>Present</p>
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="w-4 h-4 bg-red-500 mr-2"></div>
+                                    <p>Absent</p>
+                                </div>
+                            </div>
+                        </div>
+                        {noDataMessage && (
+                            <p className="mb-4 text-red-500">{noDataMessage}</p>
+                        )}
+                        <div className="space-y-4">
+
+                        </div>
                     </div>
                     {noDataMessage && (
                         <p className="mb-4 text-red-500">{noDataMessage}</p>
@@ -177,19 +204,21 @@ const Attendance: React.FC = () => {
                                 <Skeleton key={index} height={200} />
                             ))
                         ) : (
-                            filteredEmployees.map((employee) => {
-                                const summary = getAttendanceSummary(employee.id);
-                                return (
-                                    <EmployeeCard
-                                        key={employee.id}
-                                        employee={employee}
-                                        summary={summary}
-                                        month={selectedMonth}
-                                        year={selectedYear}
-                                        attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
-                                    />
-                                );
-                            })
+                            <div className="employee-card-container">
+                                {filteredEmployees.map((employee) => {
+                                    const summary = getAttendanceSummary(employee.id);
+                                    return (
+                                        <EmployeeCard
+                                            key={employee.id}
+                                            employee={employee}
+                                            summary={summary}
+                                            month={selectedMonth}
+                                            year={selectedYear}
+                                            attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
+                                        />
+                                    );
+                                })}
+                            </div>
                         )}
                     </div>
                 </CardContent>

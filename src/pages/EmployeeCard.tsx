@@ -4,6 +4,7 @@ import CustomCalendar from './CustomCalendar';
 
 interface EmployeeCardProps {
     employee: {
+        id: number;
         firstName: string;
         lastName: string;
         employeeId: string;
@@ -19,8 +20,8 @@ interface EmployeeCardProps {
     month: number;
     year: number;
     attendanceData: {
-        employeeId: number;  // Keep this as number
-        attendanceStatus: 'full day' | 'half day' | 'Present' | 'absent';
+        employeeId: number;
+        attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
         checkinDate: string;
         checkoutDate: string;
     }[];
@@ -31,46 +32,43 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, y
         <div className="employee-card">
             <div className="employee-info">
                 <h2>{employee.firstName} {employee.lastName}</h2>
-                <p><i className="fas fa-id-badge"></i> Employee ID: {employee.employeeId}</p>
-                <p><i className="fas fa-building"></i> Department: {employee.department}</p>
-                <p><i className="fas fa-briefcase"></i> Position: {employee.position}</p>
                 <div className="employee-stats">
                     <div className="stat-card">
                         <i className="fas fa-calendar-day"></i>
                         <div>
-                            <p>Full Days</p>
+                            <p>Full</p>
                             <h3>{summary.fullDays}</h3>
                         </div>
                     </div>
                     <div className="stat-card">
                         <i className="fas fa-calendar-alt"></i>
                         <div>
-                            <p>Half Days</p>
+                            <p>Half</p>
                             <h3>{summary.halfDays}</h3>
                         </div>
                     </div>
                     <div className="stat-card">
                         <i className="fas fa-check"></i>
                         <div>
-                            <p>Present Days</p>
+                            <p>Present</p>
                             <h3>{summary.presentDays}</h3>
                         </div>
                     </div>
                     <div className="stat-card">
                         <i className="fas fa-times"></i>
                         <div>
-                            <p>Absent Days</p>
+                            <p>Absent</p>
                             <h3>{summary.absentDays}</h3>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div className="employee-calendar">
-                <CustomCalendar
-                    month={month}
-                    year={year}
-                    attendanceData={attendanceData.filter(data => data.employeeId.toString() === employee.employeeId)}
-                />
+                <div className="employee-calendar">
+                    <CustomCalendar
+                        month={month}
+                        year={year}
+                        attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
+                    />
+                </div>
             </div>
         </div>
     );
