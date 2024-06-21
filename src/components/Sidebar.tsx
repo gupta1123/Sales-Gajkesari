@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import styles from './Sidebar.module.css';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from '../store';
-import { FiLogOut, FiHome, FiUsers, FiMap, FiUser, FiDollarSign, FiCalendar, FiSettings } from 'react-icons/fi';
-import React, { useEffect } from 'react';
+import { FiLogOut, FiHome, FiUsers, FiMap, FiUser, FiDollarSign, FiCalendar, FiSettings, FiClipboard } from 'react-icons/fi';
 
 export default function Sidebar() {
   const dispatch = useDispatch();
@@ -14,17 +13,10 @@ export default function Sidebar() {
     dispatch(logoutUser() as any);
   };
 
-  useEffect(() => {
-    const gajkesariText = document.querySelector(`.${styles.brand}`);
-    if (gajkesariText) {
-      gajkesariText.classList.add(styles.animateText);
-    }
-  }, []);
-
   return (
     <div className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
-        <h2 className={styles.brand}>Gajkesari</h2>
+        <h2>Gajkesari</h2>
       </div>
       <ul className={styles.sidebarList}>
         <li className={styles.sidebarItem}>
@@ -68,10 +60,34 @@ export default function Sidebar() {
           </Link>
         </li>
         <li className={styles.sidebarItem}>
+          <Link href="/DailyPricing" legacyBehavior>
+            <a className={`${styles.sidebarLink} ${router.pathname === '/DailyPricing' ? styles.active : ''}`}>
+              <FiDollarSign className={styles.sidebarIcon} />
+              <span>Daily Pricing</span>
+            </a>
+          </Link>
+        </li>
+        <li className={styles.sidebarItem}>
           <Link href="/Attendance" legacyBehavior>
             <a className={`${styles.sidebarLink} ${router.pathname === '/Attendance' ? styles.active : ''}`}>
               <FiCalendar className={styles.sidebarIcon} />
               <span>Attendance</span>
+            </a>
+          </Link>
+        </li>
+        <li className={styles.sidebarItem}>
+          <Link href="/Requirements" legacyBehavior>
+            <a className={`${styles.sidebarLink} ${router.pathname === '/Requirements' ? styles.active : ''}`}>
+              <FiClipboard className={styles.sidebarIcon} />
+              <span>Requirements</span>
+            </a>
+          </Link>
+        </li>
+        <li className={styles.sidebarItem}>
+          <Link href="/Complaints" legacyBehavior>
+            <a className={`${styles.sidebarLink} ${router.pathname === '/Complaints' ? styles.active : ''}`}>
+              <FiClipboard className={styles.sidebarIcon} />
+              <span>Complaints</span>
             </a>
           </Link>
         </li>

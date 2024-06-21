@@ -6,6 +6,8 @@
     overflow: hidden;
     width: 100%;
     max-width: 300px;
+    position: relative;
+    /* Added to ensure the positioning context for tooltips */
 }
 
 .calendar-days {
@@ -45,26 +47,38 @@
 .calendar-dates div.full-day {
     background-color: #4CAF50;
     color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-dates div.half-day {
     background-color: #FFEB3B;
     color: black;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-dates div.absent {
     background-color: #F44336;
     color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-dates div.present {
     background-color: #2196F3;
     color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.calendar-dates div.sunday {
+    background-color: #ADD8E6;
+    /* Light blue color for Sunday */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-dates div:hover {
     background-color: rgba(0, 0, 0, 0.1);
     transform: scale(1.1);
+    z-index: 1;
+    /* Ensure hovered elements are on top */
 }
 
 .calendar-dates div.empty {
@@ -74,12 +88,13 @@
 
 .calendar-tooltip {
     visibility: hidden;
-    width: 150px;
+    width: auto;
+    max-width: 100px;
     background-color: rgba(0, 0, 0, 0.8);
     color: #fff;
     text-align: center;
     border-radius: 8px;
-    padding: 10px;
+    padding: 5px;
     position: absolute;
     z-index: 1;
     bottom: 125%;
@@ -88,6 +103,7 @@
     opacity: 0;
     transition: opacity 0.3s;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
 }
 
 .calendar-dates div:hover .calendar-tooltip {
@@ -104,4 +120,16 @@
     border-width: 6px;
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* Ensure the tooltip doesn't overflow outside the calendar card */
+.calendar-dates div:hover .calendar-tooltip {
+    visibility: visible;
+    opacity: 1;
+    white-space: nowrap;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    max-width: 100px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }

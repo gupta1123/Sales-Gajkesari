@@ -61,32 +61,19 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const fetchData = useCallback(async () => {
         try {
             if (selectedYear && selectedMonth) {
-                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${selectedYear}-${selectedMonth}-01&end=${selectedYear}-${selectedMonth}-31`, {
+                const now = new Date();
+                const isCurrentMonth = Number(selectedYear) === now.getFullYear() && Number(selectedMonth) === now.getMonth() + 1;
+                const endDay = isCurrentMonth ? now.getDate() - 1 : getDaysInMonth(Number(selectedYear), Number(selectedMonth));
+
+                const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/attendance-log/getForRange?start=${selectedYear}-${selectedMonth}-01&end=${selectedYear}-${selectedMonth}-${endDay.toString().padStart(2, '0')}`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
                     },
                 });
                 const attendanceLogs = await response.json();
 
-                const employeeResponse = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                    },
-                });
-                const employees = await employeeResponse.json();
-
-                const mergedData = attendanceLogs.map((log: any) => {
-                    const employee = employees.find((emp: any) => emp.id === log.employeeId);
-                    return {
-                        ...log,
-                        travelAllowance: employee?.travelAllowance || 0,
-                        dearnessAllowance: employee?.dearnessAllowance || 0,
-                        fullMonthSalary: employee?.fullMonthSalary || 0,
-                    };
-                });
-
-                setData(mergedData);
-                setIsDataAvailable(mergedData.length > 0);
+                setData(attendanceLogs);
+                setIsDataAvailable(attendanceLogs.length > 0);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -127,7 +114,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         const totalDaysInMonth = getDaysInMonth(year, month);
         const sundays = countSundaysInMonth(year, month);
         const totalDaysWorked = row.statsDto.fullDays * 1 + row.statsDto.halfDays * 0.5;
-        const baseSalary = calculateBaseSalary(row.fullMonthSalary, totalDaysWorked, totalDaysInMonth, sundays);
+        const baseSalary = calculateBaseSalary(row.salary || 0, totalDaysWorked, totalDaysInMonth, sundays);
         const travelAllowance = row.travelAllowance * (row.statsDto.fullDays + row.statsDto.halfDays);
         const dearnessAllowance = row.dearnessAllowance * (row.statsDto.fullDays + row.statsDto.halfDays);
         const totalSalary = baseSalary + travelAllowance + dearnessAllowance + row.statsDto.expenseTotal;
@@ -193,7 +180,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                                     <TableCell>{row.employeeFirstName} {row.employeeLastName}</TableCell>
                                     <TableCell>{row.statsDto.fullDays}</TableCell>
                                     <TableCell>{row.statsDto.halfDays}</TableCell>
-                                    <TableCell>{Math.round(calculateBaseSalary(row.fullMonthSalary, (row.statsDto.fullDays * 1 + row.statsDto.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth)), countSundaysInMonth(Number(selectedYear), Number(selectedMonth))))}</TableCell>
+                                    <TableCell>{Math.round(calculateBaseSalary(row.salary || 0, (row.statsDto.fullDays * 1 + row.statsDto.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth)), countSundaysInMonth(Number(selectedYear), Number(selectedMonth))))}</TableCell>
                                     <TableCell>{Math.round(row.travelAllowance * (row.statsDto.fullDays + row.statsDto.halfDays))}</TableCell>
                                     <TableCell>{Math.round(row.dearnessAllowance * (row.statsDto.fullDays + row.statsDto.halfDays))}</TableCell>
                                     <TableCell>{Math.round(row.statsDto.expenseTotal)}</TableCell>
@@ -233,5 +220,4 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         </div>
     );
 };
-
 export default Salary;

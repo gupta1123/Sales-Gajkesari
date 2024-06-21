@@ -1,7 +1,9 @@
-import { useState } from 'react';
+// pages/VisitList.tsx
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useQuery, QueryClient, QueryClientProvider } from 'react-query';
+import { useRouter } from 'next/router';
 import { RootState } from '../store';
 import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
@@ -10,7 +12,6 @@ import { format, subDays } from "date-fns";
 import { stringify } from 'csv-stringify';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
-
 
 const queryClient = new QueryClient();
 
@@ -96,13 +97,16 @@ const fetchAllVisits = async (
 };
 
 const VisitsList: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
+  const router = useRouter();
   const token = useSelector((state: RootState) => state.auth.token);
-  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 2));
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const { employeeName: queryEmployeeName, startDate: queryStartDate, endDate: queryEndDate } = router.query;
+
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
+  const [startDate, setStartDate] = useState<Date | undefined>(queryStartDate ? new Date(queryStartDate as string) : subDays(new Date(), 2));
+  const [endDate, setEndDate] = useState<Date | undefined>(queryEndDate ? new Date(queryEndDate as string) : new Date());
   const [purpose, setPurpose] = useState<string>('');
   const [storeName, setStoreName] = useState<string>('');
-  const [employeeName, setEmployeeName] = useState<string>('');
+  const [employeeName, setEmployeeName] = useState<string>(queryEmployeeName as string || '');
   const [sortColumn, setSortColumn] = useState<string | null>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [itemsPerPage, setItemsPerPage] = useState(10);

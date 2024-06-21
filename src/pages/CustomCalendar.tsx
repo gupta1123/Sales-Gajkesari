@@ -10,15 +10,17 @@ interface CustomCalendarProps {
         checkinDate: string;
         checkoutDate: string;
     }[];
+    onDateClick: (date: string) => void;
 }
 
-const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendanceData }) => {
+const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendanceData, onDateClick }) => {
     const datesRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const renderCalendar = () => {
             if (datesRef.current) {
                 datesRef.current.innerHTML = '';
+
                 const firstDay = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -36,15 +38,39 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendance
                     const attendanceStatus = attendanceData.find(data => data.checkinDate.startsWith(dateKey))?.attendanceStatus;
 
                     const date = new Date(year, month, i);
+                    const tooltip = document.createElement('span');
+                    tooltip.classList.add('calendar-tooltip');
+
                     if (date.getDay() === 0) {
                         dateDiv.classList.add('sunday');
+                        tooltip.textContent = 'Holiday';
                     } else if (attendanceStatus) {
                         dateDiv.classList.add(attendanceStatus.toLowerCase().replace(' ', '-'));
-                        const tooltip = document.createElement('span');
-                        tooltip.classList.add('calendar-tooltip');
                         tooltip.textContent = ` ${attendanceStatus}`;
-                        dateDiv.appendChild(tooltip);
                     }
+
+                    dateDiv.appendChild(tooltip);
+
+                    dateDiv.addEventListener('mouseover', () => {
+                        const rect = dateDiv.getBoundingClientRect();
+                        const tooltipRect = tooltip.getBoundingClientRect();
+
+                        if (rect.right - tooltipRect.width / 2 < 0) {
+                            tooltip.style.left = '0';
+                            tooltip.style.transform = 'none';
+                        } else if (rect.left + tooltipRect.width / 2 > datesRef.current!.offsetWidth) {
+                            tooltip.style.left = 'auto';
+                            tooltip.style.right = '0';
+                            tooltip.style.transform = 'none';
+                        } else {
+                            tooltip.style.left = '50%';
+                            tooltip.style.transform = 'translateX(-50%)';
+                        }
+                    });
+
+                    dateDiv.addEventListener('click', () => {
+                        onDateClick(dateKey);
+                    });
 
                     datesRef.current?.appendChild(dateDiv);
                 }
@@ -52,18 +78,18 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendance
         };
 
         renderCalendar();
-    }, [month, year, attendanceData]);
+    }, [month, year, attendanceData, onDateClick]);
 
     return (
         <div className="custom-calendar">
             <div className="calendar-days">
-                <div>Sun</div>
-                <div>Mon</div>
-                <div>Tue</div>
-                <div>Wed</div>
-                <div>Thu</div>
-                <div>Fri</div>
-                <div>Sat</div>
+                <div>S</div>
+                <div>M</div>
+                <div>T</div>
+                <div>W</div>
+                <div>T</div>
+                <div>F</div>
+                <div>S</div>
             </div>
             <div className="calendar-dates" ref={datesRef}></div>
         </div>

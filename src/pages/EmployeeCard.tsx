@@ -25,9 +25,10 @@ interface EmployeeCardProps {
         checkinDate: string;
         checkoutDate: string;
     }[];
+    onDateClick: (date: string) => void; // Add the onDateClick prop
 }
 
-const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, year, attendanceData }) => {
+const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, year, attendanceData, onDateClick }) => {
     return (
         <div className="employee-card">
             <div className="employee-info">
@@ -67,6 +68,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, y
                         month={month}
                         year={year}
                         attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
+                        onDateClick={onDateClick} // Pass the onDateClick prop
                     />
                 </div>
             </div>

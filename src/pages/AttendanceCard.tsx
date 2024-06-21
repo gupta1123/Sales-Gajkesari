@@ -27,9 +27,10 @@ interface AttendanceCardProps {
     attendanceData: AttendanceData[];
     selectedYear: number;
     selectedMonth: number;
+    onDateClick: (date: string) => void;
 }
 
-const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceData, selectedYear, selectedMonth }) => {
+const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceData, selectedYear, selectedMonth, onDateClick }) => {
     const getAttendanceSummary = (employeeId: number) => {
         const employeeAttendance = attendanceData.filter(data => data.employeeId === employeeId);
         const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
@@ -85,6 +86,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceDat
                     month={selectedMonth}
                     year={selectedYear}
                     attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
+                    onDateClick={onDateClick}
                 />
             </div>
         </div>

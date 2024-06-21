@@ -27,16 +27,12 @@
   font-size: 1.5rem;
   font-weight: bold;
   color: #6b46c1;
-  /* Purple color */
   opacity: 0;
-  /* Initial opacity for animation */
   transform: translateY(-20px);
-  /* Initial position for animation */
 }
 
 .animateText {
   animation: fadeIn 1s forwards;
-  /* Animation to make text appear smoothly */
 }
 
 @keyframes fadeIn {
