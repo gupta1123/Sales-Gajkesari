@@ -31,14 +31,6 @@ export default function Sidebar() {
             </Link>
           </li>
           <li className={styles.sidebarItem}>
-            <Link href="/CustomerListPage" legacyBehavior>
-              <a className={`${styles.sidebarLink} ${router.pathname === '/CustomerListPage' ? styles.active : ''}`}>
-                <FiUsers className={styles.sidebarIcon} />
-                <span>Customers List</span>
-              </a>
-            </Link>
-          </li>
-          <li className={styles.sidebarItem}>
             <Link href="/VisitsList" legacyBehavior>
               <a className={`${styles.sidebarLink} ${router.pathname === '/VisitsList' ? styles.active : ''}`}>
                 <FiMap className={styles.sidebarIcon} />
@@ -47,52 +39,22 @@ export default function Sidebar() {
             </Link>
           </li>
           <li className={styles.sidebarItem}>
-            <Link href="/Employeelist" legacyBehavior>
-              <a className={`${styles.sidebarLink} ${router.pathname === '/Employeelist' ? styles.active : ''}`}>
-                <FiUser className={styles.sidebarIcon} />
-                <span>Employee List</span>
+            <Link href="/Expense" legacyBehavior>
+              <a className={`${styles.sidebarLink} ${router.pathname === '/Expense' ? styles.active : ''}`}>
+                <FiDollarSign className={styles.sidebarIcon} />
+                <span>Expense</span>
               </a>
             </Link>
           </li>
-          {role !== 'Manager' && (
-            <>
-              <li className={styles.sidebarItem}>
-                <Link href="/Expense" legacyBehavior>
-                  <a className={`${styles.sidebarLink} ${router.pathname === '/Expense' ? styles.active : ''}`}>
-                    <FiDollarSign className={styles.sidebarIcon} />
-                    <span>Expense</span>
-                  </a>
-                </Link>
-              </li>
-              <li className={styles.sidebarItem}>
-                <Link href="/DailyPricing" legacyBehavior>
-                  <a className={`${styles.sidebarLink} ${router.pathname === '/DailyPricing' ? styles.active : ''}`}>
-                    <FiDollarSign className={styles.sidebarIcon} />
-                    <span>Daily Pricing</span>
-                  </a>
-                </Link>
-              </li>
-            </>
-          )}
           {role === 'ADMIN' && (
-            <>
-              <li className={styles.sidebarItem}>
-                <Link href="/Attendance" legacyBehavior>
-                  <a className={`${styles.sidebarLink} ${router.pathname === '/Attendance' ? styles.active : ''}`}>
-                    <FiCalendar className={styles.sidebarIcon} />
-                    <span>Attendance</span>
-                  </a>
-                </Link>
-              </li>
-              <li className={styles.sidebarItem}>
-                <Link href="/Settings" legacyBehavior>
-                  <a className={`${styles.sidebarLink} ${router.pathname === '/Settings' ? styles.active : ''}`}>
-                    <FiSettings className={styles.sidebarIcon} />
-                    <span>Settings</span>
-                  </a>
-                </Link>
-              </li>
-            </>
+            <li className={styles.sidebarItem}>
+              <Link href="/Attendance" legacyBehavior>
+                <a className={`${styles.sidebarLink} ${router.pathname === '/Attendance' ? styles.active : ''}`}>
+                  <FiCalendar className={styles.sidebarIcon} />
+                  <span>Attendance</span>
+                </a>
+              </Link>
+            </li>
           )}
           <li className={styles.sidebarItem}>
             <Link href="/Requirements" legacyBehavior>
@@ -110,6 +72,40 @@ export default function Sidebar() {
               </a>
             </Link>
           </li>
+          <li className={styles.sidebarItem}>
+            <Link href="/DailyPricing" legacyBehavior>
+              <a className={`${styles.sidebarLink} ${router.pathname === '/DailyPricing' ? styles.active : ''}`}>
+                <FiDollarSign className={styles.sidebarIcon} />
+                <span>Daily Pricing</span>
+              </a>
+            </Link>
+          </li>
+          <li className={styles.sidebarItem}>
+            <Link href="/CustomerListPage" legacyBehavior>
+              <a className={`${styles.sidebarLink} ${router.pathname === '/CustomerListPage' ? styles.active : ''}`}>
+                <FiUsers className={styles.sidebarIcon} />
+                <span>Customers List</span>
+              </a>
+            </Link>
+          </li>
+          <li className={styles.sidebarItem}>
+            <Link href="/Employeelist" legacyBehavior>
+              <a className={`${styles.sidebarLink} ${router.pathname === '/Employeelist' ? styles.active : ''}`}>
+                <FiUser className={styles.sidebarIcon} />
+                <span>Employee List</span>
+              </a>
+            </Link>
+          </li>
+          {role === 'ADMIN' && (
+            <li className={styles.sidebarItem}>
+              <Link href="/Settings" legacyBehavior>
+                <a className={`${styles.sidebarLink} ${router.pathname === '/Settings' ? styles.active : ''}`}>
+                  <FiSettings className={styles.sidebarIcon} />
+                  <span>Settings</span>
+                </a>
+              </Link>
+            </li>
+          )}
         </ul>
       </div>
       <div className={styles.sidebarFooter}>
