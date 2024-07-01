@@ -1,4 +1,3 @@
-// pages/VisitList.tsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -8,10 +7,10 @@ import { RootState } from '../store';
 import VisitsTable from '../components/VisitList/VisitsTable';
 import VisitsFilter from '../components/VisitList/VisitsFilter';
 import { Visit } from '../components/VisitList/types';
-import { format, subDays } from "date-fns";
+import { format, subDays } from 'date-fns';
 import { stringify } from 'csv-stringify';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 
 const queryClient = new QueryClient();
 
@@ -56,13 +55,32 @@ const fetchVisits = async (
   return response.data;
 };
 
-const fetchAllVisits = async (
+const fetchVisitsForTeam = async (
   token: string | null,
+  teamId: number,
   startDate: Date | undefined,
   endDate: Date | undefined,
-  purpose: string,
-  storeName: string,
-  employeeName: string,
+  currentPage: number,
+  itemsPerPage: number
+) => {
+  const formattedStartDate = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+  const formattedEndDate = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+  const url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getForTeam?teamId=${teamId}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&page=${currentPage - 1}&size=${itemsPerPage}&sort=visitDate,desc`;
+
+  const headers: { Authorization?: string } = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await axios.get(url, { headers });
+  return response.data;
+};
+
+const fetchAllVisitsForTeam = async (
+  token: string | null,
+  teamId: number,
+  startDate: Date | undefined,
+  endDate: Date | undefined,
   sortColumn: string | null,
   sortDirection: 'asc' | 'desc'
 ) => {
@@ -71,15 +89,11 @@ const fetchAllVisits = async (
   const allVisits = [];
 
   while (true) {
-    const response = await fetchVisits(
+    const response = await fetchVisitsForTeam(
       token,
+      teamId,
       startDate,
       endDate,
-      purpose,
-      storeName,
-      employeeName,
-      sortColumn,
-      sortDirection,
       page + 1,
       itemsPerPage
     );
@@ -99,47 +113,68 @@ const fetchAllVisits = async (
 const VisitsList: React.FC = () => {
   const router = useRouter();
   const token = useSelector((state: RootState) => state.auth.token);
+  const role = useSelector((state: RootState) => state.auth.role);
+  const teamId = useSelector((state: RootState) => state.auth.teamId);
   const { employeeName: queryEmployeeName, startDate: queryStartDate, endDate: queryEndDate } = router.query;
 
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
   const [startDate, setStartDate] = useState<Date | undefined>(queryStartDate ? new Date(queryStartDate as string) : subDays(new Date(), 2));
   const [endDate, setEndDate] = useState<Date | undefined>(queryEndDate ? new Date(queryEndDate as string) : new Date());
-  const [purpose, setPurpose] = useState<string>('');
-  const [storeName, setStoreName] = useState<string>('');
-  const [employeeName, setEmployeeName] = useState<string>(queryEmployeeName as string || '');
   const [sortColumn, setSortColumn] = useState<string | null>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [allVisits, setAllVisits] = useState<Visit[]>([]);
 
+  const [purpose, setPurpose] = useState<string>('');
+  const [storeName, setStoreName] = useState<string>('');
+  const [employeeName, setEmployeeName] = useState<string>('');
+
+  useEffect(() => {
+    setStartDate(queryStartDate ? new Date(queryStartDate as string) : subDays(new Date(), 2));
+    setEndDate(queryEndDate ? new Date(queryEndDate as string) : new Date());
+  }, [queryStartDate, queryEndDate]);
+
   const { data, error, isLoading } = useQuery(
     [
       'visits',
       token,
+      role,
+      teamId,
       startDate,
       endDate,
-      purpose,
-      storeName,
-      employeeName,
       sortColumn,
       sortDirection,
       currentPage,
       itemsPerPage
     ],
-    () => fetchVisits(
-      token,
-      startDate,
-      endDate,
-      purpose,
-      storeName,
-      employeeName,
-      sortColumn,
-      sortDirection,
-      currentPage,
-      itemsPerPage
-    ),
+    () => {
+      if (role === 'MANAGER' && teamId) {
+        return fetchVisitsForTeam(
+          token,
+          teamId,
+          startDate,
+          endDate,
+          currentPage,
+          itemsPerPage
+        );
+      } else if (role === 'ADMIN' || role === 'OFFICE MANAGER') {
+        return fetchVisits(
+          token,
+          startDate,
+          endDate,
+          purpose,
+          storeName,
+          employeeName,
+          sortColumn,
+          sortDirection,
+          currentPage,
+          itemsPerPage
+        );
+      }
+    },
     {
+      enabled: !!token && (role === 'MANAGER' ? !!teamId : (role === 'ADMIN' || role === 'OFFICE MANAGER')),
       keepPreviousData: true,
     }
   );
@@ -147,38 +182,25 @@ const VisitsList: React.FC = () => {
   const visits = data?.content || [];
   const totalPages = data ? data.totalPages : 1;
 
-  const columnMapping: { [key: string]: string } = {
-    'Customer Name': 'storeName',
-    'Executive': 'employeeName',
-    'Date': 'visit_date',
-    'Status': 'outcome',
-    'Purpose': 'purpose',
-    'Visit Start': 'checkinDate',
-    'Visit End': 'checkoutDate',
-    'Intent': 'intent',
-    'Last Updated': 'updatedAt',
-    'Phone Number': 'storePrimaryContact',
-    'District': 'district',
-    'Sub District': 'subDistrict',
-  };
-
   const handleSort = (column: string) => {
-    const backendColumn = columnMapping[column] || column;
-    if (backendColumn === sortColumn) {
+    if (sortColumn === column) {
       setSortDirection((prevDirection) => (prevDirection === 'asc' ? 'desc' : 'asc'));
     } else {
-      setSortColumn(backendColumn);
+      setSortColumn(column);
       setSortDirection('asc');
     }
   };
 
   const handleFilter = (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => {
-    const { storeName, employeeName, purpose } = filters;
-    setStoreName(storeName);
-    setEmployeeName(employeeName);
-    setPurpose(purpose);
-
     setCurrentPage(1);
+    setStoreName(filters.storeName);
+    setEmployeeName(filters.employeeName);
+    setPurpose(filters.purpose);
+    if (clearFilters) {
+      setStoreName('');
+      setEmployeeName('');
+      setPurpose('');
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -301,18 +323,34 @@ const VisitsList: React.FC = () => {
   };
 
   const fetchAndExportAllVisits = async () => {
-    const allVisits = await fetchAllVisits(
-      token,
-      startDate,
-      endDate,
-      purpose,
-      storeName,
-      employeeName,
-      sortColumn,
-      sortDirection
-    );
-    setAllVisits(allVisits);
-    handleExport(allVisits);
+    if (role === 'MANAGER' && !teamId) return;
+    if (role === 'MANAGER') {
+      const allVisits = await fetchAllVisitsForTeam(
+        token,
+        teamId!,
+        startDate,
+        endDate,
+        sortColumn,
+        sortDirection
+      );
+      setAllVisits(allVisits);
+      handleExport(allVisits);
+    } else if (role === 'ADMIN' || role === 'OFFICE MANAGER') {
+      const allVisits = await fetchVisits(
+        token,
+        startDate,
+        endDate,
+        purpose,
+        storeName,
+        employeeName,
+        sortColumn,
+        sortDirection,
+        1,
+        1000 // Fetch a large number of visits for export
+      );
+      setAllVisits(allVisits.content);
+      handleExport(allVisits.content);
+    }
   };
 
   if (isLoading) {

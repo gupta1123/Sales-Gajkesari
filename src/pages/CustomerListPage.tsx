@@ -37,13 +37,12 @@ import { AiFillCaretDown } from "react-icons/ai";
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
-// Create a QueryClient instance
 const queryClient = new QueryClient();
 
-export default function App() {
+export default function CustomerListPage() {
     return (
         <QueryClientProvider client={queryClient}>
-            <CustomerListPage />
+            <CustomerListContent />
         </QueryClientProvider>
     );
 }
@@ -68,248 +67,12 @@ type Customer = {
     customClientType: string | null;
 };
 
-type CustomerTableProps = {
-    customers: Customer[];
-    selectedColumns: string[];
-    onSelectColumn: (column: string) => void;
-    onSelectAllRows: () => void;
-    selectedRows: string[];
-    onSelectRow: (customerId: string) => void;
-    onBulkAction: (action: string) => void;
-    onDeleteCustomer: (customerId: string) => void;
-    sortColumn: string | null;
-    sortDirection: 'asc' | 'desc';
-    onSort: (column: string) => void;
-};
-
-const CustomerTable = ({
-    customers,
-    selectedColumns,
-    onSelectColumn,
-    onBulkAction,
-    onDeleteCustomer,
-    sortColumn,
-    sortDirection,
-    onSort,
-}: CustomerTableProps) => {
-    return (
-        <Table className="text-sm font-poppins">
-            <TableHeader>
-                <TableRow>
-                    {selectedColumns.includes('shopName') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('storeName')}>
-                            Shop Name
-                            {sortColumn === 'storeName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('ownerName') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('clientFirstName')}>
-                            Owner Name
-                            {sortColumn === 'clientFirstName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('city') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('city')}>
-                            City
-                            {sortColumn === 'city' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('state') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('state')}>
-                            State
-                            {sortColumn === 'state' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('phone') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('primaryContact')}>
-                            Phone
-                            {sortColumn === 'primaryContact' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('monthlySales') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('monthlySale')}>
-                            Monthly Sales
-                            {sortColumn === 'monthlySale' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('intentLevel') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('intent')}>
-                            Intent Level
-                            {sortColumn === 'intent' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('fieldOfficer') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('employeeName')}>
-                            Field Officer
-                            {sortColumn === 'employeeName' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('clientType') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('clientType')}>
-                            Client Type
-                            {sortColumn === 'clientType' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('totalVisits') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('totalVisits')}>
-                            Total Visits
-                            {sortColumn === 'totalVisits' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('lastVisitDate') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('lastVisitDate')}>
-                            Last Visit Date
-                            {sortColumn === 'lastVisitDate' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    {selectedColumns.includes('email') && (
-                        <TableHead className="cursor-pointer" onClick={() => onSort('email')}>
-                            Email
-                            {sortColumn === 'email' && (
-                                <span className="text-black text-sm">{sortDirection === 'asc' ? ' ' : ' '}</span>
-                            )}
-                        </TableHead>
-                    )}
-                    <TableHead className="w-20">Actions</TableHead>
-                </TableRow>
-            </TableHeader>
-
-            <TableBody>
-                {customers.map((customer) => (
-                    <TableRow key={customer.storeId}>
-                        {selectedColumns.includes('shopName') && <TableCell>{customer.storeName}</TableCell>}
-                        {selectedColumns.includes('ownerName') && <TableCell>{`${customer.clientFirstName} ${customer.clientLastName}`}</TableCell>}
-                        {selectedColumns.includes('city') && <TableCell>{customer.city}</TableCell>}
-                        {selectedColumns.includes('state') && <TableCell>{customer.state}</TableCell>}
-                        {selectedColumns.includes('phone') && <TableCell>{customer.primaryContact}</TableCell>}
-                        {selectedColumns.includes('monthlySales') && (
-                            <TableCell>
-                                {customer.monthlySale ? `${customer.monthlySale.toLocaleString()} tonnes` : ''}
-                            </TableCell>
-                        )}
-                        {selectedColumns.includes('intentLevel') && (
-                            <TableCell>{customer.intent}</TableCell>
-                        )}
-                        {selectedColumns.includes('fieldOfficer') && <TableCell>{customer.employeeName}</TableCell>}
-                        {selectedColumns.includes('clientType') && (
-                            <TableCell>
-                                <Badge variant="outline">
-                                    {customer.customClientType || customer.clientType}
-                                </Badge>
-                            </TableCell>
-                        )}
-
-                        {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisitCount}</TableCell>}
-                        {selectedColumns.includes('lastVisitDate') && (
-                            <TableCell>
-                                {customer.lastVisitDate
-                                    ? new Date(customer.lastVisitDate).toLocaleDateString('en-US', {
-                                        year: 'numeric',
-                                        month: '2-digit',
-                                        day: '2-digit',
-                                    })
-                                    : ''}
-                            </TableCell>
-                        )}
-                        {selectedColumns.includes('email') && <TableCell>{customer.email}</TableCell>}
-                        <TableCell className="w-20">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                        <span className="sr-only">Open menu</span>
-                                        <AiFillCaretDown className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => window.location.href = `/CustomerDetailPage/${customer.storeId}`}>
-                                        View
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={() => onDeleteCustomer(customer.storeId.toString())}>
-                                        Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    );
-};
-
-interface PaginationNumbersProps {
-    currentPage: number;
-    totalPages: number;
-    onPageChange: (page: number) => void;
-}
-interface QueryFilters {
-    page: number;
-    size: number;
-    filters: {
-        storeName: string;
-        primaryContact: string;
-        ownerName: string;
-        city: string;
-        state: string;
-        monthlySale: string;
-        clientType: string;
-    };
-    sortColumn: string | null;
-    sortDirection: 'asc' | 'desc';
-}
-
-const PaginationNumbers: React.FC<PaginationNumbersProps> = ({ currentPage, totalPages, onPageChange }) => {
-    const pageNumbers = [];
-
-    for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-    }
-
-    return (
-        <div className="flex items-center space-x-1">
-            {pageNumbers.map((pageNumber) => (
-                <PaginationItem
-                    key={pageNumber}
-                    onClick={() => onPageChange(pageNumber)}
-                    className={pageNumber === currentPage ? 'bg-blue-500 text-white' : ''}
-                >
-                    {pageNumber}
-                </PaginationItem>
-            ))}
-        </div>
-    );
-};
-
-function CustomerListPage() {
-    const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+function CustomerListContent() {
+    const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
         'shopName', 'ownerName', 'city', 'state', 'phone', 'monthlySales', 'intentLevel', 'fieldOfficer',
         'clientType', 'totalVisits', 'lastVisitDate', 'email',
     ]);
-
     const [filters, setFilters] = useState({
         storeName: '',
         primaryContact: '',
@@ -325,45 +88,48 @@ function CustomerListPage() {
     const [isChangeFieldOfficerDialogOpen, setIsChangeFieldOfficerDialogOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [sortColumn, setSortColumn] = useState<string | null>('storeName');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
     const token = useSelector((state: RootState) => state.auth.token);
     const employeeId = useSelector((state: RootState) => state.auth.employeeId);
-    const invalidateCustomersCache = () => {
-        queryClient.invalidateQueries('customers');
-    };
-
+    const role = useSelector((state: RootState) => state.auth.role);
+    const teamId = useSelector((state: RootState) => state.auth.teamId);
 
     const fetchFilteredCustomers = async ({ queryKey }: { queryKey: any }) => {
         const { page, size, filters, sortColumn, sortDirection } = queryKey[1];
 
+        let url: string;
         const queryParams = new URLSearchParams();
+
+        if (role === 'MANAGER' && teamId) {
+            url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getForTeam`;
+            queryParams.append('teamId', teamId.toString());
+        } else {
+            url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/filteredValues`;
+            // Add filter parameters for non-manager roles
+            if (filters.storeName) queryParams.append('storeName', filters.storeName);
+            if (filters.primaryContact) queryParams.append('primaryContact', filters.primaryContact);
+            if (filters.ownerName) queryParams.append('ownerName', filters.ownerName);
+            if (filters.city) queryParams.append('city', filters.city);
+            if (filters.state) queryParams.append('state', filters.state);
+            if (filters.monthlySale) queryParams.append('monthlySale', filters.monthlySale);
+            if (filters.clientType) queryParams.append('clientType', filters.clientType);
+        }
+
         queryParams.append('page', (page - 1).toString());
         queryParams.append('size', size.toString());
 
-        if (filters.storeName) queryParams.append('storeName', filters.storeName);
-        if (filters.primaryContact) queryParams.append('primaryContact', filters.primaryContact);
-        if (filters.ownerName) queryParams.append('ownerName', filters.ownerName);
-        if (filters.city) queryParams.append('city', filters.city);
-        if (filters.state) queryParams.append('state', filters.state);
-        if (filters.monthlySale) queryParams.append('monthlySale', filters.monthlySale);
-        if (filters.clientType) queryParams.append('clientType', filters.clientType);
-
-        // Append the sorting parameters without URL encoding
-        let queryString = queryParams.toString();
         if (sortColumn) {
-            queryString += `&sort=${sortColumn},${sortDirection}`;
+            queryParams.append('sort', `${sortColumn},${sortDirection}`);
         }
 
-        const response = await fetch(
-            `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/filteredValues?${queryString}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
+        const response = await fetch(`${url}?${queryParams.toString()}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
 
         if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -372,26 +138,14 @@ function CustomerListPage() {
         return response.json();
     };
 
-    const [sortColumn, setSortColumn] = useState<string | null>('storeName');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-    const handleSort = (column: string) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('asc');
-        }
-    };
-
     const { data, isLoading, isError, error } = useQuery(
-        ['customers', { page: currentPage, size: itemsPerPage, filters, sortColumn, sortDirection }],
+        ['customers', { page: currentPage, size: itemsPerPage, filters, sortColumn, sortDirection, role, teamId }],
         fetchFilteredCustomers
     );
 
     const customers = data?.content || [];
     const totalCustomers = data?.totalElements || 0;
-    const totalPages = data ? data.totalPages : 1; // Add totalPages
+    const totalPages = data ? data.totalPages : 1;
 
     const openDeleteModal = (customerId: string) => {
         setSelectedCustomerId(customerId);
@@ -408,7 +162,7 @@ function CustomerListPage() {
             ...prevFilters,
             [filterName]: value,
         }));
-        setCurrentPage(1); // Reset to page 1 whenever a filter is changed
+        setCurrentPage(1);
     };
 
     const handleFilterClear = (filterName: keyof typeof filters) => {
@@ -416,7 +170,7 @@ function CustomerListPage() {
             ...prevFilters,
             [filterName]: '',
         }));
-        setCurrentPage(1); // Reset to page 1 whenever a filter is cleared
+        setCurrentPage(1);
     };
 
     const handleDeleteConfirm = async () => {
@@ -430,10 +184,9 @@ function CustomerListPage() {
                 });
                 if (response.ok) {
                     // Invalidate the customers cache to refetch the updated data
-                    invalidateCustomersCache();
+                    queryClient.invalidateQueries('customers');
                     closeDeleteModal();
                 } else {
-                    // Handle error case
                     console.error('Failed to delete customer');
                 }
             } catch (error) {
@@ -452,10 +205,6 @@ function CustomerListPage() {
             setItemsPerPage(newValue);
             setCurrentPage(1);
         }
-    };
-
-    const toggleViewMode = () => {
-        setViewMode((prevMode) => (prevMode === 'card' ? 'table' : 'card'));
     };
 
     const handleSelectColumn = (column: string) => {
@@ -484,18 +233,15 @@ function CustomerListPage() {
 
     const handleBulkAction = (action: string) => {
         if (action === 'changeFieldOfficer') {
-            console.log('Opening Change Field Officer Dialog');
             setIsChangeFieldOfficerDialogOpen(true);
         } else {
             console.log(`Performing ${action} on selected rows:`, selectedRows);
-            // Implement the logic for other bulk actions
         }
     };
 
     const handleChangeFieldOfficerConfirm = (selectedFieldOfficer: string) => {
         console.log('Changing field officer to:', selectedFieldOfficer);
         console.log('Selected rows:', selectedRows);
-        // Implement the logic to update the field officer for the selected customers
         setIsChangeFieldOfficerDialogOpen(false);
     };
 
@@ -507,10 +253,19 @@ function CustomerListPage() {
         setIsModalOpen(false);
     };
 
+    const handleSort = (column: string) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
     const renderPagination = () => {
         const pageNumbers = [];
-        const displayPages = 5; // Show first 5 pages
-        const groupSize = 10; // Show 10 pages at a time before showing "..."
+        const displayPages = 5;
+        const groupSize = 10;
 
         let startPage = Math.max(currentPage - Math.floor(displayPages / 2), 1);
         let endPage = startPage + displayPages - 1;
@@ -613,9 +368,9 @@ function CustomerListPage() {
                             </DropdownMenu>
                         </>
                     )}
-                    <Button variant="outline" onClick={openModal}>
+                     {/* <Button variant="outline" onClick={openModal}>
                         Add Customer
-                    </Button>
+                    </Button>  */}
                 </div>
             </div>
             <AddCustomerModal
@@ -624,6 +379,12 @@ function CustomerListPage() {
                 token={token || ''}
                 employeeId={employeeId ? Number(employeeId) : null}
             />
+
+            {role === 'MANAGER' && (
+                <div className="mb-4">
+                    <h2 className="text-xl font-semibold">Team Customers</h2>
+                </div>
+            )}
 
             <>
                 <div className="mb-4 flex flex-wrap space-x-4 text-sm font-poppins">
@@ -714,19 +475,178 @@ function CustomerListPage() {
                     </div>
                 </div>
 
-                <CustomerTable
-                    customers={customers}
-                    selectedColumns={selectedColumns}
-                    onSelectColumn={handleSelectColumn}
-                    onSelectAllRows={handleSelectAllRows}
-                    selectedRows={selectedRows}
-                    onSelectRow={handleSelectRow}
-                    onBulkAction={handleBulkAction}
-                    onDeleteCustomer={openDeleteModal}
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                />
+                <Table className="text-sm font-poppins">
+                    <TableHeader>
+                        <TableRow>
+                            {selectedColumns.includes('shopName') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('storeName')}>
+                                    Shop Name
+                                    {sortColumn === 'storeName' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('ownerName') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('clientFirstName')}>
+                                    Owner Name
+                                    {sortColumn === 'clientFirstName' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('city') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('city')}>
+                                    City
+                                    {sortColumn === 'city' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('state') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('state')}>
+                                    State
+                                    {sortColumn === 'state' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('phone') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('primaryContact')}>
+                                    Phone
+                                    {sortColumn === 'primaryContact' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('monthlySales') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('monthlySale')}>
+                                    Monthly Sales
+                                    {sortColumn === 'monthlySale' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('intentLevel') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('intent')}>
+                                    Intent Level
+                                    {sortColumn === 'intent' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('fieldOfficer') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('employeeName')}>
+                                    Field Officer
+                                    {sortColumn === 'employeeName' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('clientType') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('clientType')}>
+                                    Client Type
+                                    {sortColumn === 'clientType' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('totalVisits') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('totalVisits')}>
+                                    Total Visits
+                                    {sortColumn === 'totalVisits' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('lastVisitDate') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('lastVisitDate')}>
+                                    Last Visit Date
+                                    {sortColumn === 'lastVisitDate' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            {selectedColumns.includes('email') && (
+                                <TableHead className="cursor-pointer" onClick={() => handleSort('email')}>
+                                    Email
+                                    {sortColumn === 'email' && (
+                                        <span className="text-black text-sm">{sortDirection === 'asc' ? ' ▲' : ' ▼'}</span>
+                                    )}
+                                </TableHead>
+                            )}
+                            <TableHead className="w-20">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                        {customers.map((customer: Customer) => (
+
+                            <TableRow key={customer.storeId}>
+                                {selectedColumns.includes('shopName') && <TableCell>{customer.storeName || ''}</TableCell>}
+                                {selectedColumns.includes('ownerName') && (
+                                    <TableCell>
+                                        {customer.clientFirstName || customer.clientLastName
+                                            ? `${customer.clientFirstName || ''} ${customer.clientLastName || ''}`.trim()
+                                            : ''}
+                                    </TableCell>
+                                )}
+                                {selectedColumns.includes('city') && <TableCell>{customer.city || ''}</TableCell>}
+                                {selectedColumns.includes('state') && <TableCell>{customer.state || ''}</TableCell>}
+                                {selectedColumns.includes('phone') && <TableCell>{customer.primaryContact || ''}</TableCell>}
+                                {selectedColumns.includes('monthlySales') && (
+                                    <TableCell>
+                                        {customer.monthlySale !== null && customer.monthlySale !== undefined
+                                            ? `${customer.monthlySale.toLocaleString()} tonnes`
+                                            : ''}
+                                    </TableCell>
+                                )}
+                                {selectedColumns.includes('intentLevel') && (
+                                    <TableCell>{customer.intent !== null && customer.intent !== undefined ? customer.intent : ''}</TableCell>
+                                )}
+                                {selectedColumns.includes('fieldOfficer') && <TableCell>{customer.employeeName || ''}</TableCell>}
+                                {selectedColumns.includes('clientType') && (
+                                    <TableCell>
+                                        <Badge variant="outline">
+                                            {customer.clientType || ''}
+                                        </Badge>
+                                    </TableCell>
+                                )}
+                                {selectedColumns.includes('totalVisits') && <TableCell>{customer.totalVisitCount}</TableCell>}
+                                {selectedColumns.includes('lastVisitDate') && (
+                                    <TableCell>
+                                        {customer.lastVisitDate
+                                            ? new Date(customer.lastVisitDate).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                            })
+                                            : ''}
+                                    </TableCell>
+                                )}
+                                {selectedColumns.includes('email') && <TableCell>{customer.email || ''}</TableCell>}
+                                <TableCell className="w-20">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <span className="sr-only">Open menu</span>
+                                                <AiFillCaretDown className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => window.location.href = `/CustomerDetailPage/${customer.storeId}`}>
+                                                View
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onSelect={() => openDeleteModal(customer.storeId.toString())}>
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
 
                 <div className="mt-8 flex justify-between items-center">
                     <div className="flex items-center space-x-2">
@@ -759,3 +679,4 @@ function CustomerListPage() {
         </div>
     );
 }
+

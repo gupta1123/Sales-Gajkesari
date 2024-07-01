@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
@@ -13,6 +11,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { ClipLoader } from 'react-spinners';
+import EmployeeCard1 from './EmployeeCard1';
 
 interface Visit {
   id: string;
@@ -54,42 +53,6 @@ const StateCard = ({ state, totalVisits, totalEmployees, onClick }: StateCardPro
       <div className="flex justify-between">
         <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
         <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
-      </div>
-    </div>
-  );
-};
-
-interface CityCardProps {
-  city: string;
-  totalVisits: number;
-  totalEmployees: number;
-  onClick: () => void;
-}
-
-const CityCard = ({ city, totalVisits, totalEmployees, onClick }: CityCardProps) => {
-  return (
-    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4 capitalize">{city || 'Unknown City'}</h2>
-      <div className="flex justify-between">
-        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
-        <p className="text-gray-600">Total Employees: <span className="font-bold">{totalEmployees}</span></p>
-      </div>
-    </div>
-  );
-};
-
-interface EmployeeCardProps {
-  employeeName: string;
-  totalVisits: number;
-  onClick: () => void;
-}
-
-const EmployeeCard = ({ employeeName, totalVisits, onClick }: EmployeeCardProps) => {
-  return (
-    <div className="bg-white shadow-lg rounded-lg p-6 cursor-pointer transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onClick={onClick}>
-      <h2 className="text-2xl font-bold mb-4 capitalize">{employeeName}</h2>
-      <div className="flex justify-between">
-        <p className="text-gray-600">Total Visits: <span className="font-bold">{totalVisits}</span></p>
       </div>
     </div>
   );
@@ -493,7 +456,7 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
                 </PaginationLink>
               </PaginationItem>
             ))}
-            {totalPages > 1 && (
+            {totalPages > 1 && currentPage !== totalPages && (
               <a
                 href="#"
                 className={`px-4 py-2 text-sm font-medium ${currentPage === totalPages
@@ -520,7 +483,6 @@ const VisitsTable = ({ visits, onViewDetails, currentPage, onPageChange }: Visit
 const Dashboard = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [selectedState, setSelectedState] = useState<string | null>(null);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -528,20 +490,28 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const token = useSelector((state: RootState) => state.auth.token);
+  const role = useSelector((state: RootState) => state.auth.role);
+  const teamId = useSelector((state: RootState) => state.auth.teamId);
+
   const router = useRouter();
 
   useEffect(() => {
     if (token) {
       fetchVisits(startDate, endDate);
     }
-  }, [startDate, endDate, token]);
+  }, [startDate, endDate, token, role, teamId]);
 
   const fetchVisits = async (start: string, end: string) => {
     setIsLoading(true);
     try {
-      let url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange1?start=${start}&end=${end}`;
-      if (selectedCity && selectedCity !== 'Filter By City') {
-        url += `&city=${encodeURIComponent(selectedCity)}`;
+      let url = '';
+
+      if (role === 'MANAGER' && teamId) {
+        url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getForTeam?teamId=${teamId}&startDate=${start}&endDate=${end}`;
+      } else if (role === 'ADMIN' || role === 'OFFICE MANAGER') {
+        url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateRange1?start=${start}&end=${end}`;
+      } else {
+        throw new Error('Invalid user role');
       }
 
       const response = await fetch(url, {
@@ -549,11 +519,18 @@ const Dashboard = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
       if (!response.ok) {
         throw new Error('Failed to fetch visits');
       }
-      const data: Visit[] = await response.json();
-      setVisits(data.filter(visit => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime));
+
+      const data = await response.json();
+
+      if (role === 'MANAGER') {
+        setVisits(data.content || []);
+      } else {
+        setVisits(data);
+      }
     } catch (error) {
       console.error('Error fetching visits:', error);
     } finally {
@@ -565,7 +542,6 @@ const Dashboard = () => {
     const { reset } = router.query;
     if (reset === 'true') {
       setSelectedState(null);
-      setSelectedCity(null);
       setSelectedEmployee(null);
       setCurrentPage(1);
       router.replace('/Dashboard', undefined, { shallow: true });
@@ -574,12 +550,6 @@ const Dashboard = () => {
 
   const handleStateClick = (state: string) => {
     setSelectedState(state.trim().toLowerCase() || 'unknown');
-    setSelectedCity(null);
-    setSelectedEmployee(null);
-  };
-
-  const handleCityClick = (city: string) => {
-    setSelectedCity(city.trim().toLowerCase() || 'unknown');
     setSelectedEmployee(null);
   };
 
@@ -594,7 +564,8 @@ const Dashboard = () => {
   };
 
   const handleViewDetails = (visitId: string) => {
-    router.push(`/VisitDetailPage/${visitId}`);
+    sessionStorage.setItem('previousPage', 'EmployeeCard1');
+    router.replace(`/VisitDetailPage/${visitId}`);
   };
 
   const states = Array.from(new Set(visits.map((visit) => visit.state.trim().toLowerCase() || 'unknown')));
@@ -638,7 +609,7 @@ const Dashboard = () => {
       </div>
     );
   }
-  if (isLoading && !selectedState && !selectedCity && !selectedEmployee) {
+  if (isLoading && !selectedState && !selectedEmployee) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
@@ -654,7 +625,7 @@ const Dashboard = () => {
     );
   }
 
-  if (isLoading && selectedState && !selectedCity && !selectedEmployee) {
+  if (isLoading && selectedState && !selectedEmployee) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
@@ -668,24 +639,6 @@ const Dashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {renderSkeletons(6)}
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading && selectedCity && !selectedEmployee) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold capitalize">{selectedCity === 'unknown' ? 'Unknown City' : selectedCity}</h1>
-          <Button variant="ghost" size="lg" onClick={() => setSelectedCity(null)}>
-            <ArrowLeftIcon className="h-6 w-6" />
-          </Button>
-        </div>
-        <div className="flex justify-center mb-8">
-          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">          {renderSkeletons(6)}
         </div>
       </div>
     );
@@ -715,44 +668,9 @@ const Dashboard = () => {
       </div>
     );
   }
-  if (selectedState && !selectedCity && !selectedEmployee) {
+  if (selectedState && !selectedEmployee) {
     const stateVisits = visits.filter((visit) => (visit.state.trim().toLowerCase() || 'unknown') === selectedState);
-    const cities = Array.from(new Set(stateVisits.map((visit) => visit.city.trim().toLowerCase() || 'unknown')));
-    const cityCards = cities.map((city) => {
-      const cityVisits = visits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === city && (visit.state.trim().toLowerCase() || 'unknown') === selectedState);
-      const totalVisits = cityVisits.length;
-      const totalEmployees = Array.from(new Set(cityVisits.map((visit) => visit.employeeName))).length;
-      return (
-        <CityCard
-          key={city}
-          city={city.charAt(0).toUpperCase() + city.slice(1) || 'Unknown City'}
-          totalVisits={totalVisits}
-          totalEmployees={totalEmployees}
-          onClick={() => handleCityClick(city)}
-        />
-      );
-    });
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold capitalize">{selectedState === 'unknown' ? 'Unknown State' : selectedState}</h1>
-          <Button variant="ghost" size="lg" onClick={() => setSelectedState(null)}>
-            <ArrowLeftIcon className="h-6 w-6" />
-          </Button>
-        </div>
-        <div className="mb-8">
-          <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {cityCards}
-        </div>
-      </div>
-    );
-  }
-
-  if (selectedCity && !selectedEmployee) {
-    const cityVisits = visits.filter((visit) => (visit.city.trim().toLowerCase() || 'unknown') === selectedCity);
-    const employeeVisits = cityVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
+    const employeeVisits = stateVisits.reduce((acc: { [key: string]: Visit[] }, visit) => {
       const employeeName = visit.employeeName.trim().toLowerCase();
       if (!acc[employeeName]) {
         acc[employeeName] = [];
@@ -764,7 +682,7 @@ const Dashboard = () => {
     const employeeCards = Object.entries(employeeVisits).map(([employeeName, visits]) => {
       const totalVisits = visits.length;
       return (
-        <EmployeeCard
+        <EmployeeCard1
           key={employeeName}
           employeeName={employeeName.charAt(0).toUpperCase() + employeeName.slice(1)}
           totalVisits={totalVisits}
@@ -776,8 +694,8 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold capitalize">{selectedCity === 'unknown' ? 'Unknown City' : selectedCity}</h1>
-          <Button variant="ghost" size="lg" onClick={() => setSelectedCity(null)}>
+          <h1 className="text-3xl font-bold capitalize">{selectedState === 'unknown' ? 'Unknown State' : selectedState}</h1>
+          <Button variant="ghost" size="lg" onClick={() => setSelectedState(null)}>
             <ArrowLeftIcon className="h-6 w-6" />
           </Button>
         </div>
@@ -792,7 +710,7 @@ const Dashboard = () => {
   }
 
   if (selectedEmployee) {
-    const employeeVisits = visits.filter((visit) => visit.employeeName.trim().toLowerCase() === selectedEmployee && (visit.city.trim().toLowerCase() || 'unknown') === selectedCity);
+    const employeeVisits = visits.filter((visit) => visit.employeeName.trim().toLowerCase() === selectedEmployee);
 
     const totalVisits = employeeVisits.length;
     const completedVisits = employeeVisits.filter((visit) => visit.checkinDate && visit.checkinTime && visit.checkoutDate && visit.checkoutTime).length;
@@ -823,7 +741,6 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <KPICard title="Total Visits" value={totalVisits} />
           <KPICard title="Completed Visits" value={completedVisits} />
-          {/* <KPICard title="Ongoing Visits" value={ongoingVisits} /> */}
           <KPICard title="Assigned Visits" value={assignedVisits} />
         </div>
         <div className="mb-8">

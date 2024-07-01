@@ -1,36 +1,14 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter } from 'next/router';
-import { CheckCircleOutlined } from '@ant-design/icons';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"; // Update the path according to your file structure
-
-type EventIconProps = {
-  type: 'task' | 'event' | 'notification'; // Add more types as needed
-};
-
-const EventIcon: React.FC<EventIconProps> = ({ type }) => {
-  switch (type) {
-    case "task":
-      return <CheckCircleOutlined className="w-6 h-6 text-green-500" />;
-    // handle other cases
-    default:
-      return <div>Unknown type</div>;
-  }
-};
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 interface CustomerData {
+  id?: number;
   storeName?: string;
   firstName?: string;
   lastName?: string;
@@ -46,27 +24,26 @@ interface CustomerData {
   gstNumber?: string;
   monthlySale?: string | number;
   clientType?: string;
+  fieldOfficerId?: number;
+}
+
+interface Employee {
+  id: number;
+  firstName: string;
+  lastName: string;
 }
 
 interface AddCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  employeeId: number | null;
   token: string;
-  existingData?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-    // Add other relevant fields
-  };
+  employeeId: number | null;
+  existingData?: CustomerData; // Add this line
 }
 
 const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   isOpen,
   onClose,
-  employeeId,
   token,
   existingData,
 }) => {
@@ -75,18 +52,35 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       firstName: '',
       lastName: '',
       email: '',
-      // Initialize other fields with empty values
     }
   );
   const [activeTab, setActiveTab] = useState<string>('basic');
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const router = useRouter();
 
-  const handleInputChange = (field: string, value: string) => {
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data: Employee[] = await response.json();
+        setEmployees(data);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      }
+    };
+
+    fetchEmployees();
+  }, [token]);
+
+  const handleInputChange = (field: keyof CustomerData, value: string | number) => {
     let parsedValue: string | number = value;
-    // Assuming 'pincode', 'monthlySale', 'primaryContact', and other similar fields are intended to be numbers
-    const numberFields = ['pincode', 'monthlySale', 'primaryContact', 'secondaryContact'];
+    const numberFields: (keyof CustomerData)[] = ['pincode', 'monthlySale', 'primaryContact', 'secondaryContact', 'fieldOfficerId'];
     if (numberFields.includes(field)) {
-      parsedValue = value === '' ? '' : parseInt(value, 10); // Parse to integer, or you can use parseFloat for decimal numbers
+      parsedValue = value === '' ? '' : parseInt(value.toString(), 10);
     }
 
     setCustomerData((prevData) => ({
@@ -97,50 +91,44 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
   const handleSubmit = async () => {
     try {
-      // Construct the request body with appropriate type conversions
       const requestBody = {
         ...customerData,
         primaryContact: customerData.primaryContact ? parseInt(customerData.primaryContact.toString(), 10) : undefined,
+        secondaryContact: customerData.secondaryContact ? parseInt(customerData.secondaryContact.toString(), 10) : undefined,
         pincode: customerData.pincode ? parseInt(customerData.pincode.toString(), 10) : undefined,
         monthlySale: customerData.monthlySale ? parseInt(customerData.monthlySale.toString(), 10) : undefined,
-        latitude: 10.00, // Assuming static values for demonstration
-        longitude: -23.00, // Assuming static values for demonstration
-        employeeId: employeeId, // Explicitly include employeeId
+        latitude: 10.0,
+        longitude: -23.0,
+        employeeId: customerData.fieldOfficerId, // Use selected field officer's ID
       };
 
-      // Determine the URL and method based on whether you're updating or creating a new entry
-      const url = existingData
+      const url = existingData && existingData.id
         ? `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/update?id=${existingData.id}`
         : 'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/create';
-      const method = existingData ? 'PUT' : 'POST';
+      const method = existingData && existingData.id ? 'PUT' : 'POST';
 
-      // Execute the fetch request with the prepared URL, method, and request body
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Ensure the token is correctly passed and used
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       });
 
-      // Process the response
       if (response.ok) {
         const data = await response.json();
-        // Assuming you want to navigate to a new page with the storeId from response
         router.push(`/CustomerDetailPage/${data.storeId}`);
+        onClose(); // Close the modal after successful submission
       } else {
-        // Handle HTTP error responses
         console.error('Failed to update/create customer');
+        // Handle error case, e.g., show an error message to the user
       }
     } catch (error) {
-      // Handle exceptions during the fetch operation
       console.error('Error updating/creating customer:', error);
+      // Handle error case, e.g., show an error message to the user
     }
   };
-  useEffect(() => {
-    console.log("Current Employee ID: ", employeeId);
-  }, [employeeId]);
 
   const handleNext = () => {
     if (activeTab === 'basic') {
@@ -188,23 +176,13 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Label htmlFor="firstName" className="text-right">
                   First Name
                 </Label>
-                <Input
-                  id="firstName"
-                  value={customerData.firstName || ''}
-                  className="col-span-3"
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                />
+                <Input id="firstName" value={customerData.firstName || ''} className="col-span-3" onChange={(e) => handleInputChange('firstName', e.target.value)} />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lastName" className="text-right">
                   Last Name
                 </Label>
-                <Input
-                  id="lastName"
-                  value={customerData.lastName || ''}
-                  className="col-span-3"
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                />
+                <Input id="lastName" value={customerData.lastName || ''} className="col-span-3" onChange={(e) => handleInputChange('lastName', e.target.value)} />
               </div>
             </div>
           </TabsContent>
@@ -226,13 +204,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Label htmlFor="email" className="text-right">
                   Email
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={customerData.email || ''}
-                  className="col-span-3"
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                />
+                <Input id="email" type="email" value={customerData.email || ''} className="col-span-3" onChange={(e) => handleInputChange('email', e.target.value)} />
               </div>
             </div>
           </TabsContent>
@@ -290,7 +262,6 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 </Label>
                 <Input id="monthlySale" type="number" value={customerData.monthlySale || ''} className="col-span-3" onChange={(e) => handleInputChange('monthlySale', e.target.value)} />
               </div>
-
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="clientType" className="text-right">
                   Client Type
@@ -307,16 +278,33 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem
-                        onClick={() => handleInputChange('clientType', 'Project')}
-                      >
-                        project
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleInputChange('clientType', 'Shop')}
-                      >
-                        shop
-                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleInputChange('clientType', 'Project')}>Project</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleInputChange('clientType', 'Shop')}>Shop</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="fieldOfficer" className="text-right">
+                  Field Officer
+                </Label>
+                <div className="col-span-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="w-full">
+                      <Input
+                        id="fieldOfficer"
+                        value={customerData.fieldOfficerId ? employees.find((emp) => emp.id === customerData.fieldOfficerId)?.firstName : ''}
+                        placeholder="Select Field Officer"
+                        readOnly
+                        className="cursor-pointer text-gray-400"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {employees.map((employee) => (
+                        <DropdownMenuItem key={employee.id} onClick={() => handleInputChange('fieldOfficerId', employee.id.toString())}>
+                          {employee.firstName} {employee.lastName}
+                        </DropdownMenuItem>
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

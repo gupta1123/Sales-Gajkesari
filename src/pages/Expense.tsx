@@ -6,7 +6,6 @@ import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, XMarkIcon, InformationCircleIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
 
-
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -31,7 +30,7 @@ import {
     PaginationPrevious,
     PaginationNext
 } from "@/components/ui/pagination";
-import { Checkbox } from "@/components/ui/checkbox"; // shadcn Checkbox component
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Expense {
     id: string;
@@ -45,6 +44,9 @@ interface Expense {
 
 const ExpensePage = () => {
     const [expenseData, setExpenseData] = useState<Expense[]>([]);
+    const [updateTrigger, setUpdateTrigger] = useState(false);
+    const [selectedExpenseCategories, setSelectedExpenseCategories] = useState<string[]>([]);
+
     const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -54,28 +56,44 @@ const ExpensePage = () => {
     const [fieldOfficers, setFieldOfficers] = useState<string[]>([]);
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
     const token = useSelector((state: RootState) => state.auth.token);
+    const role = useSelector((state: RootState) => state.auth.role);
+    const teamId = useSelector((state: RootState) => state.auth.teamId); // Use teamId from Redux state
     const [expandedCard, setExpandedCard] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [selectedExpenseIds, setSelectedExpenseIds] = useState<string[]>([]);
     const itemsPerPageCard = 5;
     const itemsPerPageTable = 10;
 
     useEffect(() => {
         fetchExpenseData();
-    }, [selectedEmployee, selectedYear, selectedMonth, selectedStatus, selectedFieldOfficer, selectedExpenseCategory]);
+    }, [selectedEmployee, selectedYear, selectedMonth, selectedStatus, selectedFieldOfficer, selectedExpenseCategory, updateTrigger]);
 
     const fetchExpenseData = async () => {
         try {
-            const start = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
-            const end = new Date(selectedYear, selectedMonth + 1, 0).toISOString().split('T')[0];
+            let response;
+            if (role === 'MANAGER' && teamId) {
+                response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/getForTeam?id=${teamId}`, { // Use teamId here
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+            } else {
+                const start = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
+                const end = new Date(selectedYear, selectedMonth + 1, 0).toISOString().split('T')[0];
+                response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/getByDateRange?start=${start}&end=${end}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+            }
 
-            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/getByDateRange?start=${start}&end=${end}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            if (!response.ok) {
+                const errorDetails = await response.json();
+                throw new Error(`Error fetching expense data: ${errorDetails.message}`);
+            }
 
             const data = await response.json();
             setExpenseData(data);
@@ -100,7 +118,7 @@ const ExpensePage = () => {
                 },
                 body: JSON.stringify({
                     approvalStatus: 'Approved',
-                    approvalDate: '2024-03-23',
+                    approvalDate: new Date().toISOString().split('T')[0],
                     reimbursedDate: '2023-03-23',
                     reimbursementAmount: 200,
                     paymentMethod: 'cash',
@@ -108,7 +126,6 @@ const ExpensePage = () => {
             });
 
             if (response.ok) {
-                console.log('Expense approved successfully');
                 setExpenseData((prevExpenseData) =>
                     prevExpenseData.map((expense) =>
                         expense.id === expenseId && expense.employeeName === employeeName
@@ -116,6 +133,8 @@ const ExpensePage = () => {
                             : expense
                     )
                 );
+                setUpdateTrigger((prev) => !prev);
+                console.log('Expense approved successfully');
             } else {
                 console.error('Error approving expense');
             }
@@ -134,13 +153,12 @@ const ExpensePage = () => {
                 },
                 body: JSON.stringify({
                     approvalStatus: 'Rejected',
-                    approvalDate: '2024-03-22',
+                    approvalDate: new Date().toISOString().split('T')[0],
                     rejectionReason: 'Reason',
                 }),
             });
 
             if (response.ok) {
-                console.log('Expense rejected successfully');
                 setExpenseData((prevExpenseData) =>
                     prevExpenseData.map((expense) =>
                         expense.id === expenseId && expense.employeeName === employeeName
@@ -148,6 +166,8 @@ const ExpensePage = () => {
                             : expense
                     )
                 );
+                setUpdateTrigger((prev) => !prev);
+                console.log('Expense rejected successfully');
             } else {
                 console.error('Error rejecting expense');
             }
@@ -156,27 +176,17 @@ const ExpensePage = () => {
         }
     };
 
-    const handleApproveAll = async (employeeName: string) => {
-        const pendingExpenses = expenseData.filter(
-            (expense) => expense.employeeName === employeeName && expense.approvalStatus === 'Pending'
-        );
+    const handleApproveAll = async () => {
+        const selectedExpenses = expenseData.filter((expense) => selectedExpenseIds.includes(expense.id));
 
-        const approveExpenses = pendingExpenses.map((expense) => ({
+        const approveExpenses = selectedExpenses.map((expense) => ({
             id: expense.id,
             approvalStatus: "Approved",
             approvalDate: new Date().toISOString().split('T')[0],
-            reimbursedDate: expense.expenseDate,
+            reimbursedDate: '2023-03-23',
             reimbursementAmount: expense.amount || 0,
-            paymentMethod: "cash"
+            paymentMethod: 'cash',
         }));
-
-        setExpenseData((prevExpenseData) =>
-            prevExpenseData.map((expense) =>
-                expense.employeeName === employeeName && expense.approvalStatus === 'Pending'
-                    ? { ...expense, approvalStatus: 'Approved' }
-                    : expense
-            )
-        );
 
         try {
             const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/approveMultiple', {
@@ -189,49 +199,32 @@ const ExpensePage = () => {
             });
 
             if (response.ok) {
-                console.log('All expenses approved successfully');
-            } else {
-                console.error('Error approving expenses');
                 setExpenseData((prevExpenseData) =>
                     prevExpenseData.map((expense) =>
-                        expense.employeeName === employeeName && expense.approvalStatus === 'Approved'
-                            ? { ...expense, approvalStatus: 'Pending' }
+                        selectedExpenseIds.includes(expense.id)
+                            ? { ...expense, approvalStatus: 'Approved' }
                             : expense
                     )
                 );
+                setSelectedExpenseIds([]);
+                console.log('Selected expenses approved successfully');
+            } else {
+                console.error('Error approving expenses');
             }
         } catch (error) {
             console.error('Error approving expenses:', error);
-            setExpenseData((prevExpenseData) =>
-                prevExpenseData.map((expense) =>
-                    expense.employeeName === employeeName && expense.approvalStatus === 'Approved'
-                        ? { ...expense, approvalStatus: 'Pending' }
-                        : expense
-                )
-            );
         }
     };
 
+    const handleRejectAll = async () => {
+        const selectedExpenses = expenseData.filter((expense) => selectedExpenseIds.includes(expense.id));
 
-    const handleRejectAll = async (employeeName: string) => {
-        const pendingExpenses = expenseData.filter(
-            (expense) => expense.employeeName === employeeName && expense.approvalStatus === 'Pending'
-        );
-
-        const rejectExpenses = pendingExpenses.map((expense) => ({
+        const rejectExpenses = selectedExpenses.map((expense) => ({
             id: expense.id,
             approvalStatus: 'Rejected',
-            approvalDate: '2024-03-26',
+            approvalDate: new Date().toISOString().split('T')[0],
             rejectionReason: 'Reason',
         }));
-
-        setExpenseData((prevExpenseData) =>
-            prevExpenseData.map((expense) =>
-                expense.employeeName === employeeName && expense.approvalStatus === 'Pending'
-                    ? { ...expense, approvalStatus: 'Rejected' }
-                    : expense
-            )
-        );
 
         try {
             const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/expense/rejectMultiple', {
@@ -243,25 +236,21 @@ const ExpensePage = () => {
                 body: JSON.stringify(rejectExpenses),
             });
 
-            if (!response.ok) {
-                console.error('Error rejecting expenses');
+            if (response.ok) {
                 setExpenseData((prevExpenseData) =>
                     prevExpenseData.map((expense) =>
-                        expense.employeeName === employeeName && expense.approvalStatus === 'Rejected'
-                            ? { ...expense, approvalStatus: 'Pending' }
+                        selectedExpenseIds.includes(expense.id)
+                            ? { ...expense, approvalStatus: 'Rejected' }
                             : expense
                     )
                 );
+                setSelectedExpenseIds([]);
+                console.log('Selected expenses rejected successfully');
+            } else {
+                console.error('Error rejecting expenses');
             }
         } catch (error) {
             console.error('Error rejecting expenses:', error);
-            setExpenseData((prevExpenseData) =>
-                prevExpenseData.map((expense) =>
-                    expense.employeeName === employeeName && expense.approvalStatus === 'Rejected'
-                        ? { ...expense, approvalStatus: 'Pending' }
-                        : expense
-                )
-            );
         }
     };
 
@@ -281,13 +270,10 @@ const ExpensePage = () => {
     const renderExpenseIcon = (type: string) => {
         switch (type) {
             case 'Travel - Car':
-                // Return a placeholder or alternative icon for 'Travel - Car'
                 return <div className="h-5 w-5 bg-blue-500 rounded-full"></div>;
             case 'Food':
-                // Return a placeholder or alternative icon for 'Food'
                 return <div className="h-5 w-5 bg-gray-500 rounded-full"></div>;
             case 'Accommodation':
-                // Return a placeholder or alternative icon for 'Accommodation'
                 return <div className="h-5 w-5 bg-gray-500 rounded-full"></div>;
             default:
                 return null;
@@ -343,12 +329,10 @@ const ExpensePage = () => {
             const aValue = a[sortColumn as keyof Expense];
             const bValue = b[sortColumn as keyof Expense];
 
-            // Handle null/undefined values
             if (aValue == null && bValue == null) return 0;
             if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
             if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
 
-            // Compare non-null values
             if (typeof aValue === 'string' && typeof bValue === 'string') {
                 return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
             } else {
@@ -458,10 +442,10 @@ const ExpensePage = () => {
                                     <Button variant="outline" className="ml-4">Actions</Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                    <DropdownMenuItem onSelect={() => selectedEmployee && handleApproveAll(selectedEmployee)}>
+                                    <DropdownMenuItem onSelect={handleApproveAll}>
                                         Approve All
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => selectedEmployee && handleRejectAll(selectedEmployee)}>
+                                    <DropdownMenuItem onSelect={handleRejectAll}>
                                         Reject All
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -539,6 +523,16 @@ const ExpensePage = () => {
                                                         {paginatedExpenseDataCard.map((expense) => (
                                                             <div key={expense.id} className="flex items-center justify-between mb-2 bg-gray-50 p-2 rounded-md shadow-sm">
                                                                 <div className="flex items-center space-x-2">
+                                                                    <Checkbox
+                                                                        checked={selectedExpenseIds.includes(expense.id)}
+                                                                        onCheckedChange={(checked) => {
+                                                                            if (checked) {
+                                                                                setSelectedExpenseIds((prevIds) => [...prevIds, expense.id]);
+                                                                            } else {
+                                                                                setSelectedExpenseIds((prevIds) => prevIds.filter((id) => id !== expense.id));
+                                                                            }
+                                                                        }}
+                                                                    />
                                                                     {renderExpenseIcon(expense.type)}
                                                                     <div>
                                                                         <p className="font-semibold text-sm">{expense.type} <InformationCircleIcon className="h-4 w-4 text-gray-400 inline-block" /></p>
@@ -549,10 +543,10 @@ const ExpensePage = () => {
                                                                     <div className="text-right">
                                                                         <span
                                                                             className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${expense.approvalStatus === 'Approved'
-                                                                                    ? 'bg-green-100 text-green-800'
-                                                                                    : expense.approvalStatus === 'Rejected'
-                                                                                        ? 'bg-red-100 text-red-800'
-                                                                                        : 'bg-yellow-100 text-yellow-800'
+                                                                                ? 'bg-green-100 text-green-800'
+                                                                                : expense.approvalStatus === 'Rejected'
+                                                                                    ? 'bg-red-100 text-red-800'
+                                                                                    : 'bg-yellow-100 text-yellow-800'
                                                                                 }`}
                                                                         >
                                                                             {expense.approvalStatus}
@@ -593,10 +587,10 @@ const ExpensePage = () => {
                                             </div>
                                             {isExpanded && (
                                                 <div className="flex justify-center space-x-2">
-                                                    <Button variant="outline" size="sm" onClick={() => handleApproveAll(employeeName)}>
+                                                    <Button variant="outline" size="sm" onClick={handleApproveAll}>
                                                         Approve All
                                                     </Button>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleRejectAll(employeeName)}>
+                                                    <Button variant="destructive" size="sm" onClick={handleRejectAll}>
                                                         Reject All
                                                     </Button>
                                                 </div>
@@ -613,7 +607,7 @@ const ExpensePage = () => {
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-3xl font-bold">
-
+                                Expense Table
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -654,7 +648,16 @@ const ExpensePage = () => {
                                     {paginatedExpenseDataTable.map((expense) => (
                                         <TableRow key={expense.id}>
                                             <TableCell>
-                                                <Checkbox />
+                                                <Checkbox
+                                                    checked={selectedExpenseIds.includes(expense.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            setSelectedExpenseIds((prevIds) => [...prevIds, expense.id]);
+                                                        } else {
+                                                            setSelectedExpenseIds((prevIds) => prevIds.filter((id) => id !== expense.id));
+                                                        }
+                                                    }}
+                                                />
                                             </TableCell>
                                             <TableCell>{expense.employeeName}</TableCell>
                                             <TableCell>{expense.expenseDate}</TableCell>
@@ -674,11 +677,10 @@ const ExpensePage = () => {
                                                 </span>
                                             </TableCell>
                                             <TableCell>
-                                              
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="outline">Actions</Button>
-                                                        </DropdownMenuTrigger>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline">Actions</Button>
+                                                    </DropdownMenuTrigger>
                                                     <DropdownMenuContent>
                                                         <DropdownMenuItem onSelect={() => handleApprove(expense.employeeName, expense.id)}>
                                                             Approve

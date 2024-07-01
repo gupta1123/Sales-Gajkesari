@@ -1,16 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -19,8 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -30,187 +20,225 @@ import {
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
-type CustomerInteractionLog = {
-  date: string;
-  description: string;
-};
+interface Employee {
+  id: number;
+  firstName: string;
+  lastName: string;
+  employeeId: string;
+  role: string;
+}
 
-const AddVisits = () => {
+interface Store {
+  storeId: number;
+  storeName: string;
+}
+
+interface AddVisitsProps {
+  closeModal: () => void;
+}
+
+const AddVisits: React.FC<AddVisitsProps> = ({ closeModal }) => {
   const [visitDate, setVisitDate] = useState<Date | undefined>(undefined);
-  const [visitTime, setVisitTime] = useState<Date | undefined>(undefined);
   const [visitPurpose, setVisitPurpose] = useState('');
-  const [visitOutcome, setVisitOutcome] = useState('');
-  const [visitNotes, setVisitNotes] = useState('');
-  const [customer, setCustomer] = useState('');
-  const [followUpTask, setFollowUpTask] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [otherPurpose, setOtherPurpose] = useState('');
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [stores, setStores] = useState<Store[]>([]);
+  const [selectedStore, setSelectedStore] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const token = useSelector((state: RootState) => state.auth.token);
+  const loggedInUserId = 86; // Set the assignedById to a constant value of 86
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      fetchStores(selectedEmployee);
+    }
+  }, [selectedEmployee]);
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      setEmployees(data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
+
+  const fetchStores = async (employeeId: string) => {
+    try {
+      const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/getByEmployee?id=${employeeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      setStores(data);
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Visit Details:', {
-      visitDate,
-      visitTime,
-      visitPurpose,
-      visitOutcome,
-      visitNotes,
-      customer,
-      followUpTask,
-    });
+
+    const payload = {
+      storeId: parseInt(selectedStore, 10),
+      employeeId: parseInt(selectedEmployee, 10),
+      visit_date: visitDate ? format(visitDate, "yyyy-MM-dd") : "",
+      purpose: visitPurpose === 'Others' ? otherPurpose : visitPurpose,
+      isSelfGenerated: false,
+      assignedById: loggedInUserId,
+    };
+
+    try {
+      const response = await fetch('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/create', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Visit created successfully:', data);
+        closeModal(); // Close the modal
+      } else {
+        console.error('Failed to create visit');
+      }
+    } catch (error) {
+      console.error('Error creating visit:', error);
+    }
   };
 
   const purposes = [
-    'Sales Pitch',
-    'Follow-up',
-    'Troubleshooting',
-    'Customer Support',
-  ];
-
-  const customers = ['Customer A', 'Customer B', 'Customer C'];
-
-  const customerInteractionLog: CustomerInteractionLog[] = [
-    {
-      date: '2023-05-01',
-      description: 'Initial contact made with the customer.',
-    },
-    {
-      date: '2023-06-15',
-      description: 'Scheduled a product demo.',
-    },
-    {
-      date: '2023-07-20',
-      description: 'Followed up on the product demo.',
-    },
+    'Follow Up',
+    'Order',
+    'Birthday',
+    'Payment',
+    'Others'
   ];
 
   return (
-    <Card className="max-w-3xl mx-auto">
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="visitDate">Visit Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+    <form className="space-y-6" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="visitDate">Visit Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !visitDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {visitDate ? format(visitDate, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={visitDate}
+                onSelect={setVisitDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="visitPurpose">Visit Purpose</Label>
+          <Select
+            value={visitPurpose}
+            onValueChange={setVisitPurpose}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select visit purpose" />
+            </SelectTrigger>
+            <SelectContent>
+              {purposes.map((purpose) => (
+                <SelectItem key={purpose} value={purpose}>
+                  {purpose}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {visitPurpose === 'Others' && (
           <div>
-            <Label htmlFor="visitPurpose">Visit Purpose</Label>
-            <Select
-              value={visitPurpose}
-              onValueChange={setVisitPurpose}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select visit purpose" />
-              </SelectTrigger>
-              <SelectContent>
-                {purposes.map((purpose) => (
-                  <SelectItem key={purpose} value={purpose}>
-                    {purpose}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="otherPurpose">Other Purpose</Label>
+            <Input
+              id="otherPurpose"
+              value={otherPurpose}
+              onChange={(e) => setOtherPurpose(e.target.value)}
+              placeholder="Specify other purpose"
+            />
           </div>
-          <div>
-            <Label htmlFor="customer">Customer</Label>
-            <Select
-              value={customer}
-              onValueChange={setCustomer}
-            >
-
-              <SelectTrigger>
-                <SelectValue placeholder="Customer" />
-              </SelectTrigger>
-              <SelectContent>
-                {customers.map((customer) => (
-                  <SelectItem key={customer} value={customer}>
-                    {customer}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="employee">Employee</Label>
+          <Select
+            value={selectedEmployee}
+            onValueChange={(value) => {
+              setSelectedEmployee(value);
+              setSelectedStore('');
+              fetchStores(value); // Fetch stores when an employee is selected
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select an employee" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees.map((employee) => (
+                <SelectItem key={employee.id} value={employee.id.toString()}>
+                  {`${employee.firstName} ${employee.lastName}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <Label htmlFor="visitNotes">Visit Notes</Label>
-          <Textarea
-            id="visitNotes"
-            value={visitNotes}
-            onChange={(e) => setVisitNotes(e.target.value)}
-            placeholder="Visit Notes"
-            rows={4}
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <Checkbox
-            checked={visitOutcome === 'Successful Sale'}
-            onCheckedChange={(checked) =>
-              setVisitOutcome(checked ? 'Successful Sale' : '')
-            }
-            className="col-span-1"
+          <Label htmlFor="store">Store</Label>
+          <Select
+            value={selectedStore}
+            onValueChange={setSelectedStore}
+            disabled={!selectedEmployee}
           >
-            Successful Sale
-          </Checkbox>
-          <Checkbox
-            checked={visitOutcome === 'Pending Follow-up'}
-            onCheckedChange={(checked) =>
-              setVisitOutcome(checked ? 'Pending Follow-up' : '')
-            }
-            className="col-span-1"
-          >
-            Pending Follow-up
-          </Checkbox>
-          <Checkbox
-            checked={visitOutcome === 'Customer Feedback'}
-            onCheckedChange={(checked) =>
-              setVisitOutcome(checked ? 'Customer Feedback' : '')
-            }
-            className="col-span-1"
-          >
-            Customer Feedback
-          </Checkbox>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a store" />
+            </SelectTrigger>
+            <SelectContent>
+              {stores.map((store) => (
+                <SelectItem key={store.storeId} value={store.storeId.toString()}>
+                  {store.storeName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <Label htmlFor="followUpTask">Follow-up Task</Label>
-          <Input
-            id="followUpTask"
-            value={followUpTask}
-            onChange={(e) => setFollowUpTask(e.target.value)}
-            placeholder="Follow-up Task"
-          />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold mb-2">
-            Customer Interaction Log
-          </h3>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-end">
-        <Button onClick={handleSubmit}>Submit Visit</Button>
-      </CardFooter>
-    </Card>
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit">Submit Visit</Button>
+      </div>
+    </form>
   );
 };
 

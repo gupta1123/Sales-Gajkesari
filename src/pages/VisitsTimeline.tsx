@@ -34,7 +34,7 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
         },
       });
       const data: Visit[] = await response.json();
-      // Sort visits in descending order by visit_date
+    
       const sortedVisits = data.sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
       setVisits(sortedVisits);
       setIsLoading(false);

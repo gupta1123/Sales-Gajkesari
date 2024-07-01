@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import AddVisits from '@/pages/AddVisits';
 
 interface VisitsFilterProps {
     onFilter: (filters: { storeName: string; employeeName: string; purpose: string }, clearFilters: boolean) => void;
@@ -44,6 +46,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
 }) => {
     const [debouncedStoreName, setDebouncedStoreName] = useState('');
     const [debouncedEmployeeName, setDebouncedEmployeeName] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const storeNameDebounceTimer = setTimeout(() => {
@@ -104,10 +107,12 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
         return date ? format(date, 'MMM d, yyyy') : '';
     };
 
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
     return (
         <Card>
-            <CardHeader>
-            </CardHeader>
             <CardContent>
                 <div className="flex justify-between flex-wrap gap-4">
                     <div className="flex flex-grow items-center space-x-4">
@@ -203,6 +208,14 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                     </div>
 
                     <div className="flex items-center space-x-2">
+                        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" onClick={() => setIsModalOpen(true)}>Create Visits</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <AddVisits closeModal={closeModal} />
+                            </DialogContent>
+                        </Dialog>
                         {viewMode === 'table' && (
                             <>
                                 <DropdownMenu>

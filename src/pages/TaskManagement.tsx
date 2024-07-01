@@ -60,6 +60,8 @@ const TaskManagement = () => {
     const [sortDirection, setSortDirection] = useState('desc')
     const [filters, setFilters] = useState({ employee: '', priority: '', status: '', search: '' })
     const token = useSelector((state: RootState) => state.auth.token)
+    const role = useSelector((state: RootState) => state.auth.role);
+    const teamId = useSelector((state: RootState) => state.auth.teamId);
     const [isLoading, setIsLoading] = useState(true)
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [stores, setStores] = useState<string[]>([]);
@@ -85,13 +87,24 @@ const TaskManagement = () => {
     const fetchTasks = async () => {
         setIsLoading(true)
         try {
-            const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/getAll?page=${currentPage - 1}&size=${itemsPerPage}&sort=${sortColumn},${sortDirection}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-            const data = await response.json()
-            // Transform tasks to include assignedToName
+            let response;
+            if (role === 'MANAGER' && teamId) {
+                response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/getByTeam?id=${teamId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+            } else {
+                const start = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+                const end = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+                response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/getByDateRange?start=${start}&end=${end}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+            }
+
+            const data = await response.json();
             const transformedTasks = data.map((task: any) => {
                 const assignedEmployee = employees.find(emp => emp.id === task.assignedToId);
                 return {
@@ -100,7 +113,7 @@ const TaskManagement = () => {
                 };
             });
 
-            setTasks(data || []);
+            setTasks(transformedTasks || []);
             setIsLoading(false)
         } catch (error) {
             console.error('Error fetching tasks:', error)
@@ -186,7 +199,6 @@ const TaskManagement = () => {
 
             const data = await response.json()
 
-            // Update the tasks state directly
             setTasks(prevTasks => {
                 const updatedTasks = prevTasks.map(task => {
                     if (task.id === editTask.id) {
@@ -376,23 +388,23 @@ const TaskManagement = () => {
                         <SelectItem value="low">Low</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-            </Select>
-            <Select
-                value={filters.status}
-                onValueChange={(value) => handleFilterChange('status', value)}
-            >
-                <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="Assigned">Assigned</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-            </SelectContent>
-        </Select>
-            </div >
+                    </SelectContent>
+                </Select>
+                <Select
+                    value={filters.status}
+                    onValueChange={(value) => handleFilterChange('status', value)}
+                >
+                    <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Assigned">Assigned</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
             <Button onClick={() => { setIsModalOpen(true); setActiveTab('general'); }} className="mb-6">
                 Create Task
             </Button>
@@ -539,154 +551,154 @@ const TaskManagement = () => {
                         </TabsContent>
                     </Tabs>
                 </DialogContent>
-            </Dialog >
+            </Dialog>
 
-    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-                <DialogTitle>Edit Task</DialogTitle>
-                <DialogDescription>Modify the task details.</DialogDescription>
-            </DialogHeader>
-            {editTask && (
-                <Tabs value={activeTab}>
-                    <TabsList className="mb-4">
-                        <TabsTrigger value="general" onClick={() => setActiveTab('general')}>General</TabsTrigger>
-                        <TabsTrigger value="details" onClick={() => setActiveTab('details')}>Details</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="general">
-                        <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="taskTitle">Task Title</Label>
-                                <Input
-                                    id="taskTitle"
-                                    placeholder="Enter task title"
-                                    value={editTask.taskTitle}
-                                    onChange={(e) => setEditTask({ ...editTask, taskTitle: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="taskDescription">Task Description</Label>
-                                <Input
-                                    id="taskDescription"
-                                    placeholder="Enter task description"
-                                    value={editTask.taskDescription}
-                                    onChange={(e) => setEditTask({ ...editTask, taskDescription: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="category">Category</Label>
-                                <Select
-                                    value={editTask.category}
-                                    onValueChange={(value) => setEditTask({ ...editTask, category: value })}
-                                >
-                                    <SelectTrigger className="w-[280px]">
-                                        <SelectValue placeholder="Select a category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Birthday">Birthday</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex justify-between mt-4">
-                                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button onClick={handleNext}>Next</Button>
-                            </div>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="details">
-                        <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="dueDate">Due Date</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-[280px] justify-start text-left font-normal ${!editTask.dueDate && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {editTask.dueDate ? format(editTask.dueDate, 'PPP') : <span>Pick a date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={editTask.dueDate}
-                                            onSelect={(date) => setEditTask({ ...editTask, dueDate: date })}
-                                            initialFocus
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit Task</DialogTitle>
+                        <DialogDescription>Modify the task details.</DialogDescription>
+                    </DialogHeader>
+                    {editTask && (
+                        <Tabs value={activeTab}>
+                            <TabsList className="mb-4">
+                                <TabsTrigger value="general" onClick={() => setActiveTab('general')}>General</TabsTrigger>
+                                <TabsTrigger value="details" onClick={() => setActiveTab('details')}>Details</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="general">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="taskTitle">Task Title</Label>
+                                        <Input
+                                            id="taskTitle"
+                                            placeholder="Enter task title"
+                                            value={editTask.taskTitle}
+                                            onChange={(e) => setEditTask({ ...editTask, taskTitle: e.target.value })}
                                         />
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="assignedToId">Assigned To</Label>
-                                <Select
-                                    value={editTask.assignedToId ? editTask.assignedToId.toString() : ''}
-                                    onValueChange={(value) => {
-                                        const selectedEmployee = employees.find(emp => emp.id === parseInt(value));
-                                        setEditTask({ ...editTask, assignedToId: parseInt(value), assignedToName: selectedEmployee ? `${selectedEmployee.firstName} ${selectedEmployee.lastName}` : 'Unknown' });
-                                    }}
-                                >
-                                    <SelectTrigger className="w-[280px]">
-                                        <SelectValue placeholder="Select an employee" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {employees.map((employee) => (
-                                            <SelectItem key={employee.id} value={employee.id.toString()}>
-                                                {employee.firstName} {employee.lastName}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="priority">Priority</Label>
-                                <Select
-                                    value={editTask.priority}
-                                    onValueChange={(value) => setEditTask({ ...editTask, priority: value })}
-                                >
-                                    <SelectTrigger className="w-[280px]">
-                                        <SelectValue placeholder="Select a priority" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="low">Low</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="high">High</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="storeId">Store</Label>
-                            <Select
-                                value={editTask.storeId}
-                                onOpenChange={fetchStores}
-                                onValueChange={(value) => setEditTask({ ...editTask, storeId: value })}
-                            >
-                                <SelectTrigger className="w-[280px]">
-                                    <SelectValue placeholder="Select a store" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {stores.map((store, index) => (
-                                        <SelectItem key={index} value={store}>
-                                            {store}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex justify-between mt-4">
-                            <Button variant="outline" onClick={handleBack}>
-                                Back
-                            </Button>
-                            <Button onClick={updateTask}>Update Task</Button>
-                        </div>
-                    </div>
-                </TabsContent>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="taskDescription">Task Description</Label>
+                                        <Input
+                                            id="taskDescription"
+                                            placeholder="Enter task description"
+                                            value={editTask.taskDescription}
+                                            onChange={(e) => setEditTask({ ...editTask, taskDescription: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="category">Category</Label>
+                                        <Select
+                                            value={editTask.category}
+                                            onValueChange={(value) => setEditTask({ ...editTask, category: value })}
+                                        >
+                                            <SelectTrigger className="w-[280px]">
+                                                <SelectValue placeholder="Select a category" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Birthday">Birthday</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex justify-between mt-4">
+                                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                                            Cancel
+                                        </Button>
+                                        <Button onClick={handleNext}>Next</Button>
+                                    </div>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="details">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="dueDate">Due Date</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className={`w-[280px] justify-start text-left font-normal ${!editTask.dueDate && 'text-muted-foreground'}`}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {editTask.dueDate ? format(editTask.dueDate, 'PPP') : <span>Pick a date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={editTask.dueDate}
+                                                    onSelect={(date) => setEditTask({ ...editTask, dueDate: date })}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="assignedToId">Assigned To</Label>
+                                        <Select
+                                            value={editTask.assignedToId ? editTask.assignedToId.toString() : ''}
+                                            onValueChange={(value) => {
+                                                const selectedEmployee = employees.find(emp => emp.id === parseInt(value));
+                                                setEditTask({ ...editTask, assignedToId: parseInt(value), assignedToName: selectedEmployee ? `${selectedEmployee.firstName} ${selectedEmployee.lastName}` : 'Unknown' });
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-[280px]">
+                                                <SelectValue placeholder="Select an employee" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {employees.map((employee) => (
+                                                    <SelectItem key={employee.id} value={employee.id.toString()}>
+                                                        {employee.firstName} {employee.lastName}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="priority">Priority</Label>
+                                        <Select
+                                            value={editTask.priority}
+                                            onValueChange={(value) => setEditTask({ ...editTask, priority: value })}
+                                        >
+                                            <SelectTrigger className="w-[280px]">
+                                                <SelectValue placeholder="Select a priority" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="low">Low</SelectItem>
+                                                <SelectItem value="medium">Medium</SelectItem>
+                                                <SelectItem value="high">High</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="storeId">Store</Label>
+                                        <Select
+                                            value={editTask.storeId}
+                                            onOpenChange={fetchStores}
+                                            onValueChange={(value) => setEditTask({ ...editTask, storeId: value })}
+                                        >
+                                            <SelectTrigger className="w-[280px]">
+                                                <SelectValue placeholder="Select a store" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {stores.map((store, index) => (
+                                                    <SelectItem key={index} value={store}>
+                                                        {store}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex justify-between mt-4">
+                                        <Button variant="outline" onClick={handleBack}>
+                                            Back
+                                        </Button>
+                                        <Button onClick={updateTask}>Update Task</Button>
+                                    </div>
+                                </div>
+                            </TabsContent>
                         </Tabs>
                     )}
-    </DialogContent>
-            </Dialog >
+                </DialogContent>
+            </Dialog>
 
             <div className="table-container">
                 <Table>
@@ -794,9 +806,9 @@ const TaskManagement = () => {
                             <SelectItem value="20">20</SelectItem>
                             <SelectItem value="50">50</SelectItem>
                         </SelectContent>
-                   </Select>
+                    </Select>
                 </div>
-{ renderPagination() }
+                {renderPagination()}
             </div >
         </div >
     )

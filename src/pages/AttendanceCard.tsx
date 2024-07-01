@@ -1,14 +1,14 @@
 import React from 'react';
 import CustomCalendar from './CustomCalendar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarDay, faCalendarAlt, faCheck, faTimes, faIdBadge, faBuilding, faBriefcase } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faCloudSun, faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import styles from './AttendanceCard.module.css';
 
 interface AttendanceData {
     id: number;
     employeeId: number;
     employeeName: string;
-    attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
+    attendanceStatus: 'full day' | 'half day' | 'Absent';
     checkinDate: string;
     checkoutDate: string;
 }
@@ -17,9 +17,6 @@ interface Employee {
     id: number;
     firstName: string;
     lastName: string;
-    employeeId: string;
-    department: string;
-    position: string;
 }
 
 interface AttendanceCardProps {
@@ -27,57 +24,41 @@ interface AttendanceCardProps {
     attendanceData: AttendanceData[];
     selectedYear: number;
     selectedMonth: number;
-    onDateClick: (date: string) => void;
+    onDateClick: (id: number) => void;
+    summary: {
+        fullDays: number;
+        halfDays: number;
+        absentDays: number;
+    };
 }
 
-const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceData, selectedYear, selectedMonth, onDateClick }) => {
-    const getAttendanceSummary = (employeeId: number) => {
-        const employeeAttendance = attendanceData.filter(data => data.employeeId === employeeId);
-        const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
-        const halfDays = employeeAttendance.filter(data => data.attendanceStatus === 'half day').length;
-        const presentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Present').length;
-        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Absent').length;
-
-        return { fullDays, halfDays, presentDays, absentDays };
-    };
-
-    const summary = getAttendanceSummary(employee.id);
+const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceData, selectedYear, selectedMonth, onDateClick, summary }) => {
+    const totalFullDays = summary.fullDays + attendanceData.filter(data => new Date(data.checkinDate).getDay() === 0).length;
 
     return (
         <div className={styles['info-card']}>
             <div className={styles.info}>
                 <h2>{employee.firstName} {employee.lastName}</h2>
-                <p><FontAwesomeIcon icon={faIdBadge} /> Employee ID: {employee.employeeId}</p>
-                <p><FontAwesomeIcon icon={faBuilding} /> Department: {employee.department}</p>
-                <p><FontAwesomeIcon icon={faBriefcase} /> Position: {employee.position}</p>
                 <div className={styles.stats}>
-                    <div className={styles['stat-card']}>
-                        <FontAwesomeIcon icon={faCalendarDay} />
-                        <div>
-                            <p>Full Days</p>
-                            <h3>{summary.fullDays}</h3>
-                        </div>
+                    <div className={styles['stat-box']}>
+                        <FontAwesomeIcon icon={faSun} />
+                        <p>Full</p>
+                        <h3>{totalFullDays}</h3>
                     </div>
-                    <div className={styles['stat-card']}>
-                        <FontAwesomeIcon icon={faCalendarAlt} />
-                        <div>
-                            <p>Half Days</p>
-                            <h3>{summary.halfDays}</h3>
-                        </div>
+                    <div className={styles['stat-box']}>
+                        <FontAwesomeIcon icon={faCloudSun} />
+                        <p>Half</p>
+                        <h3>{summary.halfDays}</h3>
                     </div>
-                    <div className={styles['stat-card']}>
-                        <FontAwesomeIcon icon={faCheck} />
-                        <div>
-                            <p>Present Days</p>
-                            <h3>{summary.presentDays}</h3>
-                        </div>
+                    <div className={styles['stat-box']}>
+                        <FontAwesomeIcon icon={faCheckCircle} />
+                        <p>Present</p>
+                        <h3>0</h3>
                     </div>
-                    <div className={styles['stat-card']}>
-                        <FontAwesomeIcon icon={faTimes} />
-                        <div>
-                            <p>Absent Days</p>
-                            <h3>{summary.absentDays}</h3>
-                        </div>
+                    <div className={styles['stat-box']}>
+                        <FontAwesomeIcon icon={faTimesCircle} />
+                        <p>Absent</p>
+                        <h3>{summary.absentDays}</h3>
                     </div>
                 </div>
             </div>

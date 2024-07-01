@@ -1,6 +1,5 @@
-import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { configureStore, createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { PayloadAction } from '@reduxjs/toolkit';
 
 interface AuthState {
   user: null | { [key: string]: any };
@@ -8,21 +7,48 @@ interface AuthState {
   employeeId: null | string;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: null | string | { [key: string]: any };
-  username: null | string; // Add username here
+  username: null | string;
+  role: null | string;
+  teamId: number | null;
+  officeManagerId: number | null; // New field
+  isAdmin: boolean;
+  accountStatus?: {
+    accountNonExpired: boolean;
+    accountNonLocked: boolean;
+    credentialsNonExpired: boolean;
+    enabled: boolean;
+  };
 }
-
 
 interface UserData {
   username: string;
   password: string;
 }
 
+interface LoginResponse {
+  token: string;
+  employeeId?: string;
+  username: string;
+  role: string;
+  teamId?: number | null;
+  officeManagerId?: number | null; // New field
+  isAdmin: boolean;
+  accountStatus?: {
+    accountNonExpired: boolean;
+    accountNonLocked: boolean;
+    credentialsNonExpired: boolean;
+    enabled: boolean;
+  };
+}
+
+const BASE_URL = 'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081';
+
 export const registerUser = createAsyncThunk<string, UserData, { rejectValue: string }>(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/register',
+        `${BASE_URL}/user/register`,
         userData
       );
       return response.data;
@@ -33,29 +59,61 @@ export const registerUser = createAsyncThunk<string, UserData, { rejectValue: st
   }
 );
 
-export const loginUser = createAsyncThunk<{ token: string; employeeId: string; username: string }, UserData, { rejectValue: string }>(
+export const loginUser = createAsyncThunk<LoginResponse, UserData, { rejectValue: string }>(
   'auth/login',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/token',
-        {
-          username: userData.username,
-          password: userData.password,
-        }
-      );
-      const token = response.data.split(' ')[1];
+      // Step 1: Authenticate and get token
+      const tokenResponse = await axios.post(`${BASE_URL}/user/token`, {
+        username: userData.username,
+        password: userData.password,
+      });
+      const token = tokenResponse.data.split(' ')[1];
       localStorage.setItem('token', token);
-      const employeeResponse = await axios.get(
-        'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/info',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+
+      // Step 2: Fetch user details
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // First, try to fetch admin details
+      try {
+        const adminResponse = await axios.get(`${BASE_URL}/user/manage/current-user`, { headers });
+        const { username, authorities } = adminResponse.data;
+        const role = authorities[0].authority.replace('ROLE_', '');
+        const isAdmin = role === 'ADMIN';
+
+        if (isAdmin) {
+          return {
+            token,
+            username,
+            role,
+            isAdmin,
+            accountStatus: {
+              accountNonExpired: adminResponse.data.accountNonExpired,
+              accountNonLocked: adminResponse.data.accountNonLocked,
+              credentialsNonExpired: adminResponse.data.credentialsNonExpired,
+              enabled: adminResponse.data.enabled,
+            },
+          };
         }
-      );
-      const { employeeId } = employeeResponse.data;
-      return { token, employeeId, username: userData.username };
+      } catch (error) {
+        // If not admin, proceed to fetch non-admin user details
+      }
+
+      // Fetch non-admin user details
+      const userResponse = await axios.get(`${BASE_URL}/user/manage/get?username=${userData.username}`, { headers });
+      const { employeeId, username, roles } = userResponse.data;
+
+      let teamId = null;
+      let officeManagerId = null;
+      if (roles === 'MANAGER') {
+        const teamResponse = await axios.get(`${BASE_URL}/employee/team/getbyEmployee?id=${employeeId}`, { headers });
+        const teamData = teamResponse.data[0];
+        teamId = teamData?.id;
+        officeManagerId = teamData?.officeManager?.id;
+        localStorage.setItem('teamId', teamId?.toString());
+      }
+
+      return { token, employeeId, username, role: roles, teamId, officeManagerId, isAdmin: false };
     } catch (error: any) {
       console.error('Login User Error:', error);
       return rejectWithValue(error.response?.data || error.message);
@@ -63,13 +121,13 @@ export const loginUser = createAsyncThunk<{ token: string; employeeId: string; u
   }
 );
 
-
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/logout');
+      await axios.post(`${BASE_URL}/user/logout`);
       localStorage.removeItem('token');
+      localStorage.removeItem('teamId');
     } catch (error: any) {
       console.error('Logout User Error:', error);
       return rejectWithValue(error.response?.data || error.message);
@@ -83,7 +141,11 @@ const initialState: AuthState = {
   employeeId: null,
   status: 'idle',
   error: null,
-  username: null, // Add username to initial state
+  username: null,
+  role: null,
+  teamId: null,
+  officeManagerId: null,
+  isAdmin: false,
 };
 
 const authSlice = createSlice({
@@ -92,6 +154,12 @@ const authSlice = createSlice({
   reducers: {
     setToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
+    },
+    setRole: (state, action: PayloadAction<string>) => {
+      state.role = action.payload;
+    },
+    setTeamId: (state, action: PayloadAction<number | null>) => {
+      state.teamId = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -110,11 +178,16 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.status = 'loading';
       })
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<{ token: string; employeeId: string; username: string }>) => {
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<LoginResponse>) => {
         state.status = 'succeeded';
         state.token = action.payload.token;
-        state.employeeId = action.payload.employeeId;
+        state.employeeId = action.payload.employeeId || null;
         state.username = action.payload.username;
+        state.role = action.payload.role;
+        state.teamId = action.payload.teamId || null;
+        state.officeManagerId = action.payload.officeManagerId || null;
+        state.isAdmin = action.payload.isAdmin;
+        state.accountStatus = action.payload.accountStatus;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
@@ -124,10 +197,7 @@ const authSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(logoutUser.fulfilled, (state) => {
-        state.user = null;
-        state.token = null;
-        state.employeeId = null;
-        state.username = null; // Clear username on logout
+        Object.assign(state, initialState);
         state.status = 'succeeded';
       })
       .addCase(logoutUser.rejected, (state, action) => {
@@ -137,9 +207,7 @@ const authSlice = createSlice({
   },
 });
 
-
-export const { setToken } = authSlice.actions;
-
+export const { setToken, setRole, setTeamId } = authSlice.actions;
 export default authSlice.reducer;
 
 export const store = configureStore({
@@ -149,4 +217,13 @@ export const store = configureStore({
 });
 
 export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch; 
+export type AppDispatch = typeof store.dispatch;
+
+// Function to decode JWT token (if needed)
+function parseJwt(token: string) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+}

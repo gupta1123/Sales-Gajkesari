@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import EmployeeCard from './EmployeeCard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import AttendanceCard from './AttendanceCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import Skeleton from 'react-loading-skeleton';
@@ -13,7 +12,7 @@ interface AttendanceData {
     id: number;
     employeeId: number;
     employeeName: string;
-    attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
+    attendanceStatus: 'full day' | 'half day' | 'Absent';
     checkinDate: string;
     checkoutDate: string;
 }
@@ -93,7 +92,17 @@ const Attendance: React.FC = () => {
                 throw new Error("Failed to fetch attendance data");
             }
 
-            const data = await response.json();
+            let data = await response.json();
+
+            // Mark Sundays as Full Day
+            data = data.map((attendance: AttendanceData) => {
+                const date = new Date(attendance.checkinDate);
+                if (date.getDay() === 0) {
+                    return { ...attendance, attendanceStatus: 'full day' };
+                }
+                return attendance;
+            });
+
             setAttendanceData(data);
             setNoDataMessage("");
 
@@ -109,25 +118,19 @@ const Attendance: React.FC = () => {
         setIsLoading(false);
     };
 
+
+
     const getAttendanceSummary = (employeeId: number) => {
         const employeeAttendance = attendanceData.filter(data => data.employeeId === employeeId);
         const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
         const halfDays = employeeAttendance.filter(data => data.attendanceStatus === 'half day').length;
-        const presentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Present').length;
         const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Absent').length;
 
-        return { fullDays, halfDays, presentDays, absentDays };
+        return { fullDays, halfDays, absentDays };
     };
 
-    const handleDateClick = (date: string, employee: Employee) => {
-        router.push({
-            pathname: '/VisitList',
-            query: {
-                employeeName: `${employee.firstName} ${employee.lastName}`,
-                startDate: date,
-                endDate: date,
-            },
-        });
+    const handleDateClick = (id: number) => {
+        router.push(`/VisitList/${id}`);
     };
 
     const filteredEmployees = employees.filter((employee) =>
@@ -187,16 +190,8 @@ const Attendance: React.FC = () => {
                             <p>Half Day</p>
                         </div>
                         <div className="flex items-center">
-                            <div className="w-4 h-4 bg-blue-500 mr-2"></div>
-                            <p>Present</p>
-                        </div>
-                        <div className="flex items-center">
                             <div className="w-4 h-4 bg-red-500 mr-2"></div>
                             <p>Absent</p>
-                        </div>
-                        <div className="flex items-center">
-                            <div className="w-4 h-4 bg-[#ADD8E6] mr-2"></div> {/* Light blue color for Sunday */}
-                            <p>Holiday</p>
                         </div>
                     </div>
                 </div>
@@ -210,18 +205,18 @@ const Attendance: React.FC = () => {
                         <Skeleton key={index} height={200} />
                     ))
                 ) : (
-                    <div className="employee-card-container">
+                    <div className="grid grid-cols-3 gap-4">
                         {filteredEmployees.map((employee) => {
                             const summary = getAttendanceSummary(employee.id);
                             return (
-                                <EmployeeCard
+                                <AttendanceCard
                                     key={employee.id}
                                     employee={employee}
                                     summary={summary}
-                                    month={selectedMonth}
-                                    year={selectedYear}
+                                    selectedYear={selectedYear}
+                                    selectedMonth={selectedMonth}
                                     attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
-                                    onDateClick={(date) => handleDateClick(date, employee)}
+                                    onDateClick={handleDateClick}
                                 />
                             );
                         })}

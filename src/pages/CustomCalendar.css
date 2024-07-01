@@ -7,7 +7,6 @@
     width: 100%;
     max-width: 300px;
     position: relative;
-    /* Added to ensure the positioning context for tooltips */
 }
 
 .calendar-days {
@@ -62,23 +61,10 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.calendar-dates div.present {
-    background-color: #2196F3;
-    color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.calendar-dates div.sunday {
-    background-color: #ADD8E6;
-    /* Light blue color for Sunday */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
 .calendar-dates div:hover {
     background-color: rgba(0, 0, 0, 0.1);
     transform: scale(1.1);
     z-index: 1;
-    /* Ensure hovered elements are on top */
 }
 
 .calendar-dates div.empty {
@@ -120,16 +106,4 @@
     border-width: 6px;
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
-}
-
-/* Ensure the tooltip doesn't overflow outside the calendar card */
-.calendar-dates div:hover .calendar-tooltip {
-    visibility: visible;
-    opacity: 1;
-    white-space: nowrap;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-word;
-    max-width: 100px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }

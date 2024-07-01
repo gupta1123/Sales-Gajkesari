@@ -3,8 +3,8 @@ import { NextPage } from 'next';
 import { AppProps } from 'next/app';
 import Sidebar from '../components/Sidebar';
 import styles from './App.module.css';
-import { Provider, useSelector, useDispatch } from 'react-redux';
-import { store, loginUser, logoutUser, setToken } from '../store';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { store, loginUser, logoutUser, setToken, setRole } from '../store';
 import React, { useState, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -79,7 +79,7 @@ const LoginPage = () => {
           <Typography.Title level={2}>Gajkesari</Typography.Title>
           <img src="/image.gif" alt="Login" className="mx-auto mb-4" />
           {errorMessage && <p className="text-center mb-4 text-red-500">{errorMessage}</p>}
-          
+
           <div className="mb-4">
             <Input
               type="text"
@@ -156,14 +156,19 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
 const AuthWrapper = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
   const token = useSelector((state: any) => state.auth.token);
+  const role = useSelector((state: any) => state.auth.role);
   const router = useRouter();
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
+    const storedRole = localStorage.getItem('role');
     if (storedToken && !token) {
       dispatch(setToken(storedToken));
     }
-  }, [dispatch, token]);
+    if (storedRole && !role) {
+      dispatch(setRole(storedRole as 'Admin' | 'Manager'));
+    }
+  }, [dispatch, token, role]);
 
   useEffect(() => {
     const checkTokenValidity = async () => {
@@ -189,12 +194,6 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
       };
     }
   }, [dispatch, token, router]);
-
-  const authStatus = useSelector((state: any) => state.auth.status);
-
-  const handleLogout = () => {
-    dispatch(logoutUser() as any);
-  };
 
   if (!token) {
     return <LoginPage />;

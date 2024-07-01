@@ -20,12 +20,13 @@ interface EmployeeCardProps {
     month: number;
     year: number;
     attendanceData: {
+        id: number; // Added id property
         employeeId: number;
-        attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
+        attendanceStatus: 'full day' | 'half day' | 'Absent'; // Removed 'Present' to match the expected type
         checkinDate: string;
         checkoutDate: string;
     }[];
-    onDateClick: (date: string) => void; // Add the onDateClick prop
+    onDateClick: (id: number) => void; // Updated to match the expected type
 }
 
 const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, year, attendanceData, onDateClick }) => {

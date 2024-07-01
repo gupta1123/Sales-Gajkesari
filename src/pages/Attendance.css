@@ -8,7 +8,7 @@
     border-radius: 20px;
     padding: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    width: 80%;
+    width: 100%;
     max-width: 1000px;
 }
 
@@ -107,7 +107,8 @@
     font-weight: 500;
 }
 
-.dates div.full-day {
+.dates div.full-day,
+.dates div.sunday {
     background-color: #4CAF50;
     color: white;
 }
@@ -119,11 +120,6 @@
 
 .dates div.absent {
     background-color: #F44336;
-    color: white;
-}
-
-.dates div.Present {
-    background-color: #2196F3;
     color: white;
 }
 
@@ -169,10 +165,4 @@
     border-width: 6px;
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
-}
-
-.employee-card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
 }

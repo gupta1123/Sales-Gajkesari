@@ -5,12 +5,13 @@ interface CustomCalendarProps {
     month: number;
     year: number;
     attendanceData: {
+        id: number;
         employeeId: number;
-        attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
+        attendanceStatus: 'full day' | 'half day' | 'Absent';
         checkinDate: string;
         checkoutDate: string;
     }[];
-    onDateClick: (date: string) => void;
+    onDateClick: (id: number) => void;
 }
 
 const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendanceData, onDateClick }) => {
@@ -20,7 +21,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendance
         const renderCalendar = () => {
             if (datesRef.current) {
                 datesRef.current.innerHTML = '';
-
                 const firstDay = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -35,30 +35,29 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendance
                     dateDiv.textContent = i.toString();
 
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                    const attendanceStatus = attendanceData.find(data => data.checkinDate.startsWith(dateKey))?.attendanceStatus;
+                    const attendanceRecord = attendanceData.find(data => data.checkinDate.startsWith(dateKey));
+                    const attendanceStatus = attendanceRecord?.attendanceStatus;
 
                     const date = new Date(year, month, i);
                     const tooltip = document.createElement('span');
                     tooltip.classList.add('calendar-tooltip');
 
                     if (date.getDay() === 0) {
-                        dateDiv.classList.add('sunday');
-                        tooltip.textContent = 'Holiday';
+                        dateDiv.classList.add('full-day'); // Apply the 'full-day' class for Sundays
                     } else if (attendanceStatus) {
                         dateDiv.classList.add(attendanceStatus.toLowerCase().replace(' ', '-'));
                         tooltip.textContent = ` ${attendanceStatus}`;
+                        dateDiv.appendChild(tooltip);
                     }
-
-                    dateDiv.appendChild(tooltip);
 
                     dateDiv.addEventListener('mouseover', () => {
                         const rect = dateDiv.getBoundingClientRect();
                         const tooltipRect = tooltip.getBoundingClientRect();
 
-                        if (rect.right - tooltipRect.width / 2 < 0) {
+                        if (rect.left - tooltipRect.width / 2 < 0) {
                             tooltip.style.left = '0';
                             tooltip.style.transform = 'none';
-                        } else if (rect.left + tooltipRect.width / 2 > datesRef.current!.offsetWidth) {
+                        } else if (rect.right + tooltipRect.width / 2 > datesRef.current!.offsetWidth) {
                             tooltip.style.left = 'auto';
                             tooltip.style.right = '0';
                             tooltip.style.transform = 'none';
@@ -69,7 +68,9 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ month, year, attendance
                     });
 
                     dateDiv.addEventListener('click', () => {
-                        onDateClick(dateKey);
+                        if (attendanceRecord) {
+                            onDateClick(attendanceRecord.id);
+                        }
                     });
 
                     datesRef.current?.appendChild(dateDiv);

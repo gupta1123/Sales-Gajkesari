@@ -33,6 +33,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
     const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
     const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
+    const [selectedFieldOfficer, setSelectedFieldOfficer] = useState<string>("All");
     const [data, setData] = useState<any[]>([]);
     const [isDataAvailable, setIsDataAvailable] = useState<boolean>(true);
     const [currentPage, setCurrentPage] = useState<number>(1);
@@ -123,8 +124,17 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
+    const sortedData = data.sort((a, b) => {
+        const nameA = `${a.employeeFirstName} ${a.employeeLastName}`.toLowerCase();
+        const nameB = `${b.employeeFirstName} ${b.employeeLastName}`.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+    const currentRows = sortedData
+        .filter(row => selectedFieldOfficer === "All" || `${row.employeeFirstName} ${row.employeeLastName}` === selectedFieldOfficer)
+        .slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(data.length / rowsPerPage);
+
+    const uniqueFieldOfficers = [...new Set(data.map(row => `${row.employeeFirstName} ${row.employeeLastName}`))];
 
     return (
         <div className={styles.salaryContainer}>
@@ -158,13 +168,28 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                         </SelectContent>
                     </Select>
                 </div>
+                <div className={styles.selectContainer}>
+                    <Select onValueChange={setSelectedFieldOfficer} defaultValue="All">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Field Officer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Field Officers</SelectItem>
+                            {uniqueFieldOfficers.map((officer, index) => (
+                                <SelectItem key={index} value={officer}>
+                                    {officer}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             {isDataAvailable ? (
                 <>
                     <Table className={styles.table}>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Employee</TableHead>
+                                <TableHead>Field Officer</TableHead>
                                 <TableHead>Full Days</TableHead>
                                 <TableHead>Half Days</TableHead>
                                 <TableHead>Base Salary</TableHead>
@@ -220,4 +245,5 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         </div>
     );
 };
+
 export default Salary;

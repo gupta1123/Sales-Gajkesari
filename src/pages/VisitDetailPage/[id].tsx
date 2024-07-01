@@ -1,4 +1,5 @@
-'use client'
+'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
@@ -201,6 +202,17 @@ const VisitDetailPage = () => {
         return null;
     }
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.onpopstate = () => {
+        const previousPage = sessionStorage.getItem('previousPage');
+        if (previousPage === 'EmployeeCard1') {
+          router.replace('/EmployeeCard1');
+        }
+      };
+    }
+  }, [router]);
 
   return (
     <div className="container mx-auto py-8">
