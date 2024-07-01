@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon, MoreHorizontal } from 'lucide-react';
@@ -10,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pagination, PaginationContent, PaginationLink, PaginationItem, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
@@ -23,6 +24,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from "@/components/ui/badge";
+import { User, MapPin } from 'lucide-react';
+
 
 interface Task {
     id: number;
@@ -38,6 +42,7 @@ interface Task {
     storeId: number;
     storeName: string;
     storeCity: string;
+    taskType: string;  // Add this line
 }
 
 interface Employee {
@@ -67,12 +72,11 @@ const Complaints = () => {
         storeId: 0,
         storeName: '',
         storeCity: '',
+        taskType: 'complaint'  // Add this line
     });
     const router = useRouter();
-    const [editTask, setEditTask] = useState<Task | null>(null);
     const [activeTab, setActiveTab] = useState('general');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [sortColumn, setSortColumn] = useState('id');
@@ -90,11 +94,11 @@ const Complaints = () => {
     }, [token, currentPage, itemsPerPage, sortColumn, sortDirection, filters]);
 
     useEffect(() => {
-        if (isModalOpen || isEditModalOpen) {
+        if (isModalOpen) {
             fetchEmployees();
             fetchStores();
         }
-    }, [isModalOpen, isEditModalOpen, token]);
+    }, [isModalOpen, token]);
 
     const handleNext = () => {
         setActiveTab('details');
@@ -210,6 +214,7 @@ const Complaints = () => {
                 storeId: 0,
                 storeName: '',
                 storeCity: '',
+                taskType: 'complaint'  // Add this line
             });
             setIsModalOpen(false);
         } catch (error) {
@@ -217,41 +222,31 @@ const Complaints = () => {
         }
     };
 
-    const updateTask = async () => {
-        if (!editTask) {
-            console.error('editTask is null');
-            return;
-        }
-
+    const updateTaskStatus = async (taskId: number, newStatus: string) => {
         try {
             const response = await fetch(
-                `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/updateTask?taskId=${editTask.id}`,
+                `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/updateTask?taskId=${taskId}`,
                 {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({ ...editTask, taskType: 'complaint' }),
+                    body: JSON.stringify({ status: newStatus }),
                 }
             );
 
-            const data = await response.json();
-
-            setTasks((prevTasks) => {
-                const updatedTasks = prevTasks.map((task) => {
-                    if (task.id === editTask.id) {
-                        return { ...editTask, taskType: 'complaint' };
-                    }
-                    return task;
-                });
-                return updatedTasks;
-            });
-
-            setEditTask(null);
-            setIsEditModalOpen(false);
+            if (response.ok) {
+                setTasks((prevTasks) =>
+                    prevTasks.map((task) =>
+                        task.id === taskId ? { ...task, status: newStatus } : task
+                    )
+                );
+            } else {
+                console.error('Failed to update task status');
+            }
         } catch (error) {
-            console.error('Error updating task:', error);
+            console.error('Error updating task status:', error);
         }
     };
 
@@ -307,14 +302,11 @@ const Complaints = () => {
             case 'assigned':
                 className += 'tag-blue';
                 break;
-            case 'in progress':
+            case 'work in progress':
                 className += 'tag-yellow';
                 break;
-            case 'completed':
+            case 'complete':
                 className += 'tag-green';
-                break;
-            case 'closed':
-                className += 'tag-gray';
                 break;
             case 'low':
                 className += 'tag-green';
@@ -336,7 +328,6 @@ const Complaints = () => {
         const totalPages = Math.ceil(tasks.length / itemsPerPage);
         const pageNumbers = [];
         const displayPages = 5;
-        const groupSize = 10;
 
         let startPage = Math.max(currentPage - Math.floor(displayPages / 2), 1);
         let endPage = startPage + displayPages - 1;
@@ -391,12 +382,82 @@ const Complaints = () => {
         );
     };
 
+    const renderComplaintCard = (task: Task) => (
+        <Card className="mb-4 overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300" style={{ borderRadius: '12px' }}>
+            <div className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-1" style={{ letterSpacing: '-0.025em' }}>{task.storeName}</h3>
+                        <p className="text-sm text-gray-500" style={{ fontWeight: 500 }}>{format(new Date(task.dueDate), 'MMM d, yyyy')}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.priority.toLowerCase() === 'low' ? 'bg-green-100 text-green-800' :
+                                task.priority.toLowerCase() === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                            }`}>
+                            {task.priority}
+                        </span>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleViewStore(task.storeId)} className="text-sm">
+                                    View Store
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleViewFieldOfficer(task.assignedToId)} className="text-sm">
+                                    View Field Officer
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => deleteTask(task.id)} className="text-sm text-red-600">
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+
+                <h4 className="text-base font-medium text-gray-700 mb-3" style={{ lineHeight: '1.4' }}>{task.taskTitle || 'Untitled Complaint'}</h4>
+
+                <div className="flex justify-between mb-4 text-sm">
+                    <div>
+                        <span className="text-gray-500">Assigned to:</span>
+                        <p className="font-medium text-gray-800">{task.assignedToName}</p>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-gray-500">Store City:</span>
+                        <p className="font-medium text-gray-800">{task.storeCity}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">Status:</span>
+                    <Select
+                        value={task.status}
+                        onValueChange={(value) => updateTaskStatus(task.id, value)}
+                    >
+                        <SelectTrigger className="w-[180px] h-9 text-sm">
+                            <SelectValue placeholder="Change status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Assigned">Assigned</SelectItem>
+                            <SelectItem value="Work In Progress">Work In Progress</SelectItem>
+                            <SelectItem value="Complete">Complete</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+        </Card>
+    );
+
     return (
         <div className="container mx-auto py-12 outlined-container">
             <h1 className="text-3xl font-bold mb-6">Complaints Management</h1>
             <div className="mb-4 flex space-x-4">
                 <Input
-                    placeholder="Search by description"
+                    placeholder="Search by description or store name"
                     value={filters.search}
                     onChange={(e) => handleFilterChange('search', e.target.value)}
                 />
@@ -431,8 +492,8 @@ const Complaints = () => {
                     <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
                         <SelectItem value="Assigned">Assigned</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Work In Progress">Work In Progress</SelectItem>
+                        <SelectItem value="Complete">Complete</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -442,8 +503,8 @@ const Complaints = () => {
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                        <DialogTitle>Create Complaints</DialogTitle>
-                        <DialogDescription>Fill in the Complaints details.</DialogDescription>
+                        <DialogTitle>Create Complaint</DialogTitle>
+                        <DialogDescription>Fill in the complaint details.</DialogDescription>
                     </DialogHeader>
                     <Tabs value={activeTab}>
                         <TabsList className="mb-4">
@@ -453,19 +514,19 @@ const Complaints = () => {
                         <TabsContent value="general">
                             <div className="grid gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="taskTitle">Complaints Title</Label>
+                                    <Label htmlFor="taskTitle">Complaint Title</Label>
                                     <Input
                                         id="taskTitle"
-                                        placeholder="Enter Complaints title"
+                                        placeholder="Enter complaint title"
                                         value={newTask.taskTitle}
                                         onChange={(e) => setNewTask({ ...newTask, taskTitle: e.target.value })}
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="taskDescription">Complaints Description</Label>
+                                    <Label htmlFor="taskDescription">Complaint Description</Label>
                                     <Input
                                         id="taskDescription"
-                                        placeholder="Enter Complaints description"
+                                        placeholder="Enter complaint description"
                                         value={newTask.taskDescription}
                                         onChange={(e) => setNewTask({ ...newTask, taskDescription: e.target.value })}
                                     />
@@ -477,7 +538,7 @@ const Complaints = () => {
                                             <SelectValue placeholder="Select a category" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Complaint">Complaints</SelectItem>
+                                            <SelectItem value="Complaint">Complaint</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -565,7 +626,7 @@ const Complaints = () => {
                                 </div>
                                 <div className="flex justify-between mt-4">
                                     <Button variant="outline" onClick={handleBack}>Back</Button>
-                                    <Button onClick={createTask}>Create Complaints</Button>
+                                    <Button onClick={createTask}>Create Complaint</Button>
                                 </div>
                             </div>
                         </TabsContent>
@@ -573,242 +634,28 @@ const Complaints = () => {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Task</DialogTitle>
-                        <DialogDescription>Modify the Complaints details.</DialogDescription>
-                    </DialogHeader>
-                    {editTask && (
-                        <Tabs value={activeTab}>
-                            <TabsList className="mb-4">
-                                <TabsTrigger value="general" onClick={() => setActiveTab('general')}>General</TabsTrigger>
-                                <TabsTrigger value="details" onClick={() => setActiveTab('details')}>Details</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="general">
-                                <div className="grid gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="taskTitle">Complaint Summary</Label>
-                                        <Input
-                                            id="taskTitle"
-                                            placeholder="Enter Complaints title"
-                                            value={editTask.taskTitle}
-                                            onChange={(e) => setEditTask({ ...editTask, taskTitle: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="taskDescription">Complaint Details</Label>
-                                        <Input
-                                            id="taskDescription"
-                                            placeholder="Enter Complaints description"
-                                            value={editTask.taskDescription}
-                                            onChange={(e) => setEditTask({ ...editTask, taskDescription: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="category">Category</Label>
-                                        <Select value={editTask.category} onValueChange={(value) => setEditTask({ ...editTask, category: value })}>
-                                            <SelectTrigger className="w-[280px]">
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="complaint">Complaints</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex justify-between mt-4">
-                                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-                                        <Button onClick={handleNext}>Next</Button>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="details">
-                                <div className="grid gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="dueDate">Created Date</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className={`w-[280px] justify-start text-left font-normal ${!editTask.dueDate && 'text-muted-foreground'}`}
-                                                >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {editTask.dueDate ? format(new Date(editTask.dueDate), 'PPP') : <span>Pick a date</span>}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={editTask.dueDate ? new Date(editTask.dueDate) : undefined}
-                                                    onSelect={(date) => setEditTask({ ...editTask, dueDate: date?.toISOString() || '' })}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="assignedToId">Created To</Label>
-                                        <Select
-                                            value={editTask.assignedToId ? editTask.assignedToId.toString() : ''}
-                                            onValueChange={(value) => {
-                                                const selectedEmployee = employees.find(emp => emp.id === parseInt(value));
-                                                setEditTask({ ...editTask, assignedToId: parseInt(value), assignedToName: selectedEmployee ? `${selectedEmployee.firstName} ${selectedEmployee.lastName}` : 'Unknown' });
-                                            }}
-                                        >
-                                            <SelectTrigger className="w-[280px]">
-                                                <SelectValue placeholder="Select an employee" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {employees.map((employee) => (
-                                                    <SelectItem key={employee.id} value={employee.id.toString()}>
-                                                        {employee.firstName} {employee.lastName}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="priority">Priority</Label>
-                                        <Select value={editTask.priority} onValueChange={(value) => setEditTask({ ...editTask, priority: value })}>
-                                            <SelectTrigger className="w-[280px]">
-                                                <SelectValue placeholder="Select a priority" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="low">Low</SelectItem>
-                                                <SelectItem value="medium">Medium</SelectItem>
-                                                <SelectItem value="high">High</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="storeId">Store</Label>
-                                        <Select
-                                            value={editTask.storeId ? editTask.storeId.toString() : ''}
-                                            onValueChange={(value) => setEditTask({ ...editTask, storeId: parseInt(value) })}
-                                        >
-                                            <SelectTrigger className="w-[280px]">
-                                                <SelectValue placeholder="Select a store" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {stores.map((store) => (
-                                                    <SelectItem key={store.id} value={store.id.toString()}>
-                                                        {store.storeName}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex justify-between mt-4">
-                                        <Button variant="outline" onClick={handleBack}>Back</Button>
-                                        <Button onClick={updateTask}>Update Complaints</Button>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                        </Tabs>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            <div className="table-container">
-                <Table>
-                    <TableCaption>List of Complaints</TableCaption>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('taskTitle')}>
-                                Complaint Summary
-                                {sortColumn === 'taskTitle' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('taskDescription')}>
-                                Complaint Details
-                                {sortColumn === 'taskDescription' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('dueDate')}>
-                                Target Resolution Date
-                                {sortColumn === 'dueDate' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('assignedToName')}>
-                                Handled By
-                                {sortColumn === 'assignedToName' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('storeName')}>
-                                Customer
-                                {sortColumn === 'storeName' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('storeCity')}>
-                                Store City
-                                {sortColumn === 'storeCity' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
-                                Status
-                                {sortColumn === 'status' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort('priority')}>
-                                Priority
-                                {sortColumn === 'priority' && <span className="ml-2">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                            </TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={9} className="text-center">Loading...</TableCell>
-                            </TableRow>
-                        ) : tasks.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={9} className="text-center">No complaints found.</TableCell>
-                            </TableRow>
-                        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {isLoading ? (
+                    <p>Loading...</p>
+                ) : tasks.length === 0 ? (
+                    <p>No complaints found.</p>
+                ) : (
                             tasks
                                 .filter(
                                     (task) =>
-                                        (task.taskDescription?.toLowerCase() || '').includes(filters.search.toLowerCase()) &&
+                                        task.taskType === 'complaint' &&
+                                        (
+                                            (task.taskDescription?.toLowerCase() || '').includes(filters.search.toLowerCase()) ||
+                                            (task.storeName?.toLowerCase() || '').includes(filters.search.toLowerCase())
+                                        ) &&
                                         (filters.employee === '' || filters.employee === 'all' ? true : task.assignedToId === parseInt(filters.employee)) &&
                                         (filters.priority === '' || filters.priority === 'all' ? true : task.priority === filters.priority) &&
                                         (filters.status === '' || filters.status === 'all' ? true : task.status === filters.status)
                                 )
-                                .map((task) => (
-                                    <TableRow key={task.id}>
-                                        <TableCell>{task.taskTitle}</TableCell>
-                                        <TableCell>{task.taskDescription}</TableCell>
-                                        <TableCell>{format(new Date(task.dueDate ?? new Date()), 'PPP')}</TableCell>
-                                        <TableCell>{task.assignedToName}</TableCell>
-                                        <TableCell>{task.storeName}</TableCell>
-                                        <TableCell>{task.storeCity}</TableCell>
-                                        <TableCell>{renderTag(task.status, 'status')}</TableCell>
-                                        <TableCell>{renderTag(task.priority, 'priority')}</TableCell>
-                                        <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => { setEditTask(task); setIsEditModalOpen(true); setActiveTab('general'); }}>
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => deleteTask(task.id)}>
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handleViewStore(task.storeId)}>
-                                                        View Store
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleViewFieldOfficer(task.assignedToId)}>
-                                                        View Field Officer
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                        )}
-                    </TableBody>
-                </Table>
+                                .map(renderComplaintCard)
+                )}
             </div>
+
             <div className="mt-8 flex justify-between items-center">
                 <div className="flex items-center space-x-2">
                     <span>Items per page:</span>
