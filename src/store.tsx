@@ -10,7 +10,7 @@ interface AuthState {
   username: null | string;
   role: null | string;
   teamId: number | null;
-  officeManagerId: number | null; // New field
+  officeManagerId: number | null;
   isAdmin: boolean;
   accountStatus?: {
     accountNonExpired: boolean;
@@ -31,7 +31,7 @@ interface LoginResponse {
   username: string;
   role: string;
   teamId?: number | null;
-  officeManagerId?: number | null; // New field
+  officeManagerId?: number | null;
   isAdmin: boolean;
   accountStatus?: {
     accountNonExpired: boolean;
@@ -47,10 +47,7 @@ export const registerUser = createAsyncThunk<string, UserData, { rejectValue: st
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        `${BASE_URL}/user/register`,
-        userData
-      );
+      const response = await axios.post(`${BASE_URL}/user/register`, userData);
       return response.data;
     } catch (error: any) {
       console.error('Register User Error:', error);
@@ -63,7 +60,6 @@ export const loginUser = createAsyncThunk<LoginResponse, UserData, { rejectValue
   'auth/login',
   async (userData, { rejectWithValue }) => {
     try {
-      // Step 1: Authenticate and get token
       const tokenResponse = await axios.post(`${BASE_URL}/user/token`, {
         username: userData.username,
         password: userData.password,
@@ -71,10 +67,8 @@ export const loginUser = createAsyncThunk<LoginResponse, UserData, { rejectValue
       const token = tokenResponse.data.split(' ')[1];
       localStorage.setItem('token', token);
 
-      // Step 2: Fetch user details
       const headers = { Authorization: `Bearer ${token}` };
 
-      // First, try to fetch admin details
       try {
         const adminResponse = await axios.get(`${BASE_URL}/user/manage/current-user`, { headers });
         const { username, authorities } = adminResponse.data;
@@ -95,11 +89,8 @@ export const loginUser = createAsyncThunk<LoginResponse, UserData, { rejectValue
             },
           };
         }
-      } catch (error) {
-        // If not admin, proceed to fetch non-admin user details
-      }
+      } catch (error) { }
 
-      // Fetch non-admin user details
       const userResponse = await axios.get(`${BASE_URL}/user/manage/get?username=${userData.username}`, { headers });
       const { employeeId, username, roles } = userResponse.data;
 
@@ -188,6 +179,7 @@ const authSlice = createSlice({
         state.officeManagerId = action.payload.officeManagerId || null;
         state.isAdmin = action.payload.isAdmin;
         state.accountStatus = action.payload.accountStatus;
+        localStorage.setItem('role', action.payload.role);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
@@ -218,12 +210,3 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-
-// Function to decode JWT token (if needed)
-function parseJwt(token: string) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch (e) {
-    return null;
-  }
-}

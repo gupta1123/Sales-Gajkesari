@@ -10,8 +10,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 interface CustomerData {
   id?: number;
   storeName?: string;
-  firstName?: string;
-  lastName?: string;
+  clientFirstName?: string;
+  clientLastName?: string;
   primaryContact?: string | number;
   secondaryContact?: string | number;
   email?: string;
@@ -38,7 +38,7 @@ interface AddCustomerModalProps {
   onClose: () => void;
   token: string;
   employeeId: number | null;
-  existingData?: CustomerData; // Add this line
+  existingData?: CustomerData;
 }
 
 const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
@@ -49,8 +49,8 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 }) => {
   const [customerData, setCustomerData] = useState<CustomerData>(
     existingData || {
-      firstName: '',
-      lastName: '',
+      clientFirstName: '',
+      clientLastName: '',
       email: '',
     }
   );
@@ -102,6 +102,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
         employeeId: customerData.fieldOfficerId, // Use selected field officer's ID
       };
 
+      console.log('requestBody', requestBody)
       const url = existingData && existingData.id
         ? `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/update?id=${existingData.id}`
         : 'http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/store/create';
@@ -116,9 +117,11 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
         body: JSON.stringify(requestBody),
       });
 
+      console.log(response)
       if (response.ok) {
         const data = await response.json();
-        router.push(`/CustomerDetailPage/${data.storeId}`);
+        console.log(data)
+        router.push(`/CustomerDetailPage/${data}`);
         onClose(); // Close the modal after successful submission
       } else {
         console.error('Failed to update/create customer');
@@ -173,16 +176,16 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 <Input id="storeName" value={customerData.storeName || ''} className="col-span-3" onChange={(e) => handleInputChange('storeName', e.target.value)} />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="firstName" className="text-right">
+                <Label htmlFor="clientFirstName" className="text-right">
                   First Name
                 </Label>
-                <Input id="firstName" value={customerData.firstName || ''} className="col-span-3" onChange={(e) => handleInputChange('firstName', e.target.value)} />
+                <Input id="clientFirstName" value={customerData.clientFirstName || ''} className="col-span-3" onChange={(e) => handleInputChange('clientFirstName', e.target.value)} />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="lastName" className="text-right">
+                <Label htmlFor="clientLastName" className="text-right">
                   Last Name
                 </Label>
-                <Input id="lastName" value={customerData.lastName || ''} className="col-span-3" onChange={(e) => handleInputChange('lastName', e.target.value)} />
+                <Input id="clientLastName" value={customerData.clientLastName || ''} className="col-span-3" onChange={(e) => handleInputChange('clientLastName', e.target.value)} />
               </div>
             </div>
           </TabsContent>

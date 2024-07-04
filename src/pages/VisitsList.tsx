@@ -115,25 +115,135 @@ const VisitsList: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const role = useSelector((state: RootState) => state.auth.role);
   const teamId = useSelector((state: RootState) => state.auth.teamId);
-  const { employeeName: queryEmployeeName, startDate: queryStartDate, endDate: queryEndDate } = router.query;
+  const state = typeof window !== 'undefined' ? history.state : undefined;
+  const { date, employeeName: stateEmployeeName } = state || {};
 
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
-  const [startDate, setStartDate] = useState<Date | undefined>(queryStartDate ? new Date(queryStartDate as string) : subDays(new Date(), 2));
-  const [endDate, setEndDate] = useState<Date | undefined>(queryEndDate ? new Date(queryEndDate as string) : new Date());
+  const [startDate, setStartDate] = useState<Date | undefined>(date ? new Date(date as string) : subDays(new Date(), 2));
+  const [endDate, setEndDate] = useState<Date | undefined>(date ? new Date(date as string) : new Date());
   const [sortColumn, setSortColumn] = useState<string | null>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [allVisits, setAllVisits] = useState<Visit[]>([]);
 
   const [purpose, setPurpose] = useState<string>('');
   const [storeName, setStoreName] = useState<string>('');
-  const [employeeName, setEmployeeName] = useState<string>('');
+  const [employeeName, setEmployeeName] = useState<string>(stateEmployeeName ? stateEmployeeName as string : '');
+  const [visitsNavigate, setVisitsNavigate] = useState([]);
+
+  const saveStateToLocalStorage = () => {
+    const state = {
+      startDate,
+      endDate,
+      sortColumn,
+      sortDirection,
+      itemsPerPage,
+      currentPage,
+      purpose,
+      storeName,
+      employeeName,
+    };
+    localStorage.setItem('visitsListState', JSON.stringify(state));
+  };
 
   useEffect(() => {
-    setStartDate(queryStartDate ? new Date(queryStartDate as string) : subDays(new Date(), 2));
-    setEndDate(queryEndDate ? new Date(queryEndDate as string) : new Date());
-  }, [queryStartDate, queryEndDate]);
+    const selectedDate = localStorage.getItem('selectedDate');
+    const storedEmployeeName = localStorage.getItem('employeeName');
+
+    if (selectedDate) {
+      setStartDate(new Date(selectedDate));
+      setEndDate(new Date(selectedDate));
+    }
+
+    if (storedEmployeeName) {
+      const cleanedEmployeeName = storedEmployeeName.trim().replace(/\s+/g, ' ');
+      setEmployeeName(cleanedEmployeeName);
+    }
+
+    console.log('selectedDate', selectedDate);
+    console.log('cleanedEmployeeName', employeeName);
+
+    if (selectedDate && storedEmployeeName) {
+      const encodedEmployeeName = encodeURIComponent(employeeName);
+
+      const url = `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByDateSorted?startDate=${selectedDate}&endDate=${selectedDate}&page=0&size=10&sort=id,desc&employeeName=${encodedEmployeeName}`;
+
+      const headers: { Authorization?: string } = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      axios.get(url, { headers })
+        .then(response => {
+          console.log('API Response:', response.data);
+          setVisitsNavigate(response.data.content)
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    }
+  }, [employeeName]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.removeItem('selectedDate');
+      localStorage.removeItem('employeeName');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      if (url !== '/VisitsList') {
+        localStorage.removeItem('selectedDate');
+        localStorage.removeItem('employeeName');
+      }
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router.events]);
+
+
+  const loadStateFromLocalStorage = () => {
+    const state = localStorage.getItem('visitsListState');
+    if (state) {
+      const parsedState = JSON.parse(state);
+      setStartDate(new Date(parsedState.startDate));
+      setEndDate(new Date(parsedState.endDate));
+      setSortColumn(parsedState.sortColumn);
+      setSortDirection(parsedState.sortDirection);
+      setItemsPerPage(parsedState.itemsPerPage);
+      setCurrentPage(parsedState.currentPage);
+      setPurpose(parsedState.purpose);
+      setStoreName(parsedState.storeName);
+      setEmployeeName(parsedState.employeeName);
+    }
+  };
+
+  useEffect(() => {
+    loadStateFromLocalStorage();
+  }, []);
+
+  useEffect(() => {
+    saveStateToLocalStorage();
+  }, [
+    startDate,
+    endDate,
+    sortColumn,
+    sortDirection,
+    itemsPerPage,
+    currentPage,
+    purpose,
+    storeName,
+    employeeName,
+  ]);
 
   const { data, error, isLoading } = useQuery(
     [
@@ -143,6 +253,9 @@ const VisitsList: React.FC = () => {
       teamId,
       startDate,
       endDate,
+      purpose,
+      storeName,
+      employeeName,
       sortColumn,
       sortDirection,
       currentPage,
@@ -333,7 +446,6 @@ const VisitsList: React.FC = () => {
         sortColumn,
         sortDirection
       );
-      setAllVisits(allVisits);
       handleExport(allVisits);
     } else if (role === 'ADMIN' || role === 'OFFICE MANAGER') {
       const allVisits = await fetchVisits(
@@ -348,7 +460,6 @@ const VisitsList: React.FC = () => {
         1,
         1000 // Fetch a large number of visits for export
       );
-      setAllVisits(allVisits.content);
       handleExport(allVisits.content);
     }
   };
@@ -440,21 +551,22 @@ const VisitsList: React.FC = () => {
         onExport={fetchAndExportAllVisits}
         selectedColumns={selectedColumns}
         viewMode={viewMode}
-        startDate={startDate}
+        startDate={localStorage.getItem('selectedDate') ? new Date(localStorage.getItem('selectedDate')!) : startDate}
         setStartDate={setStartDate}
-        endDate={endDate}
+        endDate={localStorage.getItem('selectedDate') ? new Date(localStorage.getItem('selectedDate')!) : endDate}
         setEndDate={setEndDate}
         purpose={purpose}
         setPurpose={setPurpose}
         storeName={storeName}
         setStoreName={setStoreName}
-        employeeName={employeeName}
+        employeeName={localStorage.getItem('employeeName') || employeeName}
         setEmployeeName={setEmployeeName}
       />
 
       <br />
       <VisitsTable
-        visits={visits}
+        // visits={visits}
+        visits={visits.length > 0 ? visits : visitsNavigate}
         selectedColumns={selectedColumns}
         sortColumn={sortColumn}
         sortDirection={sortDirection}

@@ -1,3 +1,4 @@
+// pages/Attendance.tsx
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
@@ -6,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { useRouter } from 'next/router';
+import { VisitListProvider } from '../contexts/VisitListContext';
 
 interface AttendanceData {
     id: number;
@@ -39,7 +40,6 @@ const Attendance: React.FC = () => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     const token = useSelector((state: RootState) => state.auth.token);
-    const router = useRouter();
 
     useEffect(() => {
         fetchAttendanceData();
@@ -92,16 +92,7 @@ const Attendance: React.FC = () => {
                 throw new Error("Failed to fetch attendance data");
             }
 
-            let data = await response.json();
-
-            // Mark Sundays as Full Day
-            data = data.map((attendance: AttendanceData) => {
-                const date = new Date(attendance.checkinDate);
-                if (date.getDay() === 0) {
-                    return { ...attendance, attendanceStatus: 'full day' };
-                }
-                return attendance;
-            });
+            const data = await response.json();
 
             setAttendanceData(data);
             setNoDataMessage("");
@@ -118,112 +109,98 @@ const Attendance: React.FC = () => {
         setIsLoading(false);
     };
 
-
-
-    const getAttendanceSummary = (employeeId: number) => {
-        const employeeAttendance = attendanceData.filter(data => data.employeeId === employeeId);
-        const fullDays = employeeAttendance.filter(data => data.attendanceStatus === 'full day').length;
-        const halfDays = employeeAttendance.filter(data => data.attendanceStatus === 'half day').length;
-        const absentDays = employeeAttendance.filter(data => data.attendanceStatus === 'Absent').length;
-
-        return { fullDays, halfDays, absentDays };
-    };
-
-    const handleDateClick = (id: number) => {
-        router.push(`/VisitList/${id}`);
-    };
-
     const filteredEmployees = employees.filter((employee) =>
         `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(nameFilter.toLowerCase())
     );
 
     return (
-        <div className="container mx-auto py-8">
-            <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center space-x-4">
-                    <div>
-                        <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select a year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {years.map((year) => (
-                                    <SelectItem key={year} value={year.toString()}>
-                                        {year}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+        <VisitListProvider>
+            <div className="container mx-auto py-8">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center space-x-4">
+                        <div>
+                            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select a year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {years.map((year) => (
+                                        <SelectItem key={year} value={year.toString()}>
+                                            {year}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select a month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {months.map((month, index) => (
+                                        <SelectItem key={month} value={index.toString()}>
+                                            {month}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Input
+                                type="text"
+                                placeholder="Filter by name"
+                                value={nameFilter}
+                                onChange={(e) => setNameFilter(e.target.value)}
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select a month" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {months.map((month, index) => (
-                                    <SelectItem key={month} value={index.toString()}>
-                                        {month}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Input
-                            type="text"
-                            placeholder="Filter by name"
-                            value={nameFilter}
-                            onChange={(e) => setNameFilter(e.target.value)}
-                        />
+                    <div className="mb-4">
+                        <p className="text-lg font-bold">Legend:</p>
+                        <div className="flex space-x-4">
+                            <div className="flex items-center">
+                                <div className="w-4 h-4 bg-green-500 mr-2"></div>
+                                <p>Full Day</p>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-4 h-4 bg-yellow-500 mr-2"></div>
+                                <p>Half Day</p>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-4 h-4 bg-red-500 mr-2"></div>
+                                <p>Absent</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="mb-4">
-                    <p className="text-lg font-bold">Legend:</p>
-                    <div className="flex space-x-4">
-                        <div className="flex items-center">
-                            <div className="w-4 h-4 bg-green-500 mr-2"></div>
-                            <p>Full Day</p>
-                        </div>
-                        <div className="flex items-center">
-                            <div className="w-4 h-4 bg-yellow-500 mr-2"></div>
-                            <p>Half Day</p>
-                        </div>
-                        <div className="flex items-center">
-                            <div className="w-4 h-4 bg-red-500 mr-2"></div>
-                            <p>Absent</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {noDataMessage && (
-                <p className="mb-4 text-red-500">{noDataMessage}</p>
-            )}
-            <div className="space-y-4">
-                {isLoading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                        <Skeleton key={index} height={200} />
-                    ))
-                ) : (
-                    <div className="grid grid-cols-3 gap-4">
-                        {filteredEmployees.map((employee) => {
-                            const summary = getAttendanceSummary(employee.id);
-                            return (
-                                <AttendanceCard
-                                    key={employee.id}
-                                    employee={employee}
-                                    summary={summary}
-                                    selectedYear={selectedYear}
-                                    selectedMonth={selectedMonth}
-                                    attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
-                                    onDateClick={handleDateClick}
-                                />
-                            );
-                        })}
-                    </div>
+                {noDataMessage && (
+                    <p className="mb-4 text-red-500">{noDataMessage}</p>
                 )}
+                <div className="space-y-4">
+                    {isLoading ? (
+                        Array.from({ length: 5 }).map((_, index) => (
+                            <Skeleton key={index} height={200} />
+                        ))
+                    ) : (
+                        <div className="grid grid-cols-3 gap-4">
+                            {filteredEmployees.map((employee) => {
+                                const initialSummary = { fullDays: 0, halfDays: 0, absentDays: 0 };
+                                return (
+                                    <AttendanceCard
+                                        key={employee.id}
+                                        employee={employee}
+                                        initialSummary={initialSummary}
+                                        selectedYear={selectedYear}
+                                        selectedMonth={selectedMonth}
+                                        attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </VisitListProvider>
     );
 };
 

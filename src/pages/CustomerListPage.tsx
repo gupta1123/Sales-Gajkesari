@@ -368,9 +368,9 @@ function CustomerListContent() {
                             </DropdownMenu>
                         </>
                     )}
-                     {/* <Button variant="outline" onClick={openModal}>
+                     <Button variant="outline" onClick={openModal}>
                         Add Customer
-                    </Button>  */}
+                    </Button> 
                 </div>
             </div>
             <AddCustomerModal

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import "./NotesTimeline.css";
 import Link from 'next/link';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 
 // Define types for props and state
 type Note = {
@@ -33,6 +34,9 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
   const [newNote, setNewNote] = useState<string>("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [showTextarea, setShowTextarea] = useState<boolean>(false);
+  const [showAll, setShowAll] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const notesPerPage = 3;
   const token = useSelector((state: RootState) => state.auth.token);
   const employeeId = useSelector((state: RootState) => state.auth.employeeId);
 
@@ -142,6 +146,19 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
     setEditingNoteId(null);
   };
 
+  const indexOfLastNote = currentPage * notesPerPage;
+  const indexOfFirstNote = indexOfLastNote - notesPerPage;
+  const currentNotes = showAll ? notes.slice(indexOfFirstNote, indexOfLastNote) : notes.slice(0, 3);
+  const totalPages = Math.ceil(notes.length / notesPerPage);
+
+  const getPaginationGroup = (totalPages: number, itemsPerPage: number) => {
+    const start = Math.floor((currentPage - 1) / itemsPerPage) * itemsPerPage;
+    return new Array(itemsPerPage)
+      .fill(0)
+      .map((_, idx) => start + idx + 1)
+      .filter((page) => page <= totalPages);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -169,7 +186,7 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
         )}
         {notes.length > 0 && (
           <div className="notes-timeline">
-            {notes.map(note => (
+            {currentNotes.map(note => (
               <div key={note.id} className="notes-timeline-item">
                 <div className="notes-timeline-point"></div>
                 <div className="notes-timeline-content">
@@ -189,6 +206,43 @@ export default function NotesSection({ storeId }: NotesSectionProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {notes.length > 3 && (
+          <div className="mt-4">
+            <Button onClick={() => setShowAll(!showAll)}>
+              {showAll ? 'Show Less' : 'Show More'}
+            </Button>
+          </div>
+        )}
+        {showAll && (
+          <div className="pagination-container mt-4">
+            <Pagination>
+              <PaginationPrevious
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                className={currentPage === 1 ? "disabled" : ""}
+              >
+                Previous
+              </PaginationPrevious>
+              <PaginationContent>
+                {getPaginationGroup(totalPages, notesPerPage).map((page, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      isActive={page === currentPage}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+              </PaginationContent>
+              <PaginationNext
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                className={currentPage === totalPages ? "disabled" : ""}
+              >
+                Next
+              </PaginationNext>
+            </Pagination>
           </div>
         )}
       </CardContent>

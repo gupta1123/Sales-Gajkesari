@@ -56,7 +56,11 @@
   align-items: center;
   margin-bottom: 8px;
 }
-
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
 .timeline-visit-id {
   font-size: 14px;
   color: #555;

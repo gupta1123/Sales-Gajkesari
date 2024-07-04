@@ -6,15 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import AddTeam from './AddTeam';
+
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import axios from 'axios';
+import "./Employeelist.css";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from 'next/router';
 import {
@@ -26,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import axios from 'axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface User {
@@ -44,6 +49,14 @@ interface User {
   actions: string;
   city: string;
   state: string;
+  userDto: {
+    username: string;
+    password: string | null;
+    roles: string | null;
+    employeeId: number | null;
+    firstName: string | null;
+    lastName: string | null;
+  };
 }
 
 interface TeamData {
@@ -79,13 +92,14 @@ const EmployeeList: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [sortColumn, setSortColumn] = useState<keyof User>('firstName');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [assignCityUserId, setAssignCityUserId] = useState<number | null>(null);
   const [assignCityUserName, setAssignCityUserName] = useState<string>("");
   const [city, setCity] = useState("");
   const [isAssignCityModalOpen, setIsAssignCityModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const token = useSelector((state: RootState) => state.auth.token);
   const role = useSelector((state: RootState) => state.auth.role);
@@ -129,7 +143,7 @@ const EmployeeList: React.FC = () => {
         setTeamData(teamData);
 
         // Set users to the field officers of the team
-        setUsers(teamData.fieldOfficers || []);
+        setUsers(teamData.fieldOfficers.map((user: User) => ({ ...user, userName: user.userDto?.username || "" })));
       } else {
         console.log('Fetching all employees');
         const response = await axios.get('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getAll', {
@@ -143,7 +157,7 @@ const EmployeeList: React.FC = () => {
         }
 
         console.log('All employees received:', response.data);
-        setUsers(response.data);
+        setUsers(response.data.map((user: User) => ({ ...user, userName: user.userDto?.username || "" })));
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -152,6 +166,7 @@ const EmployeeList: React.FC = () => {
       setIsLoading(false);
     }
   };
+
 
   const fetchOfficeManager = async () => {
     try {
@@ -195,43 +210,9 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (employeeId: number) => {
-    try {
-      const response = await axios.delete(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/delete?id=${employeeId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.status === 200) {
-        console.log(response.data);
-
-        const employee = users.find((user) => user.id === employeeId);
-        if (employee) {
-          const deleteUserResponse = await axios.delete(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/user/manage/delete?username=${employee.userName}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (deleteUserResponse.status === 200) {
-            console.log('User credentials deleted!');
-          } else {
-            console.error('Failed to delete user credentials');
-          }
-        }
-
-        setUsers(users.filter(user => user.id !== employeeId));
-      } else {
-        console.error('Error:', response.data);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  const handleEditUser = (employeeId: number) => {
-    const employee = users.find((user) => user.id === employeeId);
-    if (employee) {
-      setEditingEmployee(employee);
-      setIsEditModalOpen(true);
-    }
+  const handleEditUser = (user: User) => {
+    setEditingEmployee({ ...user, name: `${user.firstName} ${user.lastName}` });
+    setIsEditModalOpen(true);
   };
 
   const handleSaveEdit = async () => {
@@ -240,10 +221,16 @@ const EmployeeList: React.FC = () => {
         const response = await axios.put(
           `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/edit?empId=${editingEmployee.id}`,
           {
+            firstName: editingEmployee.firstName,
+            lastName: editingEmployee.lastName,
+            email: editingEmployee.email,
             role: editingEmployee.role,
-            userDto: {
-              username: editingEmployee.userName,
-            },
+            departmentName: editingEmployee.departmentName,
+            userName: editingEmployee.userName,
+            primaryContact: editingEmployee.primaryContact,
+            city: editingEmployee.city,
+            state: editingEmployee.state,
+            dateOfJoining: editingEmployee.dateOfJoining,
           },
           {
             headers: {
@@ -254,15 +241,9 @@ const EmployeeList: React.FC = () => {
         );
 
         if (response.status === 200) {
-          console.log('Employee updated!');
-
-          setUsers((prevUsers) =>
-            prevUsers.map((user) =>
-              user.id === editingEmployee.id ? editingEmployee : user
-            )
+          setUsers(prevUsers =>
+            prevUsers.map(user => (user.id === editingEmployee.id ? editingEmployee : user))
           );
-
-          setEditingEmployee(null);
           setIsEditModalOpen(false);
         } else {
           console.error('Error:', response.data);
@@ -271,6 +252,11 @@ const EmployeeList: React.FC = () => {
         console.error('Error:', error);
       }
     }
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditingEmployee(prevEmployee => prevEmployee ? { ...prevEmployee, [name]: value } : null);
   };
 
   const handleViewUser = (userId: number) => {
@@ -317,6 +303,31 @@ const EmployeeList: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: number) => {
+    try {
+      const response = await axios.put(
+        `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/delete?id=${userId}`,
+        {},
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        alert('Employee Deleted Successfully!');
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+      } else {
+        alert(`Failed to delete employee: ${response.data}`);
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      alert('An error occurred while deleting the employee');
+    }
+  };
+
   const handleSort = (column: keyof User) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -356,17 +367,94 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setEditingEmployee((prevEmployee) => {
-      if (!prevEmployee) return prevEmployee; // Ensure prevEmployee is not null
-      return {
-        ...prevEmployee,
-        [name]: value,
-      };
-    });
+  const handleSubmit = async () => {
+    try {
+      const response = await axios.post(
+        "http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee-user/create",
+        {
+          user: {
+            username: newEmployee.userName,
+            password: newEmployee.password,
+          },
+          employee: {
+            firstName: newEmployee.firstName,
+            lastName: newEmployee.lastName,
+            employeeId: newEmployee.employeeId,
+            primaryContact: newEmployee.primaryContact,
+            secondaryContact: newEmployee.secondaryContact,
+            departmentName: newEmployee.departmentName,
+            email: newEmployee.email,
+            role: newEmployee.role,
+            addressLine1: newEmployee.addressLine1,
+            addressLine2: newEmployee.addressLine2,
+            city: newEmployee.city,
+            state: newEmployee.state,
+            country: newEmployee.country,
+            pincode: newEmployee.pincode,
+            dateOfJoining: newEmployee.dateOfJoining,
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.data) {
+        throw new Error("Error adding employee!");
+      }
+
+      const newUser: User = response.data;
+
+      // Add the new employee to the users list without reloading the page
+      setUsers((prevUsers) => [...prevUsers, newUser]);
+
+      // Close the modal
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewEmployee((prevEmployee) => ({
+      ...prevEmployee,
+      [name]: value,
+    }));
+  };
+
+  const handleNextClick = () => {
+    setActiveTab('tab2');
+  };
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+  };
+
+  const [newEmployee, setNewEmployee] = useState({
+    firstName: "",
+    lastName: "",
+    employeeId: "",
+    primaryContact: "",
+    secondaryContact: "",
+    departmentName: "",
+    email: "",
+    role: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
+    dateOfJoining: "",
+    userName: "",
+    password: "",
+  });
+
+  const [activeTab, setActiveTab] = useState('tab1');
 
   return (
     <div className="container mx-auto py-8">
@@ -433,125 +521,242 @@ const EmployeeList: React.FC = () => {
             </DialogContent>
           </Dialog>
           <AddTeam />
-          <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-            <DialogContent className="sm:max-w-[425px] max-h-[75vh] overflow-y-auto">
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsModalOpen(true)}>Add Employee</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Edit Employee</DialogTitle>
+                <DialogTitle>Add Employee</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={editingEmployee?.firstName || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={editingEmployee?.lastName || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    value={editingEmployee?.email || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      setEditingEmployee((prevEmployee) => {
-                        if (!prevEmployee) return prevEmployee; // Ensure prevEmployee is not null
-                        return {
-                          ...prevEmployee,
-                          role: value,
-                        };
-                      })
-                    }
+              <Tabs value={activeTab} className="mt-6">
+                <TabsList>
+                  <TabsTrigger value="tab1">Personal & Work</TabsTrigger>
+                  <TabsTrigger value="tab2">Credentials</TabsTrigger>
+                </TabsList>
+                <TabsContent value="tab1">
+                  <div className="grid gap-4 py-4">
+                    <div className="text-lg font-semibold mb-2">Personal Information</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          value={newEmployee.firstName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          value={newEmployee.lastName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          value={newEmployee.email}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="employeeId">Employee ID</Label>
+                        <Input
+                          id="employeeId"
+                          name="employeeId"
+                          value={newEmployee.employeeId}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="primaryContact">Primary Contact</Label>
+                        <Input
+                          id="primaryContact"
+                          name="primaryContact"
+                          value={newEmployee.primaryContact}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
 
+                    <div className="grid gap-2">
+                      <Label htmlFor="addressLine1">Address Line 1</Label>
+                      <Input
+                        id="addressLine1"
+                        name="addressLine1"
+                        value={newEmployee.addressLine1}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="addressLine2">Address Line 2</Label>
+                      <Input
+                        id="addressLine2"
+                        name="addressLine2"
+                        value={newEmployee.addressLine2}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={newEmployee.city}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input
+                          id="state"
+                          name="state"
+                          value={newEmployee.state}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          name="country"
+                          value={newEmployee.country}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="pincode">Pincode</Label>
+                      <Input
+                        id="pincode"
+                        name="pincode"
+                        value={newEmployee.pincode}
+                        onChange={handleInputChange}
+                      />
+                    </div>
 
-                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Field Officer">Field Officer</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="departmentName">Department</Label>
-                  <Input
-                    id="departmentName"
-                    name="departmentName"
-                    value={editingEmployee?.departmentName || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="userName">User Name</Label>
-                  <Input
-                    id="userName"
-                    name="userName"
-                    value={editingEmployee?.userName || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="primaryContact">Phone</Label>
-                  <Input
-                    id="primaryContact"
-                    name="primaryContact"
-                    value={editingEmployee?.primaryContact || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={editingEmployee?.city || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={editingEmployee?.state || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="dateOfJoining">Date of Joining</Label>
-                  <Input
-                    id="dateOfJoining"
-                    name="dateOfJoining"
-                    type="date"
-                    value={editingEmployee?.dateOfJoining || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveEdit}>Save</Button>
-              </DialogFooter>
+                    <div className="text-lg font-semibold mt-6 mb-2">Work Information</div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="departmentName">Department</Label>
+                        <Select
+                          value={newEmployee.departmentName}
+                          onValueChange={(value) =>
+                            setNewEmployee({ ...newEmployee, departmentName: value })
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sales">Sales</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Select
+                          name="role"
+                          value={newEmployee.role}
+                          onValueChange={(value) =>
+                            setNewEmployee({ ...newEmployee, role: value })
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Field Officer">Field Officer</SelectItem>
+                            <SelectItem value="Manager"> Manager</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="dateOfJoining">Date of Joining</Label>
+                        <Input
+                          id="dateOfJoining"
+                          name="dateOfJoining"
+                          type="date"
+                          value={newEmployee.dateOfJoining}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    {activeTab === 'tab1' ? (
+                      <Button
+                        onClick={handleNextClick}
+                        disabled={!newEmployee.firstName || !newEmployee.lastName || !newEmployee.primaryContact}
+                      >
+                        Next
+                      </Button>
+                    ) : (
+                      <div>Loading...</div>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="tab2">
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setActiveTab('tab1')}
+                      className="p-2"
+                    >
+                      <ArrowLeftIcon className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-4 py-4">
+                    <div className="text-lg font-semibold mb-2">User Credentials</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="userName">User Name</Label>
+                        <Input
+                          id="userName"
+                          name="userName"
+                          value={newEmployee.userName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={newEmployee.password}
+                            onChange={handleInputChange}
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-1/2 right-2 transform -translate-y-1/2 focus:outline-none"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <EyeIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Button onClick={handleSubmit}>Add Employee</Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
           <Dialog open={isAssignCityModalOpen} onOpenChange={setIsAssignCityModalOpen}>
@@ -577,6 +782,132 @@ const EmployeeList: React.FC = () => {
                   Cancel
                 </Button>
                 <Button onClick={handleAssignCitySubmit}>Assign</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+            <DialogContent className="sm:max-w-[600px] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Employee</DialogTitle>
+              </DialogHeader>
+              {editingEmployee && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        value={editingEmployee.firstName}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        value={editingEmployee.lastName}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        value={editingEmployee.email}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="userName">User Name</Label>
+                      <Input
+                        id="userName"
+                        name="userName"
+                        value={editingEmployee.userName}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="role">Role</Label>
+                      <Select
+                        value={editingEmployee.role}
+                        onValueChange={(value) =>
+                          setEditingEmployee({ ...editingEmployee, role: value })
+                        }
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Field Officer">Field Officer</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="departmentName">Department</Label>
+                      <Input
+                        id="departmentName"
+                        name="departmentName"
+                        value={editingEmployee.departmentName}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="primaryContact">Primary Contact</Label>
+                      <Input
+                        id="primaryContact"
+                        name="primaryContact"
+                        value={editingEmployee.primaryContact}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        value={editingEmployee.city}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="state">State</Label>
+                      <Input
+                        id="state"
+                        name="state"
+                        value={editingEmployee.state}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="dateOfJoining">Date of Joining</Label>
+                      <Input
+                        id="dateOfJoining"
+                        name="dateOfJoining"
+                        type="date"
+                        value={editingEmployee.dateOfJoining}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEdit}>Save</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -713,11 +1044,8 @@ const EmployeeList: React.FC = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
-                            Delete
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleViewUser(user.id)}>
                             View
@@ -730,6 +1058,9 @@ const EmployeeList: React.FC = () => {
                               Assign City
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

@@ -29,7 +29,7 @@ import styles from './Salary.module.css';
 
 const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const currentYear = new Date().getFullYear();
-    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0'); // Months are 0-based in JavaScript
+    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
 
     const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
     const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
@@ -96,8 +96,8 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         let sundays = 0;
         const daysInMonth = getDaysInMonth(year, month);
         for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month - 1, day); // JavaScript months are 0-based
-            if (date.getDay() === 0) { // 0 is Sunday
+            const date = new Date(year, month - 1, day);
+            if (date.getDay() === 0) {
                 sundays++;
             }
         }
@@ -106,7 +106,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
     const calculateBaseSalary = (fullMonthSalary: number, totalDaysWorked: number, totalDaysInMonth: number, sundays: number) => {
         const perDaySalary = fullMonthSalary / totalDaysInMonth;
-        const sundaySalary = perDaySalary * sundays; // Sundays as paid leaves
+        const sundaySalary = perDaySalary * sundays;
         const baseSalary = perDaySalary * totalDaysWorked + sundaySalary;
         return baseSalary;
     };
@@ -114,12 +114,12 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const calculateTotalSalary = (row: any, year: number, month: number) => {
         const totalDaysInMonth = getDaysInMonth(year, month);
         const sundays = countSundaysInMonth(year, month);
-        const totalDaysWorked = row.statsDto.fullDays * 1 + row.statsDto.halfDays * 0.5;
+        const totalDaysWorked = row.fullDays * 1 + row.halfDays * 0.5;
         const baseSalary = calculateBaseSalary(row.salary || 0, totalDaysWorked, totalDaysInMonth, sundays);
-        const travelAllowance = row.travelAllowance * (row.statsDto.fullDays + row.statsDto.halfDays);
-        const dearnessAllowance = row.dearnessAllowance * (row.statsDto.fullDays + row.statsDto.halfDays);
-        const totalSalary = baseSalary + travelAllowance + dearnessAllowance + row.statsDto.expenseTotal;
-        return Math.round(totalSalary); // Rounding off to the nearest integer
+        const travelAllowance = (row.travelAllowance || 0) * row.fullDays + (row.travelAllowance || 0) * 0.5 * row.halfDays;
+        const dearnessAllowance = (row.dearnessAllowance || 0) * row.fullDays + (row.dearnessAllowance || 0) * 0.5 * row.halfDays;
+        const totalSalary = baseSalary + travelAllowance + dearnessAllowance + (row.expenseTotal || 0);
+        return Math.round(totalSalary);
     };
 
     const indexOfLastRow = currentPage * rowsPerPage;
@@ -203,12 +203,12 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                             {currentRows.map((row, index) => (
                                 <TableRow key={index}>
                                     <TableCell>{row.employeeFirstName} {row.employeeLastName}</TableCell>
-                                    <TableCell>{row.statsDto.fullDays}</TableCell>
-                                    <TableCell>{row.statsDto.halfDays}</TableCell>
-                                    <TableCell>{Math.round(calculateBaseSalary(row.salary || 0, (row.statsDto.fullDays * 1 + row.statsDto.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth)), countSundaysInMonth(Number(selectedYear), Number(selectedMonth))))}</TableCell>
-                                    <TableCell>{Math.round(row.travelAllowance * (row.statsDto.fullDays + row.statsDto.halfDays))}</TableCell>
-                                    <TableCell>{Math.round(row.dearnessAllowance * (row.statsDto.fullDays + row.statsDto.halfDays))}</TableCell>
-                                    <TableCell>{Math.round(row.statsDto.expenseTotal)}</TableCell>
+                                    <TableCell>{row.fullDays}</TableCell>
+                                    <TableCell>{row.halfDays}</TableCell>
+                                    <TableCell>{Math.round(calculateBaseSalary(row.salary || 0, (row.fullDays * 1 + row.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth)), countSundaysInMonth(Number(selectedYear), Number(selectedMonth))))}</TableCell>
+                                    <TableCell>{Math.round((row.travelAllowance || 0) * row.fullDays + (row.travelAllowance || 0) * 0.5 * row.halfDays)}</TableCell>
+                                    <TableCell>{Math.round((row.dearnessAllowance || 0) * row.fullDays + (row.dearnessAllowance || 0) * 0.5 * row.halfDays)}</TableCell>
+                                    <TableCell>{Math.round(row.expenseTotal)}</TableCell>
                                     <TableCell>{calculateTotalSalary(row, Number(selectedYear), Number(selectedMonth))}</TableCell>
                                 </TableRow>
                             ))}
@@ -245,5 +245,6 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         </div>
     );
 };
+
 
 export default Salary;

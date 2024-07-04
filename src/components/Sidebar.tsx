@@ -15,6 +15,9 @@ export default function Sidebar() {
     dispatch(logoutUser() as any);
   };
 
+  const isManager = role === 'Manager';
+  const isAdmin = role === 'ADMIN';
+
   return (
     <div className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
@@ -38,15 +41,17 @@ export default function Sidebar() {
               </a>
             </Link>
           </li>
-          <li className={styles.sidebarItem}>
-            <Link href="/Expense" legacyBehavior>
-              <a className={`${styles.sidebarLink} ${router.pathname === '/Expense' ? styles.active : ''}`}>
-                <FiDollarSign className={styles.sidebarIcon} />
-                <span>Expense</span>
-              </a>
-            </Link>
-          </li>
-          {role === 'ADMIN' && (
+          {!isManager && (
+            <li className={styles.sidebarItem}>
+              <Link href="/Expense" legacyBehavior>
+                <a className={`${styles.sidebarLink} ${router.pathname === '/Expense' ? styles.active : ''}`}>
+                  <FiDollarSign className={styles.sidebarIcon} />
+                  <span>Expenses</span>
+                </a>
+              </Link>
+            </li>
+          )}
+          {isAdmin && (
             <li className={styles.sidebarItem}>
               <Link href="/Attendance" legacyBehavior>
                 <a className={`${styles.sidebarLink} ${router.pathname === '/Attendance' ? styles.active : ''}`}>
@@ -60,7 +65,7 @@ export default function Sidebar() {
             <Link href="/Requirements" legacyBehavior>
               <a className={`${styles.sidebarLink} ${router.pathname === '/Requirements' ? styles.active : ''}`}>
                 <FiClipboard className={styles.sidebarIcon} />
-                <span>Daily Requirements</span>
+                <span>Requirement</span>
               </a>
             </Link>
           </li>
@@ -68,23 +73,25 @@ export default function Sidebar() {
             <Link href="/Complaints" legacyBehavior>
               <a className={`${styles.sidebarLink} ${router.pathname === '/Complaints' ? styles.active : ''}`}>
                 <FiClipboard className={styles.sidebarIcon} />
-                <span>Complaints</span>
+                <span>Complaint</span>
               </a>
             </Link>
           </li>
-          <li className={styles.sidebarItem}>
-            <Link href="/DailyPricing" legacyBehavior>
-              <a className={`${styles.sidebarLink} ${router.pathname === '/DailyPricing' ? styles.active : ''}`}>
-                <FiDollarSign className={styles.sidebarIcon} />
-                <span>Daily Pricing</span>
-              </a>
-            </Link>
-          </li>
+          {!isManager && (
+            <li className={styles.sidebarItem}>
+              <Link href="/DailyPricing" legacyBehavior>
+                <a className={`${styles.sidebarLink} ${router.pathname === '/DailyPricing' ? styles.active : ''}`}>
+                  <FiDollarSign className={styles.sidebarIcon} />
+                  <span>Daily Pricing</span>
+                </a>
+              </Link>
+            </li>
+          )}
           <li className={styles.sidebarItem}>
             <Link href="/CustomerListPage" legacyBehavior>
               <a className={`${styles.sidebarLink} ${router.pathname === '/CustomerListPage' ? styles.active : ''}`}>
                 <FiUsers className={styles.sidebarIcon} />
-                <span>Customers List</span>
+                <span>Customers</span>
               </a>
             </Link>
           </li>
@@ -96,7 +103,7 @@ export default function Sidebar() {
               </a>
             </Link>
           </li>
-          {role === 'ADMIN' && (
+          {isAdmin && (
             <li className={styles.sidebarItem}>
               <Link href="/Settings" legacyBehavior>
                 <a className={`${styles.sidebarLink} ${router.pathname === '/Settings' ? styles.active : ''}`}>

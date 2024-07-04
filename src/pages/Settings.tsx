@@ -1,10 +1,11 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import Salary from './Salary';
 import Allowance from './Allowance';
 import WorkingDays from './WorkingDays';
+import Teams from './Teams'; // Import the Teams component
 import { RootState } from '../store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import styles from './Settings.module.css';
@@ -41,11 +42,18 @@ export default function Settings() {
                         >
                             Working Days
                         </button>
+                        <button
+                            className={`${styles.tabButton} ${activeTab === 'team' ? styles.activeTab : ''}`}
+                            onClick={() => setActiveTab('team')}
+                        >
+                            Team
+                        </button>
                     </div>
                     <div className={styles.tabContent}>
                         {activeTab === 'salary' && <Salary authToken={authToken} />}
                         {activeTab === 'allowance' && <Allowance authToken={authToken} />}
                         {activeTab === 'workingDays' && <WorkingDays authToken={authToken} />}
+                        {activeTab === 'team' && <Teams authToken={authToken} />} {/* Add the Teams component */}
                     </div>
                 </CardContent>
             </Card>

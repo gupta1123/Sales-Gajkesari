@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CustomCalendar from './CustomCalendar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faCloudSun, faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faCloudSun, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import styles from './AttendanceCard.module.css';
+import { useVisitList } from '../contexts/VisitListContext';
 
 interface AttendanceData {
     id: number;
@@ -24,16 +25,20 @@ interface AttendanceCardProps {
     attendanceData: AttendanceData[];
     selectedYear: number;
     selectedMonth: number;
-    onDateClick: (id: number) => void;
-    summary: {
+    initialSummary: {
         fullDays: number;
         halfDays: number;
         absentDays: number;
     };
 }
 
-const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceData, selectedYear, selectedMonth, onDateClick, summary }) => {
-    const totalFullDays = summary.fullDays + attendanceData.filter(data => new Date(data.checkinDate).getDay() === 0).length;
+const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceData, selectedYear, selectedMonth, initialSummary }) => {
+    const { setFilters } = useVisitList();
+    const [summary, setSummary] = useState(initialSummary);
+
+    const handleSummaryChange = (newSummary: { fullDays: number; halfDays: number; absentDays: number }) => {
+        setSummary(newSummary);
+    };
 
     return (
         <div className={styles['info-card']}>
@@ -43,17 +48,12 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceDat
                     <div className={styles['stat-box']}>
                         <FontAwesomeIcon icon={faSun} />
                         <p>Full</p>
-                        <h3>{totalFullDays}</h3>
+                        <h3>{summary.fullDays}</h3>
                     </div>
                     <div className={styles['stat-box']}>
                         <FontAwesomeIcon icon={faCloudSun} />
                         <p>Half</p>
                         <h3>{summary.halfDays}</h3>
-                    </div>
-                    <div className={styles['stat-box']}>
-                        <FontAwesomeIcon icon={faCheckCircle} />
-                        <p>Present</p>
-                        <h3>0</h3>
                     </div>
                     <div className={styles['stat-box']}>
                         <FontAwesomeIcon icon={faTimesCircle} />
@@ -67,7 +67,8 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ employee, attendanceDat
                     month={selectedMonth}
                     year={selectedYear}
                     attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
-                    onDateClick={onDateClick}
+                    onSummaryChange={handleSummaryChange}
+                    employeeName={`${employee.firstName} ${employee.lastName}`} // Pass employee name
                 />
             </div>
         </div>

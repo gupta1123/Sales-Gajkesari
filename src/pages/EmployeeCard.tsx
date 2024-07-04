@@ -7,29 +7,32 @@ interface EmployeeCardProps {
         id: number;
         firstName: string;
         lastName: string;
-        employeeId: string;
-        department: string;
-        position: string;
+        // Removed unused fields
     };
     summary: {
         fullDays: number;
         halfDays: number;
-        presentDays: number;
         absentDays: number;
     };
     month: number;
     year: number;
     attendanceData: {
-        id: number; // Added id property
         employeeId: number;
-        attendanceStatus: 'full day' | 'half day' | 'Absent'; // Removed 'Present' to match the expected type
+        attendanceStatus: 'full day' | 'half day' | 'Absent';
         checkinDate: string;
         checkoutDate: string;
     }[];
-    onDateClick: (id: number) => void; // Updated to match the expected type
+    onDateClick: (date: string) => void;
 }
 
 const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, year, attendanceData, onDateClick }) => {
+    // Filter out any entries with "Present" in the attendanceStatus
+    const filteredAttendanceData = attendanceData.filter(data =>
+        data.attendanceStatus === 'full day' ||
+        data.attendanceStatus === 'half day' ||
+        data.attendanceStatus === 'Absent'
+    );
+
     return (
         <div className="employee-card">
             <div className="employee-info">
@@ -50,13 +53,6 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, y
                         </div>
                     </div>
                     <div className="stat-card">
-                        <i className="fas fa-check"></i>
-                        <div>
-                            <p>Present</p>
-                            <h3>{summary.presentDays}</h3>
-                        </div>
-                    </div>
-                    <div className="stat-card">
                         <i className="fas fa-times"></i>
                         <div>
                             <p>Absent</p>
@@ -65,12 +61,13 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, summary, month, y
                     </div>
                 </div>
                 <div className="employee-calendar">
-                    <CustomCalendar
+                    {/* <CustomCalendar
                         month={month}
                         year={year}
-                        attendanceData={attendanceData.filter(data => data.employeeId === employee.id)}
-                        onDateClick={onDateClick} // Pass the onDateClick prop
-                    />
+                        attendanceData={filteredAttendanceData.filter(data => data.employeeId === employee.id)}
+                        onSummaryChange={() => { }} // Provide a dummy function or handle appropriately
+                 */}
+                    {/* /> */}
                 </div>
             </div>
         </div>

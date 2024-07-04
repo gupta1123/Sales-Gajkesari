@@ -43,6 +43,8 @@ const Allowance: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                 dearnessAllowance: employee.dearnessAllowance || 0,
                 fullMonthSalary: employee.fullMonthSalary || 0,
             }));
+            // Sort employees alphabetically by first name
+            employeesWithAllowances.sort((a: any, b: any) => a.firstName.localeCompare(b.firstName));
             setEmployees(employeesWithAllowances);
         } catch (error) {
             console.error('Error fetching employees:', error);

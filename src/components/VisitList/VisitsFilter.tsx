@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,8 +44,8 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
     employeeName,
     setEmployeeName,
 }) => {
-    const [debouncedStoreName, setDebouncedStoreName] = useState('');
-    const [debouncedEmployeeName, setDebouncedEmployeeName] = useState('');
+    const [debouncedStoreName, setDebouncedStoreName] = useState(storeName);
+    const [debouncedEmployeeName, setDebouncedEmployeeName] = useState(employeeName);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
@@ -53,23 +53,29 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
             setDebouncedStoreName(storeName);
         }, 300);
 
+        return () => {
+            clearTimeout(storeNameDebounceTimer);
+        };
+    }, [storeName]);
+
+    useEffect(() => {
         const employeeNameDebounceTimer = setTimeout(() => {
             setDebouncedEmployeeName(employeeName);
         }, 300);
 
         return () => {
-            clearTimeout(storeNameDebounceTimer);
             clearTimeout(employeeNameDebounceTimer);
         };
-    }, [storeName, employeeName]);
+    }, [employeeName]);
 
     useEffect(() => {
         handleFilter();
     }, [debouncedStoreName, debouncedEmployeeName, purpose]);
 
-    const handleFilter = () => {
+    const handleFilter = useCallback(() => {
+        console.log('employeeName', debouncedEmployeeName);
         onFilter({ storeName: debouncedStoreName, employeeName: debouncedEmployeeName, purpose }, false);
-    };
+    }, [debouncedStoreName, debouncedEmployeeName, purpose, onFilter]);
 
     const handleAllowClearStoreName = () => {
         setStoreName('');
@@ -105,10 +111,6 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
 
     const formatDate = (date: Date | undefined) => {
         return date ? format(date, 'MMM d, yyyy') : '';
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
     };
 
     return (
@@ -213,7 +215,7 @@ const VisitsFilter: React.FC<VisitsFilterProps> = ({
                                 <Button variant="outline" onClick={() => setIsModalOpen(true)}>Create Visits</Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
-                                <AddVisits closeModal={closeModal} />
+                                <AddVisits closeModal={() => setIsModalOpen(false)} />
                             </DialogContent>
                         </Dialog>
                         {viewMode === 'table' && (

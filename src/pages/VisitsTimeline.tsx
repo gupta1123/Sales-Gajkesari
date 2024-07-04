@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import './VisitsTimeline.css';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { Button } from '@/components/ui/button';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 
 interface Visit {
   id: string;
@@ -18,15 +20,12 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [showAll, setShowAll] = useState<boolean>(false);
+  const visitsPerPage = 3;
   const token = useSelector((state: RootState) => state.auth.token);
 
-  useEffect(() => {
-    if (storeId && token) {
-      fetchVisits();
-    }
-  }, [storeId, token]);
-
-  const fetchVisits = async () => {
+  const fetchVisits = useCallback(async () => {
     try {
       const response = await fetch(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/visit/getByStore?id=${storeId}`, {
         headers: {
@@ -34,7 +33,6 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
         },
       });
       const data: Visit[] = await response.json();
-    
       const sortedVisits = data.sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
       setVisits(sortedVisits);
       setIsLoading(false);
@@ -42,7 +40,13 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
       setError('Failed to fetch visits.');
       setIsLoading(false);
     }
-  };
+  }, [storeId, token]);
+
+  useEffect(() => {
+    if (storeId && token) {
+      fetchVisits();
+    }
+  }, [storeId, token, fetchVisits]);
 
   if (isLoading) {
     return <div>Loading visits...</div>;
@@ -52,6 +56,19 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
     return <div>Error: {error}</div>;
   }
 
+  const indexOfLastVisit = currentPage * visitsPerPage;
+  const indexOfFirstVisit = indexOfLastVisit - visitsPerPage;
+  const currentVisits = showAll ? visits.slice(indexOfFirstVisit, indexOfLastVisit) : visits.slice(0, 3);
+  const totalPages = Math.ceil(visits.length / visitsPerPage);
+
+  const getPaginationGroup = (totalPages: number, itemsPerPage: number) => {
+    const start = Math.floor((currentPage - 1) / itemsPerPage) * itemsPerPage;
+    return new Array(itemsPerPage)
+      .fill(0)
+      .map((_, idx) => start + idx + 1)
+      .filter((page) => page <= totalPages);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -59,7 +76,7 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
       </CardHeader>
       <CardContent>
         <div className="timeline">
-          {visits.map((visit) => (
+          {currentVisits.map((visit) => (
             <div key={visit.id} className="timeline-item">
               <div className="timeline-point"></div>
               <div className="timeline-content">
@@ -79,6 +96,43 @@ export default function VisitsTimeline({ storeId }: { storeId: string }) {
             </div>
           ))}
         </div>
+        {visits.length > 3 && (
+          <div className="mt-4">
+            <Button onClick={() => setShowAll(!showAll)}>
+              {showAll ? 'Show Less' : 'Show More'}
+            </Button>
+          </div>
+        )}
+        {showAll && (
+          <div className="pagination-container mt-4">
+            <Pagination>
+              <PaginationPrevious
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                className={currentPage === 1 ? "disabled" : ""}
+              >
+                Previous
+              </PaginationPrevious>
+              <PaginationContent>
+                {getPaginationGroup(totalPages, visitsPerPage).map((page, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      isActive={page === currentPage}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+              </PaginationContent>
+              <PaginationNext
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                className={currentPage === totalPages ? "disabled" : ""}
+              >
+                Next
+              </PaginationNext>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

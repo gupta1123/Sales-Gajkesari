@@ -10,16 +10,20 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, Collapse } from 'antd';
 import { Upload, message } from "antd";
-import { InboxOutlined, CaretDownOutlined, PushpinOutlined, ClockCircleOutlined, CheckCircleOutlined, SyncOutlined } from "@ant-design/icons";
+import { InboxOutlined, CaretDownOutlined, PushpinOutlined, ClockCircleOutlined, CheckCircleOutlined, SyncOutlined, WarningOutlined } from "@ant-design/icons";
 import VisitsTimeline from "../VisitsTimeline";
 import NotesSection from "../../components/NotesSection";
 import LikesSection from "../../components/BrandsSection";
 import BrandsSection from "../../components/LikesSection";
 import PerformanceMetrics from "../../components/PerformanceMetrics";
 import "../VisitDetail.css";
+import Image from 'next/image';
 
 const { Dragger } = Upload;
+const { Option } = Select;
+const { Panel } = Collapse;
 
 interface Attachment {
   id: number;
@@ -60,12 +64,41 @@ interface VisitData {
   intent?: string | null;
 }
 
+interface Task {
+  id: number;
+  taskTitle: string | null;
+  taskDesciption: string;
+  taskType: string;
+  dueDate: string;
+  assignedToId: number;
+  assignedToName: string | null;
+  assignedById: number;
+  assignedByName: string;
+  storeId: number;
+  storeName: string;
+  storeCity: string;
+  visitId: number;
+  visitDate: string;
+  status: string;
+  priority: string;
+  attachment: any[];
+  attachmentResponse: any[];
+  createdAt: string;
+  updatedAt: string;
+  createdTime: string;
+  updatedTime: string;
+}
+
 const VisitDetailPage = () => {
   const [visit, setVisit] = useState<VisitData | null>(null);
   const [checkinImages, setCheckinImages] = useState<string[]>([]);
   const [checkoutImages, setCheckoutImages] = useState<string[]>([]);
+  const [intentLevel, setIntentLevel] = useState<string>('');
+  const [monthlySales, setMonthlySales] = useState<string>('');
   const token = useSelector((state: RootState) => state.auth.token);
   const [checkInStatus, setCheckInStatus] = useState<'Assigned' | 'On Going' | 'Checked Out' | 'Completed'>('Assigned');
+  const [requirements, setRequirements] = useState<Task[]>([]);
+  const [complaints, setComplaints] = useState<Task[]>([]);
 
   const router = useRouter();
   const { id } = router.query;
@@ -145,8 +178,62 @@ const VisitDetailPage = () => {
       }
     };
 
+    const fetchIntentLevel = async () => {
+      try {
+        const response = await axios.get(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/intent-audit/getByVisit?id=${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.data && response.data.length > 0) {
+          setIntentLevel(response.data[response.data.length - 1].newIntentLevel.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching intent level:', error);
+      }
+    };
+
+    const fetchMonthlySales = async () => {
+      try {
+        const response = await axios.get(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/monthly-sale/getByVisit?visitId=${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.data && response.data.length > 0) {
+          setMonthlySales(response.data[response.data.length - 1].newMonthlySale.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching monthly sales:', error);
+      }
+    };
+
     if (id && token) {
       fetchVisitDetails();
+      fetchIntentLevel();
+      fetchMonthlySales();
+    }
+  }, [id, token]);
+
+  useEffect(() => {
+    const fetchTasks = async (type: 'requirement' | 'complaint', setTasks: React.Dispatch<React.SetStateAction<Task[]>>) => {
+      try {
+        const response = await axios.get(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/getByVisit?type=${type}&visitId=${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.data) {
+          setTasks(response.data);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${type}s:`, error);
+      }
+    };
+
+    if (id && token) {
+      fetchTasks('requirement', setRequirements);
+      fetchTasks('complaint', setComplaints);
     }
   }, [id, token]);
 
@@ -208,11 +295,93 @@ const VisitDetailPage = () => {
       window.onpopstate = () => {
         const previousPage = sessionStorage.getItem('previousPage');
         if (previousPage === 'EmployeeCard1') {
-          router.replace('/EmployeeCard1');
+          router.replace('/Dashboard');
         }
       };
     }
   }, [router]);
+
+  const handleStatusChange = async (taskId: number, newStatus: string) => {
+    try {
+      await axios.put(
+        `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/task/updateTask?taskId=${taskId}`,
+        {
+          status: newStatus,
+          priority: "Medium",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setRequirements((prev) =>
+        prev.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
+      );
+      setComplaints((prev) =>
+        prev.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
+      );
+    } catch (error) {
+      console.error('Error updating task status:', error);
+    }
+  };
+
+  const renderTasks = (tasks: Task[], type: string) => {
+    const getBadgeClass = (status: string) => {
+      switch (status) {
+        case 'Assigned':
+          return 'status-badge status-assigned';
+        case 'Work In Progress':
+          return 'status-badge status-in-progress';
+        case 'Completed':
+          return 'status-badge status-completed';
+        default:
+          return 'status-badge';
+      }
+    };
+
+    return (
+      <div className="task-grid">
+        {tasks.map((task) => (
+          <Card key={task.id} className="task-card">
+            <CardContent>
+              <div className="task-header">
+                <h3 className="task-title">
+                  {type === 'requirement' ? <PushpinOutlined /> : <InboxOutlined />}
+                  {task.taskTitle || 'Untitled Task'}
+                </h3>
+                <span className="task-date">{formatDate(task.dueDate)}</span>
+              </div>
+              <p className="task-description">{task.taskDesciption}</p>
+              <div className="task-footer">
+                <div className="task-assignee">
+                  <Image
+                    className="avatar"
+                    src="https://github.com/shadcn.png"
+                    alt={task.assignedToName || 'N/A'}
+                    width={40}
+                    height={40}
+                  />
+                  {task.assignedToName && <span className="task-assignee-name">{task.assignedToName}</span>}
+                </div>
+                <div className={`status-indicator ${getBadgeClass(task.status)}`}>
+                  <Select
+                    defaultValue={task.status}
+                    style={{ width: '100%' }}
+                    onChange={(value) => handleStatusChange(task.id, value)}
+                  >
+                    <Option value="Assigned">Assigned</Option>
+                    <Option value="Work In Progress">In Progress</Option>
+                    <Option value="Completed">Completed</Option>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -312,7 +481,11 @@ const VisitDetailPage = () => {
               <CardTitle>Metrics</CardTitle>
             </CardHeader>
             <CardContent>
-              <PerformanceMetrics visitDuration={calculateVisitDuration()} intentLevel={visit?.intent ?? ''} />
+              <PerformanceMetrics
+                visitDuration={calculateVisitDuration()}
+                intentLevel={intentLevel}
+                monthlySales={monthlySales}
+              />
             </CardContent>
           </Card>
 
@@ -323,7 +496,7 @@ const VisitDetailPage = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {checkinImages.map((image, index) => (
-                  <img key={index} src={image} alt={`Check-in ${index + 1}`} className="rounded-lg shadow-md" />
+                  <Image key={index} src={image} alt={`Check-in ${index + 1}`} className="rounded-lg shadow-md" width={300} height={200} />
                 ))}
               </div>
             </CardContent>
@@ -331,16 +504,20 @@ const VisitDetailPage = () => {
 
           <Card className="mb-8">
             <CardContent>
-              <Tabs defaultValue="likes">
+              <Tabs defaultValue="brands">
                 <TabsList>
-                  <TabsTrigger value="likes">Brands</TabsTrigger>
-                  <TabsTrigger value="brands">Likes</TabsTrigger>
+                  <TabsTrigger value="brands">Brands</TabsTrigger>
+                  <TabsTrigger value="requirements">Requirements</TabsTrigger>
+                  <TabsTrigger value="complaints">Complaints</TabsTrigger>
                 </TabsList>
-                <TabsContent value="likes">
+                <TabsContent value="brands">
                   <LikesSection storeId={visit?.storeId?.toString() ?? '0'} />
                 </TabsContent>
-                <TabsContent value="brands">
-                  <BrandsSection storeId={visit?.storeId?.toString() ?? '0'} />
+                <TabsContent value="requirements">
+                  {renderTasks(requirements, 'requirement')}
+                </TabsContent>
+                <TabsContent value="complaints">
+                  {renderTasks(complaints, 'complaint')}
                 </TabsContent>
               </Tabs>
             </CardContent>

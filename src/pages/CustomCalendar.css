@@ -61,6 +61,12 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+.calendar-dates div.sunday {
+    background-color: #4CAF50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
 .calendar-dates div:hover {
     background-color: rgba(0, 0, 0, 0.1);
     transform: scale(1.1);
@@ -106,4 +112,20 @@
     border-width: 6px;
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+.calendar-dates div:hover .calendar-tooltip {
+    visibility: visible;
+    opacity: 1;
+    white-space: nowrap;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    max-width: 100px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Added to ensure immediate hover effect */
+.calendar-dates div:hover {
+    z-index: 2;
 }

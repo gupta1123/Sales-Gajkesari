@@ -8,9 +8,10 @@ import { store, loginUser, logoutUser, setToken, setRole } from '../store';
 import React, { useState, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 
 const Card = ({ children }: { children: ReactNode }) => (
-  <div className="bg-white rounded-lg shadow-md p-8">{children}</div>
+  <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">{children}</div>
 );
 
 const Input = ({ type, id, placeholder, value, onChange }: { type: string; id: string; placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
@@ -21,13 +22,13 @@ const Input = ({ type, id, placeholder, value, onChange }: { type: string; id: s
     value={value}
     onChange={onChange}
     autoComplete="off"
-    className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
   />
 );
 
 const Button = ({ children, className, onClick }: { children: ReactNode; className?: string; onClick: (e: React.MouseEvent<HTMLButtonElement>) => void }) => (
   <button
-    className={`${className} px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+    className={`${className} w-full px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500`}
     onClick={onClick}
   >
     {children}
@@ -35,7 +36,7 @@ const Button = ({ children, className, onClick }: { children: ReactNode; classNa
 );
 
 const Typography = {
-  Title: ({ level, children }: { level: number; children: ReactNode }) => <h2 className="text-2xl font-bold mb-4 text-[#6C63FF]">{children}</h2>,
+  Title: ({ level, children }: { level: number; children: ReactNode }) => <h2 className="text-3xl font-bold mb-6 text-black">{children}</h2>,
   Text: ({ className, children }: { className?: string; children: ReactNode }) => <p className={`${className} text-gray-600`}>{children}</p>,
 };
 
@@ -77,7 +78,7 @@ const LoginPage = () => {
       <Card>
         <div className="text-center">
           <Typography.Title level={2}>Gajkesari</Typography.Title>
-          <img src="/image.gif" alt="Login" className="mx-auto mb-4" />
+          <Image src="/GajkesariLogo.jpeg" alt="Gajkesari Logo" className="mx-auto mb-6" width={200} height={200} />
           {errorMessage && <p className="text-center mb-4 text-red-500">{errorMessage}</p>}
 
           <div className="mb-4">
@@ -89,7 +90,7 @@ const LoginPage = () => {
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
-          <div className="mb-4 relative">
+          <div className="mb-6 relative">
             <Input
               type={showPassword ? 'text' : 'password'}
               id="password"
@@ -122,7 +123,7 @@ const LoginPage = () => {
               )}
             </span>
           </div>
-          <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={(e) => handleLogin(e)}>
+          <Button className="w-full bg-red-600 hover:bg-red-700" onClick={(e) => handleLogin(e)}>
             Login
           </Button>
           {authStatus === 'loading' && <p className="text-center mt-4">Loading...</p>}
@@ -131,6 +132,7 @@ const LoginPage = () => {
     </div>
   );
 };
+
 type AppDispatch = typeof store.dispatch;
 type AppPropsWithLayout = AppProps & {
   Component: NextPage & {
