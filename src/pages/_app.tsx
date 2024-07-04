@@ -8,7 +8,6 @@ import { store, loginUser, logoutUser, setToken, setRole } from '../store';
 import React, { useState, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import Image from 'next/image';
 
 const Card = ({ children }: { children: ReactNode }) => (
   <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">{children}</div>
@@ -78,7 +77,7 @@ const LoginPage = () => {
       <Card>
         <div className="text-center">
           <Typography.Title level={2}>Gajkesari</Typography.Title>
-          <Image src="/GajkesariLogo.jpeg" alt="Gajkesari Logo" className="mx-auto mb-6" width={200} height={200} />
+          <img src="/GajkesariLogo.jpeg" alt="Gajkesari Logo" className="mx-auto mb-6" style={{ maxWidth: '200px' }} />
           {errorMessage && <p className="text-center mb-4 text-red-500">{errorMessage}</p>}
 
           <div className="mb-4">
