@@ -302,10 +302,11 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  const handleDelete = async (userId: number) => {
+  const handleDeleteUser = async (userId: number) => {
     try {
       const response = await axios.put(
         `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/delete?id=${userId}`,
+        {},
         {
           headers: {
             'Content-Type': 'application/json',
@@ -318,11 +319,11 @@ const EmployeeList: React.FC = () => {
         alert('Employee Deleted Successfully!');
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
       } else {
-        console.error('Error:', response.data);
+        alert(`Failed to delete employee: ${response.data}`);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while deleting the employee.');
+      console.error('Error deleting employee:', error);
+      alert('An error occurred while deleting the employee');
     }
   };
 
@@ -1041,7 +1042,7 @@ const EmployeeList: React.FC = () => {
                               Assign City
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => handleDelete(user.id)}>
+                          <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
