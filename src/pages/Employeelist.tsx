@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import AddTeam from './AddTeam';
-
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import {
   Pagination,
@@ -303,11 +302,10 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDelete = async (userId: number) => {
     try {
       const response = await axios.put(
         `http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/delete?id=${userId}`,
-        {},
         {
           headers: {
             'Content-Type': 'application/json',
@@ -320,11 +318,11 @@ const EmployeeList: React.FC = () => {
         alert('Employee Deleted Successfully!');
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
       } else {
-        alert(`Failed to delete employee: ${response.data}`);
+        console.error('Error:', response.data);
       }
     } catch (error) {
-      console.error('Error deleting employee:', error);
-      alert('An error occurred while deleting the employee');
+      console.error('Error:', error);
+      alert('An error occurred while deleting the employee.');
     }
   };
 
@@ -411,10 +409,14 @@ const EmployeeList: React.FC = () => {
       // Add the new employee to the users list without reloading the page
       setUsers((prevUsers) => [...prevUsers, newUser]);
 
+      // Show success message
+      alert('Employee added successfully!');
+
       // Close the modal
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error:", error);
+      alert('An error occurred while adding the employee.');
     }
   };
 
@@ -475,7 +477,7 @@ const EmployeeList: React.FC = () => {
               <Button variant="outline">Select Columns</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              {['name', 'email', 'city', 'state', 'role', 'department', 'userName', 'dateOfJoining', 'primaryContact', 'actions'].map((column) => (
+              {['name', 'city', 'state', 'role', 'userName', 'primaryContact', 'actions'].map((column) => (
                 <DropdownMenuCheckboxItem
                   key={column}
                   checked={selectedColumns.includes(column)}
@@ -525,49 +527,46 @@ const EmployeeList: React.FC = () => {
             <DialogTrigger asChild>
               <Button onClick={() => setIsModalOpen(true)}>Add Employee</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] overflow-y-auto">
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add Employee</DialogTitle>
               </DialogHeader>
               <Tabs value={activeTab} className="mt-6">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="tab1">Personal & Work</TabsTrigger>
                   <TabsTrigger value="tab2">Credentials</TabsTrigger>
                 </TabsList>
-                <TabsContent value="tab1">
-                  <div className="grid gap-4 py-4">
-                    <div className="text-lg font-semibold mb-2">Personal Information</div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="firstName">First Name</Label>
+                <TabsContent value="tab1" className="pb-16">
+                  <div className="space-y-4">
+                    <div className="text-lg font-semibold">Personal Information</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">
+                          First Name <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           id="firstName"
                           name="firstName"
                           value={newEmployee.firstName}
                           onChange={handleInputChange}
+                          required
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="lastName">Last Name</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">
+                          Last Name <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           id="lastName"
                           name="lastName"
                           value={newEmployee.lastName}
                           onChange={handleInputChange}
+                          required
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          value={newEmployee.email}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="grid gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
                         <Label htmlFor="employeeId">Employee ID</Label>
                         <Input
                           id="employeeId"
@@ -576,18 +575,29 @@ const EmployeeList: React.FC = () => {
                           onChange={handleInputChange}
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="primaryContact">Primary Contact</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="primaryContact">
+                          Primary Contact <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           id="primaryContact"
                           name="primaryContact"
                           value={newEmployee.primaryContact}
                           onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="secondaryContact">Secondary Contact</Label>
+                        <Input
+                          id="secondaryContact"
+                          name="secondaryContact"
+                          value={newEmployee.secondaryContact}
+                          onChange={handleInputChange}
                         />
                       </div>
                     </div>
-
-                    <div className="grid gap-2">
+                    <div className="space-y-2">
                       <Label htmlFor="addressLine1">Address Line 1</Label>
                       <Input
                         id="addressLine1"
@@ -596,7 +606,7 @@ const EmployeeList: React.FC = () => {
                         onChange={handleInputChange}
                       />
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-2">
                       <Label htmlFor="addressLine2">Address Line 2</Label>
                       <Input
                         id="addressLine2"
@@ -605,8 +615,8 @@ const EmployeeList: React.FC = () => {
                         onChange={handleInputChange}
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="grid gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
                         <Label htmlFor="city">City</Label>
                         <Input
                           id="city"
@@ -615,7 +625,7 @@ const EmployeeList: React.FC = () => {
                           onChange={handleInputChange}
                         />
                       </div>
-                      <div className="grid gap-2">
+                      <div className="space-y-2">
                         <Label htmlFor="state">State</Label>
                         <Input
                           id="state"
@@ -624,7 +634,7 @@ const EmployeeList: React.FC = () => {
                           onChange={handleInputChange}
                         />
                       </div>
-                      <div className="grid gap-2">
+                      <div className="space-y-2">
                         <Label htmlFor="country">Country</Label>
                         <Input
                           id="country"
@@ -634,7 +644,7 @@ const EmployeeList: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-2">
                       <Label htmlFor="pincode">Pincode</Label>
                       <Input
                         id="pincode"
@@ -644,17 +654,20 @@ const EmployeeList: React.FC = () => {
                       />
                     </div>
 
-                    <div className="text-lg font-semibold mt-6 mb-2">Work Information</div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="departmentName">Department</Label>
+                    <div className="text-lg font-semibold mt-6">Work Information</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="departmentName">
+                          Department <span className="text-red-500">*</span>
+                        </Label>
                         <Select
                           value={newEmployee.departmentName}
                           onValueChange={(value) =>
                             setNewEmployee({ ...newEmployee, departmentName: value })
                           }
+                          required
                         >
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select a department" />
                           </SelectTrigger>
                           <SelectContent>
@@ -662,25 +675,28 @@ const EmployeeList: React.FC = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="role">Role</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">
+                          Role <span className="text-red-500">*</span>
+                        </Label>
                         <Select
                           name="role"
                           value={newEmployee.role}
                           onValueChange={(value) =>
                             setNewEmployee({ ...newEmployee, role: value })
                           }
+                          required
                         >
-                          <SelectTrigger className="w-[180px]">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select a role" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Field Officer">Field Officer</SelectItem>
-                            <SelectItem value="Manager"> Manager</SelectItem>
+                            <SelectItem value="Manager">Regional Manager</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid gap-2">
+                      <div className="space-y-2">
                         <Label htmlFor="dateOfJoining">Date of Joining</Label>
                         <Input
                           id="dateOfJoining"
@@ -692,43 +708,45 @@ const EmployeeList: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    {activeTab === 'tab1' ? (
-                      <Button
-                        onClick={handleNextClick}
-                        disabled={!newEmployee.firstName || !newEmployee.lastName || !newEmployee.primaryContact}
-                      >
-                        Next
-                      </Button>
-                    ) : (
-                      <div>Loading...</div>
-                    )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="tab2">
-                  <div className="flex justify-end">
+                  <div className="sticky bottom-0 bg-white py-4 mt-6">
                     <Button
-                      variant="ghost"
-                      onClick={() => setActiveTab('tab1')}
-                      className="p-2"
+                      onClick={handleNextClick}
+                      disabled={!newEmployee.firstName || !newEmployee.lastName || !newEmployee.primaryContact || !newEmployee.departmentName || !newEmployee.role}
+                      className="w-full"
                     >
-                      <ArrowLeftIcon className="h-5 w-5" />
+                      Next
                     </Button>
                   </div>
-                  <div className="grid gap-4 py-4">
-                    <div className="text-lg font-semibold mb-2">User Credentials</div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="userName">User Name</Label>
+                </TabsContent>
+                <TabsContent value="tab2" className="pb-16">
+                  <div className="space-y-4">
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setActiveTab('tab1')}
+                        className="p-2"
+                      >
+                        <ArrowLeftIcon className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <div className="text-lg font-semibold">User Credentials</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="userName">
+                          User Name <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           id="userName"
                           name="userName"
                           value={newEmployee.userName}
                           onChange={handleInputChange}
+                          required
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">
+                          Password <span className="text-red-500">*</span>
+                        </Label>
                         <div className="relative">
                           <Input
                             id="password"
@@ -736,6 +754,7 @@ const EmployeeList: React.FC = () => {
                             type={showPassword ? 'text' : 'password'}
                             value={newEmployee.password}
                             onChange={handleInputChange}
+                            required
                           />
                           <button
                             type="button"
@@ -752,8 +771,14 @@ const EmployeeList: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <Button onClick={handleSubmit}>Add Employee</Button>
+                  <div className="sticky bottom-0 bg-white py-4 mt-6">
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!newEmployee.userName || !newEmployee.password}
+                      className="w-full"
+                    >
+                      Add Employee
+                    </Button>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -835,20 +860,12 @@ const EmployeeList: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select
+                      <Input
+                        id="role"
+                        name="role"
                         value={editingEmployee.role}
-                        onValueChange={(value) =>
-                          setEditingEmployee({ ...editingEmployee, role: value })
-                        }
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Field Officer">Field Officer</SelectItem>
-                          <SelectItem value="Manager">Manager</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={handleEditInputChange}
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="departmentName">Department</Label>
@@ -933,30 +950,10 @@ const EmployeeList: React.FC = () => {
                     )}
                   </TableHead>
                 )}
-                {selectedColumns.includes('email') && (
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('email')}>
-                    Email
-                    {sortColumn === 'email' && (
-                      <span className="ml-2">
-                        {sortDirection === 'asc' ? '▲' : '▼'}
-                      </span>
-                    )}
-                  </TableHead>
-                )}
                 {selectedColumns.includes('role') && (
                   <TableHead className="cursor-pointer" onClick={() => handleSort('role')}>
                     Role
                     {sortColumn === 'role' && (
-                      <span className="ml-2">
-                        {sortDirection === 'asc' ? '▲' : '▼'}
-                      </span>
-                    )}
-                  </TableHead>
-                )}
-                {selectedColumns.includes('department') && (
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('departmentName')}>
-                    Department
-                    {sortColumn === 'departmentName' && (
                       <span className="ml-2">
                         {sortDirection === 'asc' ? '▲' : '▼'}
                       </span>
@@ -1003,16 +1000,6 @@ const EmployeeList: React.FC = () => {
                     )}
                   </TableHead>
                 )}
-                {selectedColumns.includes('dateOfJoining') && (
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('dateOfJoining')}>
-                    Date of Joining
-                    {sortColumn === 'dateOfJoining' && (
-                      <span className="ml-2">
-                        {sortDirection === 'asc' ? '▲' : '▼'}
-                      </span>
-                    )}
-                  </TableHead>
-                )}
                 {selectedColumns.includes('actions') && (
                   <TableHead className="text-right">Actions</TableHead>
                 )}
@@ -1024,16 +1011,11 @@ const EmployeeList: React.FC = () => {
                   {selectedColumns.includes('name') && (
                     <TableCell className="font-medium">{`${user.firstName} ${user.lastName}`}</TableCell>
                   )}
-                  {selectedColumns.includes('email') && <TableCell>{user.email}</TableCell>}
                   {selectedColumns.includes('role') && <TableCell>{user.role}</TableCell>}
-                  {selectedColumns.includes('department') && <TableCell>{user.departmentName}</TableCell>}
                   {selectedColumns.includes('userName') && <TableCell>{user.userName}</TableCell>}
                   {selectedColumns.includes('primaryContact') && <TableCell>{user.primaryContact}</TableCell>}
                   {selectedColumns.includes('city') && <TableCell>{user.city}</TableCell>}
                   {selectedColumns.includes('state') && <TableCell>{user.state}</TableCell>}
-                  {selectedColumns.includes('dateOfJoining') && (
-                    <TableCell>{format(new Date(user.dateOfJoining), 'dd/MM/yyyy')}</TableCell>
-                  )}
                   {selectedColumns.includes('actions') && (
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -1047,6 +1029,7 @@ const EmployeeList: React.FC = () => {
                           <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             Edit
                           </DropdownMenuItem>
+
                           <DropdownMenuItem onClick={() => handleViewUser(user.id)}>
                             View
                           </DropdownMenuItem>
@@ -1058,7 +1041,7 @@ const EmployeeList: React.FC = () => {
                               Assign City
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
+                          <DropdownMenuItem onClick={() => handleDelete(user.id)}>
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -1069,7 +1052,6 @@ const EmployeeList: React.FC = () => {
               ))}
             </TableBody>
           </Table>
-
           <div className="mt-4 flex justify-center">
             <Pagination>
               <PaginationContent>

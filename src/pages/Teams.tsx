@@ -1,16 +1,18 @@
-'use client';
-
-import * as React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { RootState } from '../store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Modal, message, Table, Checkbox } from 'antd';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Table } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { useToast } from "@/components/ui/use-toast"
 import styles from './Teams.module.css';
-
-const { Column } = Table;
 
 interface Team {
     id: number;
@@ -27,10 +29,10 @@ interface FieldOfficer {
     firstName: string;
     lastName: string;
     role: string;
-    email: string;
 }
 
 const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
+    const { toast } = useToast()
     const [teams, setTeams] = useState<Team[]>([]);
     const [isDataAvailable, setIsDataAvailable] = useState<boolean>(true);
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<boolean>(false);
@@ -39,8 +41,6 @@ const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
     const [fieldOfficers, setFieldOfficers] = useState<FieldOfficer[]>([]);
     const [selectedFieldOfficers, setSelectedFieldOfficers] = useState<number[]>([]);
-    const [cities, setCities] = useState<string[]>([]);
-    const [selectedCity, setSelectedCity] = useState<string | null>(null);
     const [assignedCity, setAssignedCity] = useState<string | null>(null);
 
     const fetchTeams = useCallback(async () => {
@@ -62,19 +62,6 @@ const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         fetchTeams();
     }, [fetchTeams]);
 
-    const fetchCities = useCallback(async () => {
-        try {
-            const response = await axios.get('http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getCities', {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                },
-            });
-            setCities(response.data);
-        } catch (error) {
-            console.error('Error fetching cities:', error);
-        }
-    }, [authToken]);
-
     const showDeleteModal = (teamId: number) => {
         setDeleteTeamId(teamId);
         setIsDeleteModalVisible(true);
@@ -87,51 +74,57 @@ const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     'Authorization': `Bearer ${authToken}`,
                 },
             });
-            message.success('Team Deleted Successfully!');
-            fetchTeams();
+            await fetchTeams();
+            setIsDeleteModalVisible(false);
+            toast({
+                title: "Team deleted",
+                description: "The team has been successfully deleted.",
+            })
         } catch (error) {
             console.error('Error deleting team:', error);
-            message.error('Failed to delete team.');
-        } finally {
-            setIsDeleteModalVisible(false);
+            toast({
+                title: "Error",
+                description: "Failed to delete the team. Please try again.",
+                variant: "destructive",
+            })
         }
     };
 
-    const fetchFieldOfficersByCity = useCallback(async (city: string) => {
+    const fetchFieldOfficersByCity = useCallback(async (city: string, teamId: number) => {
         try {
             const response = await axios.get(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/getFieldOfficerByCity?city=${city}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`,
                 },
             });
-            setFieldOfficers(response.data);
+            const allFieldOfficers: FieldOfficer[] = response.data;
+            const currentTeam = teams.find(team => team.id === teamId);
+            const currentTeamMemberIds = currentTeam ? currentTeam.fieldOfficers.map(officer => officer.id) : [];
+            const availableFieldOfficers = allFieldOfficers.filter((officer: FieldOfficer) => !currentTeamMemberIds.includes(officer.id));
+            setFieldOfficers(availableFieldOfficers);
         } catch (error) {
             console.error('Error fetching field officers:', error);
         }
-    }, [authToken]);
+    }, [authToken, teams]);
 
     const showEditModal = async (team: Team) => {
         setSelectedTeamId(team.id);
-        await fetchCities();
         const city = team.officeManager.assignedCity;
         setAssignedCity(city);
-        setSelectedCity(city);
-        await fetchFieldOfficersByCity(city);
+        await fetchFieldOfficersByCity(city, team.id);
         setIsEditModalVisible(true);
     };
 
-    const handleCityChange = async (city: string) => {
-        if (assignedCity && city !== assignedCity) {
-            message.error("You can't create a team with a different city.");
-            setSelectedCity(assignedCity);
-            await fetchFieldOfficersByCity(assignedCity);
-        } else {
-            setSelectedCity(city);
-            await fetchFieldOfficersByCity(city);
-        }
-    };
-
     const handleAddFieldOfficer = async () => {
+        if (selectedFieldOfficers.length === 0) {
+            toast({
+                title: "No officers selected",
+                description: "Please select at least one field officer to add.",
+                variant: "destructive",
+            })
+            return;
+        }
+
         try {
             await axios.put(`http://ec2-51-20-32-8.eu-north-1.compute.amazonaws.com:8081/employee/team/addFieldOfficer?id=${selectedTeamId}`, {
                 fieldOfficers: selectedFieldOfficers,
@@ -141,13 +134,20 @@ const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     'Content-Type': 'application/json',
                 },
             });
-            message.success('Field Officer Added Successfully!');
-            fetchTeams();
+            await fetchTeams();
+            setIsEditModalVisible(false);
+            setSelectedFieldOfficers([]);
+            toast({
+                title: "Field officers added",
+                description: "The selected field officers have been added to the team.",
+            })
         } catch (error) {
             console.error('Error adding field officer:', error);
-            message.error('Failed to add field officer.');
-        } finally {
-            setIsEditModalVisible(false);
+            toast({
+                title: "Error",
+                description: "Failed to add field officers. Please try again.",
+                variant: "destructive",
+            })
         }
     };
 
@@ -162,63 +162,68 @@ const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     fieldOfficers: [fieldOfficerId],
                 },
             });
-            message.success('Field Officer Removed From Team Successfully!');
-            fetchTeams();
+            await fetchTeams();
         } catch (error) {
             console.error('Error removing field officer:', error);
-            message.error('Failed to remove field officer.');
         }
     };
 
     return (
         <div className={styles.teamContainer}>
-            <h2>Teams</h2>
+            <h2 className={styles.pageTitle}>Team Management</h2>
             {isDataAvailable ? (
                 <>
                     {teams.map((team) => (
                         <Card key={team.id} className={styles.teamCard}>
                             <CardHeader>
-                                <CardTitle>
+                                <CardTitle className={styles.cardTitle}>
                                     {team.officeManager?.firstName ?? 'N/A'} {team.officeManager?.lastName ?? 'N/A'}&apos;s Team
                                 </CardTitle>
+                                <div className={styles.cityBadge}>
+                                    City: {team.officeManager.assignedCity}
+                                </div>
                             </CardHeader>
                             <CardContent>
-                                <Table dataSource={team.fieldOfficers} rowKey="id" pagination={false}>
-                                    <Column
-                                        title="Name"
-                                        dataIndex="name"
-                                        key="name"
-                                        render={(text, officer: FieldOfficer) => `${officer.firstName} ${officer.lastName}`}
-                                    />
-                                    <Column title="Role" dataIndex="role" key="role" />
-                                    <Column title="Email" dataIndex="email" key="email" />
-                                    <Column
-                                        title="Action"
-                                        key="action"
-                                        render={(text, officer: FieldOfficer) => (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleRemoveFieldOfficer(team.id, officer.id)}
-                                            >
-                                                Remove
-                                            </Button>
-                                        )}
-                                    />
+                                <Table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Role</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {team.fieldOfficers.map((officer) => (
+                                            <tr key={officer.id}>
+                                                <td>{`${officer.firstName} ${officer.lastName}`}</td>
+                                                <td>{officer.role}</td>
+                                                <td>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleRemoveFieldOfficer(team.id, officer.id)}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
                                 </Table>
-                                <Button
-                                    className={`${styles.mt4} ${styles.addButton}`}
-                                    onClick={() => showEditModal(team)}
-                                >
-                                    Add Field Officer
-                                </Button>
-                                <Button
-                                    className={`${styles.mt4} ${styles.ml4}`}
-                                    variant="destructive"
-                                    onClick={() => showDeleteModal(team.id)}
-                                >
-                                    Delete Team
-                                </Button>
+                                <div className={styles.cardActions}>
+                                    <Button
+                                        className={styles.addButton}
+                                        onClick={() => showEditModal(team)}
+                                    >
+                                        Add Field Officer
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => showDeleteModal(team.id)}
+                                    >
+                                        Delete Team
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     ))}
@@ -227,67 +232,55 @@ const Teams: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                 <p className={styles.noDataMessage}>No teams available. Please try again later.</p>
             )}
 
-            {/* Delete Modal */}
-            <Modal
-                title="Delete Team"
-                visible={isDeleteModalVisible}
-                onOk={handleDeleteTeam}
-                onCancel={() => setIsDeleteModalVisible(false)}
-                okText="Delete"
-                okButtonProps={{ danger: true }}
-            >
-                <p>Are you sure you want to delete this team?</p>
-            </Modal>
+            <Dialog open={isDeleteModalVisible} onOpenChange={setIsDeleteModalVisible}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Team</DialogTitle>
+                    </DialogHeader>
+                    <p>Are you sure you want to delete this team?</p>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteModalVisible(false)}>Cancel</Button>
+                        <Button onClick={handleDeleteTeam}>Delete</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-            {/* Edit Modal */}
-            <Modal
-                title="Add Field Officer"
-                visible={isEditModalVisible}
-                onOk={handleAddFieldOfficer}
-                onCancel={() => setIsEditModalVisible(false)}
-                okText={<span className={styles.addModalButton}>Add</span>}
-                footer={null}
-            >
-                <div className={styles.modalBody}>
-                    <p className={styles.modalTitle}>Manager&apos;s Assigned City: {assignedCity ?? 'N/A'}</p>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button className={styles.dropdownButton}>{selectedCity || 'Select City'}</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className={styles.dropdownContent}>
-                            {cities.map((city) => (
-                                <DropdownMenuItem key={city} onClick={() => handleCityChange(city)}>
-                                    {city}
-                                </DropdownMenuItem>
+            <Dialog open={isEditModalVisible} onOpenChange={setIsEditModalVisible}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Field Officer</DialogTitle>
+                    </DialogHeader>
+                    <div className={styles.modalBody}>
+                        <p className={styles.modalTitle}>Manager&apos;s Assigned City: {assignedCity ?? 'N/A'}</p>
+                        <div className={styles.officerList}>
+                            {fieldOfficers.map((officer) => (
+                                <div key={officer.id} className={styles.checkboxContainer}>
+                                    <Checkbox
+                                        id={`officer-${officer.id}`}
+                                        checked={selectedFieldOfficers.includes(officer.id)}
+                                        onCheckedChange={(checked) => {
+                                            setSelectedFieldOfficers(prev =>
+                                                checked
+                                                    ? [...prev, officer.id]
+                                                    : prev.filter(id => id !== officer.id)
+                                            );
+                                        }}
+                                    />
+                                    <label htmlFor={`officer-${officer.id}`} className={styles.checkboxLabel}>
+                                        {`${officer.firstName} ${officer.lastName} (${officer.role})`}
+                                    </label>
+                                </div>
                             ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <div className={styles.selectContainer}>
-                        {fieldOfficers.map((officer) => (
-                            <div key={officer.id} className={styles.checkboxContainer}>
-                                <Checkbox
-                                    id={`officer-${officer.id}`}
-                                    checked={selectedFieldOfficers.includes(officer.id)}
-                                    onChange={(e) => {
-                                        const { checked } = e.target;
-                                        setSelectedFieldOfficers((prev) =>
-                                            checked
-                                                ? [...prev, officer.id]
-                                                : prev.filter((id) => id !== officer.id)
-                                        );
-                                    }}
-                                >
-                                    {`${officer.firstName} ${officer.lastName}`}
-                                </Checkbox>
-                            </div>
-                        ))}
+                        </div>
                     </div>
-                </div>
-                <div className={styles.modalFooter}>
-                    <Button onClick={() => setIsEditModalVisible(false)} className={styles.cancelButton}>Cancel</Button>
-                    <Button onClick={handleAddFieldOfficer} className={styles.addModalButton}>Add</Button>
-                </div>
-            </Modal>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditModalVisible(false)}>Cancel</Button>
+                        <Button onClick={handleAddFieldOfficer} disabled={selectedFieldOfficers.length === 0}>
+                            Add Selected Officers
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

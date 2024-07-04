@@ -116,11 +116,14 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
         const sundays = countSundaysInMonth(year, month);
         const totalDaysWorked = row.fullDays * 1 + row.halfDays * 0.5;
         const baseSalary = calculateBaseSalary(row.salary || 0, totalDaysWorked, totalDaysInMonth, sundays);
-        const travelAllowance = (row.travelAllowance || 0) * row.fullDays + (row.travelAllowance || 0) * 0.5 * row.halfDays;
-        const dearnessAllowance = (row.dearnessAllowance || 0) * row.fullDays + (row.dearnessAllowance || 0) * 0.5 * row.halfDays;
+        // TA is always 0 as per previous requirement
+        const travelAllowance = 0;
+        // Use the DA directly from the API
+        const dearnessAllowance = row.dearnessAllowance || 0;
         const totalSalary = baseSalary + travelAllowance + dearnessAllowance + (row.expenseTotal || 0);
         return Math.round(totalSalary);
     };
+
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -206,9 +209,9 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                                     <TableCell>{row.fullDays}</TableCell>
                                     <TableCell>{row.halfDays}</TableCell>
                                     <TableCell>{Math.round(calculateBaseSalary(row.salary || 0, (row.fullDays * 1 + row.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth)), countSundaysInMonth(Number(selectedYear), Number(selectedMonth))))}</TableCell>
-                                    <TableCell>{Math.round((row.travelAllowance || 0) * row.fullDays + (row.travelAllowance || 0) * 0.5 * row.halfDays)}</TableCell>
-                                    <TableCell>{Math.round((row.dearnessAllowance || 0) * row.fullDays + (row.dearnessAllowance || 0) * 0.5 * row.halfDays)}</TableCell>
-                                    <TableCell>{Math.round(row.expenseTotal)}</TableCell>
+                                    <TableCell>0</TableCell>
+                                    <TableCell>{Math.round(row.dearnessAllowance || 0)}</TableCell>
+                                    <TableCell>{Math.round(row.expenseTotal || 0)}</TableCell>
                                     <TableCell>{calculateTotalSalary(row, Number(selectedYear), Number(selectedMonth))}</TableCell>
                                 </TableRow>
                             ))}
